@@ -78,11 +78,13 @@ function initRealtimeRides() {
             const data = doc.data();
             const isJoined = data.participants.includes(currentUsername);
             container.innerHTML += `
-                <div style="background:#f9f9f9; padding:10px; border-radius:8px; margin-top:8px; border:1px solid #eee;">
-                    <b>${data.title}</b><br><small>📍 ${data.start} | 📅 ${data.date}</small>
-                    <div style="font-size:0.8rem; margin:5px 0;"><b>Συμμετέχοντες:</b> ${data.participants.join(', ')}</div>
-                    ${isJoined ? `<button style="background:#ff4444; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;" onclick="window.leaveRide('${doc.id}')">Ακύρωση</button>` 
-                               : `<button style="background:#4CAF50; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;" onclick="window.joinRide('${doc.id}')">Συμμετοχή</button>`}
+                <div class="ride-item">
+                    <b>${data.title}</b><br>
+                    <small>📍 ${data.start} | 📅 ${data.date}</small>
+                    <div style="font-size:0.85rem; margin:8px 0; color:#666;"><b>Συμμετέχοντες:</b> ${data.participants.join(', ')}</div>
+                    ${isJoined ? 
+                        `<button class="btn-danger" onclick="window.leaveRide('${doc.id}')">Ακύρωση</button>` 
+                      : `<button onclick="window.joinRide('${doc.id}')">Συμμετοχή</button>`}
                 </div>`;
         });
         loadMore.style.display = (!showAllRides && docs.length > 3) ? 'block' : 'none';
