@@ -1,0 +1,17 @@
+:root {
+    --primary: #fc4c02;
+    --bg-color: #f8f9fa;
+    --card-bg: #ffffff;
+}
+
+body { background-color: var(--bg-color); font-family: 'Segoe UI', sans-serif; padding: 20px; }
+.container { max-width: 1000px; margin: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.card { background: var(--card-bg); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+h1 { color: var(--primary); text-align: center; }
+input, button { padding: 10px; border-radius: 6px; border: 1px solid #ccc; width: 100%; margin-top: 5px;}
+button { background: var(--primary); color: white; border: none; cursor: pointer; width: auto;}
+#chat-box { height: 150px; overflow-y: auto; border: 1px solid #eee; margin-bottom: 10px; padding: 5px; }
+.upload-area { border: 2px dashed var(--primary); padding: 20px; text-align: center; cursor: pointer; }
+.btn-social { display: inline-block; padding: 10px; margin-top: 10px; text-decoration: none; color: white; border-radius: 6px; text-align: center;}
+.btn-whatsapp { background: #25D366; }
+.btn-email { background: #0078D4; }

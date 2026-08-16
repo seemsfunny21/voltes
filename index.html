@@ -4,217 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BikeHub - Ποδηλατική Κοινότητα</title>
-    <style>
-        :root {
-            --primary: #fc4c02; /* Strava Orange */
-            --bg-color: #f4f6f9;
-            --card-bg: #ffffff;
-            --text-color: #333333;
-            --border-color: #e1e8ed;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            line-height: 1.6;
-            padding: 20px;
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        header h1 {
-            color: var(--primary);
-            font-size: 2.2rem;
-            margin-bottom: 5px;
-        }
-
-        header p {
-            color: #666;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .card {
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            margin-bottom: 20px;
-        }
-
-        .card h2 {
-            font-size: 1.2rem;
-            margin-bottom: 15px;
-            border-bottom: 2px solid var(--border-color);
-            padding-bottom: 8px;
-            color: #2c3e50;
-        }
-
-        /* 1. Chat Styles */
-        #chat-box {
-            height: 200px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            overflow-y: scroll;
-            padding: 10px;
-            background: #fafbfc;
-            margin-bottom: 10px;
-            font-size: 0.9rem;
-        }
-        .chat-msg {
-            margin-bottom: 8px;
-        }
-        .chat-msg span {
-            font-weight: bold;
-            color: var(--primary);
-        }
-        .chat-input-group, .user-setting {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 8px;
-        }
-        input, textarea, select {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            outline: none;
-        }
-        input:focus, textarea:focus {
-            border-color: var(--primary);
-        }
-        button {
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: background 0.2s;
-        }
-        button:hover {
-            opacity: 0.9;
-        }
-
-        /* 2. Route Upload & Map Styles */
-        .upload-area {
-            border: 2px dashed var(--border-color);
-            padding: 20px;
-            text-align: center;
-            border-radius: 8px;
-            cursor: pointer;
-            background: #fafbfc;
-            margin-bottom: 15px;
-        }
-        .upload-area:hover {
-            border-color: var(--primary);
-        }
-        #map-preview {
-            width: 100%;
-            height: 220px;
-            background: #e9ecef;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            overflow: hidden;
-            border: 1px solid var(--border-color);
-        }
-        #map-preview img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: none;
-        }
-        .map-placeholder-text {
-            color: #888;
-            font-size: 0.9rem;
-            text-align: center;
-            padding: 0 15px;
-        }
-
-        /* 3. Invites Styles */
-        .invite-btns {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-top: 10px;
-        }
-        .btn-social {
-            flex: 1;
-            padding: 10px;
-            text-align: center;
-            color: white;
-            border-radius: 6px;
-            text-decoration: none;
-            font-weight: bold;
-            font-size: 0.9rem;
-        }
-        .btn-whatsapp { background-color: #25D366; }
-        .btn-viber { background-color: #7360F2; }
-        .btn-email { background-color: #0078D4; }
-
-        /* 4. Rides Scheduling Styles */
-        .ride-form {
-            display: grid;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-        .rides-list {
-            max-height: 200px;
-            overflow-y: auto;
-        }
-        .ride-item {
-            background: #fafbfc;
-            border: 1px solid var(--border-color);
-            padding: 10px;
-            border-radius: 6px;
-            margin-bottom: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .ride-info h4 {
-            font-size: 0.95rem;
-            color: #2c3e50;
-        }
-        .ride-info p {
-            font-size: 0.8rem;
-            color: #666;
-        }
-        .participants-count {
-            font-size: 0.8rem;
-            background: #e1e8ed;
-            padding: 2px 6px;
-            border-radius: 4px;
-            margin-top: 4px;
-            display: inline-block;
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -224,206 +14,57 @@
     </header>
 
     <div class="container">
-        <!-- Αριστερή Στήλη -->
-        <div>
-            <!-- 1. Chat -->
+        <div class="column">
             <div class="card">
                 <h2>💬 Ομάδα Συζήτησης</h2>
                 <div class="user-setting">
                     <input type="text" id="username-input" placeholder="Το ψευδώνυμο σου..." value="Ποδηλάτης">
                     <button onclick="saveUsername()">Αλλαγή</button>
                 </div>
-                <div id="chat-box">
-                    <div class="chat-msg"><span>System:</span> Καλώς ήρθατε στην παρέα!</div>
-                </div>
+                <div id="chat-box"></div>
                 <div class="chat-input-group">
                     <input type="text" id="chat-text" placeholder="Γράψτε μήνυμα..." onkeypress="checkEnter(event)">
                     <button onclick="sendChatMessage()">Αποστολή</button>
                 </div>
             </div>
 
-            <!-- 2. Screenshot & Map Simulation -->
             <div class="card">
-                <h2>🗺️ Ανέβαστη Στιγμιότυπου Διαδρομής</h2>
-                <div class="upload-area" onclick="document.getElementById('file-input').click()">
-                    <p>📁 Κάντε κλικ εδώ για να ανεβάσετε screenshot (Strava/Garmin)</p>
-                    <input type="hidden" id="file-input"> <!-- Προσομοίωση με κουμπί ή αρχείο -->
+                <h2>🗺️ Ανέβαστη Διαδρομής</h2>
+                <div class="upload-area" id="drop-zone">
+                    <p>📁 Κάντε κλικ ή σύρετε το screenshot εδώ</p>
+                    <input type="file" id="real-file-input" accept="image/*" style="display:none">
                 </div>
-                <input type="file" id="real-file-input" accept="image/*" style="display:none" onchange="previewImage(event)">
-                
                 <div id="map-preview">
-                    <span class="map-placeholder-text">Η απεικόνιση της διαδρομής ή του χάρτη θα εμφανιστεί εδώ μετά την ανέβαστη.</span>
-                    <img id="uploaded-map-img" alt="Διαδρομή Χάρτη">
+                    <img id="uploaded-map-img" alt="Διαδρομή" style="max-width:100%; display:block; margin-top:10px;">
                 </div>
             </div>
         </div>
 
-        <!-- Δεξιά Στήλη -->
-        <div>
-            <!-- 3. Invites -->
+        <div class="column">
             <div class="card">
                 <h2>✉️ Πρόσκληση Φίλων</h2>
-                <p style="font-size: 0.9rem; margin-bottom: 10px; color: #666;">Προσκαλέστε φίλους σας να συμμετέχουν στην κοινότητα:</p>
                 <div class="user-setting">
                     <input type="email" id="invite-email" placeholder="E-mail φίλου...">
                     <button onclick="sendEmailInvite()">Αποστολή</button>
                 </div>
                 <div class="invite-btns">
-                    <a href="#" id="whatsapp-link" class="btn-social btn-whatsapp" target="_blank">💬 WhatsApp</a>
-                    <a href="#" id="viber-link" class="btn-social btn-viber" target="_blank">🟣 Viber</a>
-                    <a href="#" id="email-link" class="btn-social btn-email">📧 E-mail</a>
+                    <a href="#" id="whatsapp-link" class="btn-social btn-whatsapp" target="_blank">WhatsApp</a>
+                    <a href="#" id="email-link" class="btn-social btn-email">E-mail</a>
                 </div>
             </div>
 
-            <!-- 4. Schedule Rides -->
             <div class="card">
                 <h2>📅 Προγραμματισμός Ποδηλασίας</h2>
                 <div class="ride-form">
-                    <input type="text" id="ride-title" placeholder="Τίτλος (π.χ. Πάρνηθα Climb)">
+                    <input type="text" id="ride-title" placeholder="Τίτλος διαδρομής">
                     <input type="datetime-local" id="ride-date">
-                    <button onclick="addNewRide()">Δημιουργία Βόλτας</button>
+                    <button onclick="addNewRide()">Δημιουργία</button>
                 </div>
-                <h3>Επερχόμενες Βόλτες:</h3>
-                <div class="rides-list" id="rides-container">
-                    <!-- Εδώ θα προστίθενται δυναμικά οι βόλτες -->
-                </div>
+                <div class="rides-list" id="rides-container"></div>
             </div>
         </div>
     </div>
 
-    <script>
-        // --- 1. Chat Logic ---
-        let currentUsername = "Ποδηλάτης";
-
-        function saveUsername() {
-            const val = document.getElementById('username-input').value.trim();
-            if(val) {
-                currentUsername = val;
-                alert("Το ψευδώνυμο αποθηκεύτηκε!");
-            }
-        }
-
-        function sendChatMessage() {
-            const input = document.getElementById('chat-text');
-            const text = input.value.trim();
-            if(!text) return;
-
-            const chatBox = document.getElementById('chat-box');
-            const msgDiv = document.createElement('div');
-            msgDiv.className = 'chat-msg';
-            msgDiv.innerHTML = `<span>${currentUsername}:</span> ${escapeHtml(text)}`;
-            chatBox.appendChild(msgDiv);
-            chatBox.scrollTop = chatBox.scrollHeight;
-            input.value = '';
-        }
-
-        function checkEnter(e) {
-            if(e.key === 'Enter') sendChatMessage();
-        }
-
-        function escapeHtml(str) {
-            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        }
-
-
-        // --- 2. Screenshot Upload Logic ---
-        // Συνδέουμε την περιοχή κλικ με το πραγματικό input αρχείου
-        document.querySelector('.upload-area').addEventListener('click', () => {
-            document.getElementById('real-file-input').click();
-        });
-
-        function previewImage(event) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const img = document.getElementById('uploaded-map-img');
-                    const placeholder = document.querySelector('.map-placeholder-text');
-                    img.src = e.target.result;
-                    img.style.display = 'block';
-                    placeholder.style.display = 'none';
-                }
-                reader.readAsDataURL(file);
-            }
-        }
-
-
-        // --- 3. Invite Logic ---
-        const shareText = "Έλα στην ποδηλατική μας παρέα στο BikeHub! Δες διαδρομές και δήλωσε συμμετοχή στις επόμενες βόλτες μας.";
-        const shareUrl = window.location.href;
-
-        document.getElementById('whatsapp-link.href') // helper setup
-        document.getElementById('whatsapp-link').href = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`;
-        document.getElementById('viber-link').href = `viber://forward?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`;
-        document.getElementById('email-link').href = `mailto:?subject=${encodeURIComponent("Πρόσκληση στο BikeHub")}&body=${encodeURIComponent(shareText + '\n\n' + shareUrl)}`;
-
-        function sendEmailInvite() {
-            const email = document.getElementById('invite-email').value;
-            if(!email) {
-                alert("Παρακαλώ εισάγετε ένα έγκυρο e-mail.");
-                return;
-            }
-            window.location.href = `mailto:${email}?subject=${encodeURIComponent("Πρόσκληση στο BikeHub")}&body=${encodeURIComponent(shareText + '\n\n' + shareUrl)}`;
-        }
-
-
-        // --- 4. Rides Scheduling Logic ---
-        let rides = [
-            { id: 1, title: "Πρωινή βόλτα παραλιακής", date: "2026-04-20 08:30", participants: 3 }
-        ];
-
-        function renderRides() {
-            const container = document.getElementById('rides-container');
-            container.innerHTML = '';
-            
-            rides.forEach(ride => {
-                const item = document.createElement('div');
-                item.className = 'ride-item';
-                item.innerHTML = `
-                    <div class="ride-info">
-                        <h4>${escapeHtml(ride.title)}</h4>
-                        <p>📅 ${ride.date}</p>
-                        <span class="participants-count">👥 Συμμετοχές: ${ride.participants}</span>
-                    </div>
-                    <button onclick="joinRide(${ride.id})" style="padding: 5px 10px; font-size: 0.8rem;">Συμμετοχή</button>
-                `;
-                container.appendChild(item);
-            });
-        }
-
-        function addNewRide() {
-            const title = document.getElementById('ride-title').value.trim();
-            const dateInput = document.getElementById('ride-date').value;
-
-            if(!title || !dateInput) {
-                alert("Συμπληρώστε τίτλο και ημερομηνία για τη βόλτα.");
-                return;
-            }
-
-            const formattedDate = dateInput.replace('T', ' ');
-            rides.push({
-                id: Date.now(),
-                title: title,
-                date: formattedDate,
-                participants: 1
-            });
-
-            document.getElementById('ride-title').value = '';
-            document.getElementById('ride-date').value = '';
-            renderRides();
-        }
-
-        function joinRide(id) {
-            const ride = rides.find(r => r.id === id);
-            if(ride) {
-                ride.participants += 1;
-                renderRides();
-                alert(`Δηλώσατε επιτυχώς συμμετοχή στη βόλτα: "${ride.title}"!`);
-            }
-        }
-
-        // Αρχική φόρτωση λίστας βόλτων
-        renderRides();
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
