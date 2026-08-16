@@ -3,39 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BikeHub</title>
+    <title>BikeHub - Ποδηλατική Κοινότητα</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+    <!-- Modal Εισαγωγής Ονόματος -->
     <div id="name-modal" class="modal-overlay">
-        <div class="modal">
-            <h2>Καλώς ήρθατε στο BikeHub</h2>
-            <input type="text" id="modal-username-input" placeholder="Το όνομά σας...">
+        <div class="modal-card">
+            <h2>🚴‍♂️ Καλώς ήρθατε στο BikeHub!</h2>
+            <p>Παρακαλώ εισάγετε το ψευδώνυμό σας για να συνεχίσετε:</p>
+            <input type="text" id="modal-username-input" placeholder="Το όνομα σας...">
             <button id="save-name-btn">Είσοδος</button>
         </div>
     </div>
 
-    <header>
-        <h1>BikeHub</h1>
-        <p>Χρήστης: <span id="display-username"></span></p>
-    </header>
+    <div class="container">
+        <header class="app-header">
+            <h1>🚴‍♂️ BikeHub Community</h1>
+            <p>Μοιραστείτε τις διαδρομές σας και οργανώστε τις επόμενες βόλτες σας! (<span id="display-username">Χρήστης</span>)</p>
+        </header>
 
-    <main>
-        <section id="chat">
-            <h2>Chat</h2>
-            <div id="chat-messages"></div>
+        <!-- 1. Chat -->
+        <div class="card">
+            <h2>💬 Ομάδα Συζήτησης</h2>
+            <div id="chat-box"></div>
             <div class="chat-input-group">
                 <input type="text" id="chat-text" placeholder="Γράψτε μήνυμα...">
                 <button id="send-chat-btn">Αποστολή</button>
             </div>
-        </section>
+        </div>
 
-        <section id="rides">
-            <h2>Προγραμματισμός Βόλτας</h2>
-            <input type="text" id="ride-title" placeholder="Τίτλος βόλτας...">
-            <button id="add-ride-btn">Δημιουργία</button>
-        </section>
-    </main>
+        <!-- 2. Screenshot Upload -->
+        <div class="card">
+            <h2>🗺️ Ανέβαστη Διαδρομής</h2>
+            <div class="upload-area" id="drop-zone">
+                <p>📁 Κάντε κλικ ή σύρετε το screenshot εδώ</p>
+                <input type="file" id="real-file-input" accept="image/*" style="display:none">
+            </div>
+            <div id="map-preview">
+                <img id="uploaded-map-img" alt="Διαδρομή">
+            </div>
+        </div>
+
+        <!-- 3. Invites -->
+        <div class="card">
+            <h2>✉️ Πρόσκληση Φίλων</h2>
+            <div class="user-setting">
+                <input type="email" id="invite-email" placeholder="E-mail φίλου...">
+                <button id="send-email-btn">Αποστολή</button>
+            </div>
+            <div class="invite-btns">
+                <a href="#" id="whatsapp-link" class="btn-social btn-whatsapp" target="_blank">WhatsApp</a>
+                <a href="#" id="email-link" class="btn-social btn-email">E-mail</a>
+            </div>
+        </div>
+
+        <!-- 4. Schedule Rides -->
+        <div class="card">
+            <h2>📅 Προγραμματισμός Ποδηλασίας</h2>
+            <div class="ride-form">
+                <input type="text" id="ride-title" placeholder="Τίτλος διαδρομής">
+                <input type="datetime-local" id="ride-date">
+                <button id="add-ride-btn">Δημιουργία</button>
+            </div>
+            <div class="rides-list" id="rides-container"></div>
+        </div>
+    </div>
 
     <script type="module" src="script.js"></script>
 </body>
