@@ -9,12 +9,13 @@
 <body>
 
     <div class="container">
-        <!-- Το Header τοποθετήθηκε εδώ μέσα για να κεντραριστεί τέλεια -->
+        <!-- Το Header μπήκε μέσα στο container -->
         <header class="app-header">
             <h1>🚴‍♂️ BikeHub Community</h1>
             <p>Μοιραστείτε τις διαδρομές σας και οργανώστε τις επόμενες βόλτες σας!</p>
         </header>
 
+        <!-- 1. Chat -->
         <div class="card">
             <h2>💬 Ομάδα Συζήτησης</h2>
             <div class="user-setting">
@@ -28,6 +29,7 @@
             </div>
         </div>
 
+        <!-- 2. Screenshot Upload -->
         <div class="card">
             <h2>🗺️ Ανέβαστη Διαδρομής</h2>
             <div class="upload-area" id="drop-zone">
@@ -35,10 +37,11 @@
                 <input type="file" id="real-file-input" accept="image/*" style="display:none">
             </div>
             <div id="map-preview">
-                <img id="uploaded-map-img" alt="Διαδρομή" style="max-width:100%; display:block; margin-top:10px;">
+                <img id="uploaded-map-img" alt="Διαδρομή">
             </div>
         </div>
 
+        <!-- 3. Invites -->
         <div class="card">
             <h2>✉️ Πρόσκληση Φίλων</h2>
             <div class="user-setting">
@@ -51,6 +54,7 @@
             </div>
         </div>
 
+        <!-- 4. Schedule Rides -->
         <div class="card">
             <h2>📅 Προγραμματισμός Ποδηλασίας</h2>
             <div class="ride-form">
