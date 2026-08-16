@@ -3,40 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BikeHub</title>
+    <title>BikeHub - Ποδηλατική Κοινότητα</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="app">
-        <header>
-            <h1>BikeHub <small>| <span id="display-username"></span></small></h1>
+    <div id="name-modal" class="modal-overlay">
+        <div class="modal-card">
+            <h2>🚴‍♂️ Καλώς ήρθατε στο BikeHub!</h2>
+            <p>Παρακαλώ εισάγετε το ψευδώνυμό σας για να συνεχίσετε:</p>
+            <input type="text" id="modal-username-input" placeholder="Το όνομα σας...">
+            <button id="save-name-btn">Είσοδος</button>
+        </div>
+    </div>
+    <div class="container">
+        <header class="app-header">
+            <h1>🚴‍♂️ BikeHub Community</h1>
+            <p>Οργανώστε τις βόλτες σας! (<span id="display-username">Χρήστης</span>)</p>
         </header>
-
-        <section id="name-modal" style="display:block;">
-            <h3>Καλώς ήρθες! Πώς σε λένε;</h3>
-            <input type="text" id="modal-username-input" placeholder="Όνομα...">
-            <button id="save-name-btn">Αποθήκευση</button>
-        </section>
-
-        <section id="add-ride-section">
-            <h3>Οργάνωση βόλτας</h3>
-            <select id="ride-title-select" onchange="window.checkNewRoute()"></select>
-            <select id="start-point-select" onchange="window.checkNewPoint()"></select>
-            <input type="datetime-local" id="ride-date">
-            <button id="add-ride-btn">Δημιουργία</button>
-        </section>
-
-        <section id="rides-section">
-            <h3>Επόμενες βόλτες</h3>
-            <div id="rides-container"></div>
-        </section>
-
-        <section id="chat-section">
-            <h3>Chat</h3>
-            <div id="chat-box" style="height:200px; overflow-y:scroll; border:1px solid #ccc; margin-bottom:10px;"></div>
-            <input type="text" id="chat-text" placeholder="Γράψε ένα μήνυμα...">
-            <button id="send-chat-btn">Αποστολή</button>
-        </section>
+        <div class="card">
+            <h2>💬 Ομάδα Συζήτησης</h2>
+            <div id="chat-box"></div>
+            <div class="chat-input-group">
+                <input type="text" id="chat-text" placeholder="Γράψτε μήνυμα...">
+                <button id="send-chat-btn">Αποστολή</button>
+            </div>
+        </div>
+        <div class="card">
+            <h2>📅 Προγραμματισμός Ποδηλασίας</h2>
+            <div class="ride-form">
+                <select id="ride-title-select" onchange="checkNewRoute()"></select>
+                <select id="start-point-select" onchange="checkNewPoint()"></select>
+                <input type="datetime-local" id="ride-date">
+                <button id="add-ride-btn">Δημιουργία</button>
+            </div>
+            <div class="rides-list" id="rides-container"></div>
+        </div>
+        <div class="card">
+            <h2>✉️ Πρόσκληση Φίλων</h2>
+            <div class="invite-btns">
+                <a href="#" id="whatsapp-link" class="btn-social btn-whatsapp" target="_blank">WhatsApp</a>
+                <a href="#" id="messenger-link" class="btn-social btn-messenger" target="_blank">Messenger</a>
+                <a href="#" id="facebook-link" class="btn-social btn-facebook" target="_blank">Facebook</a>
+                <a href="#" id="email-link" class="btn-social btn-email">E-mail</a>
+            </div>
+        </div>
     </div>
     <script type="module" src="script.js"></script>
 </body>
