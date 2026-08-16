@@ -1,27 +1,37 @@
-body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; padding: 20px; color: #333; }
-.container { max-width: 500px; margin: 0 auto; }
-.card { background: white; padding: 20px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-h2 { margin-top: 0; color: #2c3e50; font-size: 1.2rem; }
+:root {
+    --primary: #fc4c02;
+    --bg-color: #f0f2f5;
+    --card-bg: #ffffff;
+    --text-color: #333;
+}
 
-/* Modal */
-.modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); display:flex; align-items:center; justify-content:center; z-index:1000; }
-.modal-card { background:white; padding:30px; border-radius:15px; text-align:center; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+body {
+    background-color: var(--bg-color);
+    font-family: sans-serif;
+    margin: 0;
+    padding: 20px 10px;
+    color: var(--text-color);
+    display: flex;
+    justify-content: center;
+    min-height: 100vh;
+}
 
-/* Buttons & Inputs */
-button { background: #27ae60; color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; transition: 0.3s; font-weight: bold; }
-button:hover { background: #219150; }
-input, select { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+.container { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 15px; }
 
-/* Social Buttons */
-.invite-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.btn-social { padding: 10px; text-align: center; border-radius: 8px; text-decoration: none; color: white; font-size: 0.9rem; }
-.btn-whatsapp { background: #25d366; }
-.btn-messenger { background: #0084ff; }
-.btn-facebook { background: #4267B2; }
-.btn-email { background: #555; }
+.modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); display:flex; justify-content:center; align-items:center; z-index:1000; }
 
-/* Rides & Chat */
-#chat-box { height: 200px; overflow-y: auto; background: #f9f9f9; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #eee; }
-.ride-item { background:#fff; padding:15px; border-radius:10px; margin-bottom:10px; border:1px solid #e1e1e1; }
-.btn-danger { background: #e74c3c; }
-.btn-danger:hover { background: #c0392b; }
+.modal-card { background: var(--card-bg); padding: 25px; border-radius: 20px; width: 90%; max-width: 380px; text-align: center; }
+
+.card { background: var(--card-bg); padding: 18px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+
+input, button, select { padding: 12px; border-radius: 10px; border: 1px solid #ddd; width: 100%; margin-top: 6px; box-sizing: border-box; }
+
+button { background: var(--primary); color: white; border: none; font-weight: bold; cursor: pointer; }
+
+#chat-box { height: 160px; overflow-y: auto; border: 1px solid #eee; margin: 10px 0; padding: 10px; border-radius: 10px; background: #fafafa; }
+
+.btn-social { display: block; padding: 12px; margin-top: 8px; text-decoration: none; color: white; border-radius: 10px; text-align: center; font-weight: bold; }
+.btn-whatsapp { background: #25D366; }
+.btn-messenger { background: #0084FF; }
+.btn-facebook { background: #1877F2; }
+.btn-email { background: #0078D4; }
