@@ -38,38 +38,46 @@ window.addEventListener('DOMContentLoaded', () => {
         document.getElementById('real-file-input').click();
     });
 
-    document.getElementById('real-file-input').addEventListener('change', async function(e) {
+    document.getElementById('real-file-input').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
 
-        const formData = new FormData();
-        formData.append('image', file);
+        const reader = new FileReader();
+        reader.onload = async function(event) {
+            const base64Image = event.target.result.split(',')[1];
 
-        try {
-            const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
-                method: 'POST',
-                body: formData
-            });
-            const data = await response.json();
-            
-            if (data.success) {
-                const imageUrl = data.data.url;
-                
-                await addDoc(collection(db, "routes"), {
-                    imageUrl: imageUrl,
-                    user: currentUsername || 'Χρήστης',
-                    timestamp: Date.now()
+            const formData = new URLSearchParams();
+            formData.append('key', IMGBB_API_KEY);
+            formData.append('image', base64Image);
+
+            try {
+                const response = await fetch('https://api.imgbb.com/1/upload', {
+                    method: 'POST',
+                    body: formData
                 });
+                const data = await response.json();
+                
+                if (data.success) {
+                    const imageUrl = data.data.url;
+                    
+                    await addDoc(collection(db, "routes"), {
+                        imageUrl: imageUrl,
+                        user: currentUsername || 'Χρήστης',
+                        timestamp: Date.now()
+                    });
 
-                alert("Η διαδρομή ανέβηκε και αποθηκεύτηκε επιτυχώς!");
-                e.target.value = ''; // καθαρισμός input
-            } else {
-                alert("Αποτυχία ανεβάσματος στο ImgBB.");
+                    alert("Η διαδρομή ανέβηκε και αποθηκεύτηκε επιτυχώς!");
+                    e.target.value = '';
+                } else {
+                    console.error("ImgBB Error:", data);
+                    alert("Αποτυχία ανεβάσματος στο ImgBB: " + (data.error?.message || 'Άγνωστο σφάλμα'));
+                }
+            } catch (error) {
+                console.error("Σφάλμα:", error);
+                alert("Σφάλμα δικτύου κατά το ανέβασμα.");
             }
-        } catch (error) {
-            console.error("Σφάλμα:", error);
-            alert("Σφάλμα δικτύου κατά το ανέβασμα.");
-        }
+        };
+        reader.readAsDataURL(file);
     });
 });
 
