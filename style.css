@@ -19,12 +19,42 @@ body {
 .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); display:flex; justify-content:center; align-items:center; z-index:1000; }
 .modal-card { background: var(--card-bg); padding: 25px; border-radius: 20px; width: 90%; max-width: 380px; text-align: center; }
 .card { background: var(--card-bg); padding: 18px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-#user-info-bar { margin-top: 10px; padding: 10px; background: #eee; border-radius: 10px; text-align: center; }
-input, button, select { padding: 12px; border-radius: 10px; border: 1px solid #ddd; width: 100%; margin-top: 6px; box-sizing: border-box; }
-button { background: var(--primary); color: white; border: none; font-weight: bold; cursor: pointer; }
+
+/* Buttons styling - unified primary color */
+button {
+    background: var(--primary) !important;
+    color: white !important;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 12px;
+    border-radius: 10px;
+    width: 100%;
+    margin-top: 6px;
+}
+
+/* Specific adjustment for change-name-btn */
+#change-name-btn {
+    width: auto !important;
+    font-size: 0.8rem;
+    padding: 5px 10px !important;
+    margin-top: 5px !important;
+}
+
+input, select {
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    width: 100%;
+    margin-top: 6px;
+    box-sizing: border-box;
+}
+
 #chat-box { height: 160px; overflow-y: auto; border: 1px solid #eee; margin: 10px 0; padding: 10px; border-radius: 10px; background: #fafafa; }
+
+/* Social buttons - Keep their specific colors */
 .btn-social { display: block; padding: 12px; margin-top: 8px; text-decoration: none; color: white; border-radius: 10px; text-align: center; font-weight: bold; }
-.btn-whatsapp { background: #25D366; }
-.btn-messenger { background: #0084FF; }
-.btn-facebook { background: #1877F2; }
-.btn-email { background: #0078D4; }
+.btn-whatsapp { background: #25D366 !important; }
+.btn-messenger { background: #0084FF !important; }
+.btn-facebook { background: #1877F2 !important; }
+.btn-email { background: #0078D4 !important; }
