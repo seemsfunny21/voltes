@@ -30,6 +30,16 @@
         </div>
 
         <div class="card">
+            <h2>✉️ Πρόσκληση Φίλων</h2>
+            <div class="invite-btns">
+                <a href="#" id="whatsapp-link" class="btn-social btn-whatsapp" target="_blank">WhatsApp</a>
+                <a href="#" id="messenger-link" class="btn-social btn-messenger" target="_blank">Messenger</a>
+                <a href="#" id="facebook-link" class="btn-social btn-facebook" target="_blank">Facebook</a>
+                <a href="#" id="email-link" class="btn-social btn-email">E-mail</a>
+            </div>
+        </div>
+
+        <div class="card">
             <h2>📅 Προγραμματισμός Ποδηλασίας</h2>
             <div class="ride-form">
                 <select id="ride-title-select" onchange="checkNewRoute()"></select>
@@ -38,16 +48,7 @@
                 <button id="add-ride-btn">Δημιουργία</button>
             </div>
             <div class="rides-list" id="rides-container"></div>
-        </div>
-
-        <div class="card">
-            <h2>✉️ Πρόσκληση Φίλων</h2>
-            <div class="invite-btns">
-                <a href="#" id="whatsapp-link" class="btn-social btn-whatsapp" target="_blank">WhatsApp</a>
-                <a href="#" id="messenger-link" class="btn-social btn-messenger" target="_blank">Messenger</a>
-                <a href="#" id="facebook-link" class="btn-social btn-facebook" target="_blank">Facebook</a>
-                <a href="#" id="email-link" class="btn-social btn-email">E-mail</a>
-            </div>
+            <button id="load-more-btn" style="display:none; margin-top:10px; background:#ddd; color:#333; width:100%; padding:10px; border:none; cursor:pointer;">Προβολή περισσότερων...</button>
         </div>
     </div>
     <script type="module" src="script.js"></script>

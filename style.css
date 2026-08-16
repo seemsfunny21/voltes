@@ -1,37 +1,12 @@
-:root {
-    --primary: #fc4c02;
-    --bg-color: #f0f2f5;
-    --card-bg: #ffffff;
-    --text-color: #333;
-}
-
-body {
-    background-color: var(--bg-color);
-    font-family: sans-serif;
-    margin: 0;
-    padding: 20px 10px;
-    color: var(--text-color);
-    display: flex;
-    justify-content: center;
-    min-height: 100vh;
-}
-
-.container { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 15px; }
-
-.modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); display:flex; justify-content:center; align-items:center; z-index:1000; }
-
-.modal-card { background: var(--card-bg); padding: 25px; border-radius: 20px; width: 90%; max-width: 380px; text-align: center; }
-
-.card { background: var(--card-bg); padding: 18px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-
-input, button, select { padding: 12px; border-radius: 10px; border: 1px solid #ddd; width: 100%; margin-top: 6px; box-sizing: border-box; }
-
-button { background: var(--primary); color: white; border: none; font-weight: bold; cursor: pointer; }
-
-#chat-box { height: 160px; overflow-y: auto; border: 1px solid #eee; margin: 10px 0; padding: 10px; border-radius: 10px; background: #fafafa; }
-
-.btn-social { display: block; padding: 12px; margin-top: 8px; text-decoration: none; color: white; border-radius: 10px; text-align: center; font-weight: bold; }
-.btn-whatsapp { background: #25D366; }
-.btn-messenger { background: #0084FF; }
-.btn-facebook { background: #1877F2; }
-.btn-email { background: #0078D4; }
+body { font-family: sans-serif; background: #f0f2f5; padding: 20px; }
+.container { max-width: 500px; margin: 0 auto; }
+.card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+.modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); display:flex; align-items:center; justify-content:center; z-index:1000; }
+.modal-card { background:white; padding:20px; border-radius:10px; text-align:center; }
+.invite-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.btn-social { padding: 10px; text-align: center; border-radius: 5px; text-decoration: none; color: white; }
+.btn-whatsapp { background: #25d366; }
+.btn-messenger { background: #0084ff; }
+.btn-facebook { background: #4267B2; }
+.btn-email { background: #555; }
+.ride-form select, .ride-form input { width: 100%; margin-bottom: 10px; padding: 8px; }
