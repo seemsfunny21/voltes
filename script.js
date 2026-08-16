@@ -21,49 +21,86 @@ window.addEventListener('DOMContentLoaded', () => {
     if (savedUser) {
         currentUsername = savedUser;
         document.getElementById('name-modal').style.display = 'none';
-        document.getElementById('display-username').innerText = "Καλώς ήρθες, " + currentUsername;
+        document.getElementById('display-username').innerText = currentUsername;
     }
     updateShareLinks();
+    initRealtimeChat();
     initRealtimeRides();
-    
+
     document.getElementById('save-name-btn').addEventListener('click', saveModalUsername);
+    document.getElementById('send-chat-btn').addEventListener('click', sendChatMessage);
     document.getElementById('add-ride-btn').addEventListener('click', addNewRide);
+    document.getElementById('send-email-btn').addEventListener('click', sendEmailInvite);
+
+    document.getElementById('chat-text').addEventListener('keypress', (e) => {
+        if(e.key === 'Enter') sendChatMessage();
+    });
+
+    document.getElementById('drop-zone').addEventListener('click', () => {
+        document.getElementById('real-file-input').click();
+    });
+
+    document.getElementById('real-file-input').addEventListener('change', function(e) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const img = document.getElementById('uploaded-map-img');
+            img.src = event.target.result;
+            img.style.display = 'block';
+        }
+        if (e.target.files[0]) {
+            reader.readAsDataURL(e.target.files[0]);
+        }
+    });
 });
 
 function saveModalUsername() {
     const inputVal = document.getElementById('modal-username-input').value.trim();
-    if (!inputVal) { alert("Παρακαλώ εισάγετε ένα έγκυρο όνομα."); return; }
+    if (!inputVal) { alert("Παρακαλώ εισάγετε ένα όνομα."); return; }
     currentUsername = inputVal;
     localStorage.setItem('bikehub_username', currentUsername);
     document.getElementById('name-modal').style.display = 'none';
     document.getElementById('display-username').innerText = "Καλώς ήρθες, " + currentUsername;
 }
 
-window.joinRide = async function(rideId) {
-    if (!currentUsername) { alert("Παρακαλώ εισάγετε το όνομά σας πρώτα."); return; }
-    try {
-        const rideRef = doc(db, "rides", rideId);
-        await updateDoc(rideRef, {
-            participants: arrayUnion(currentUsername)
+// Chat
+async function sendChatMessage() {
+    const input = document.getElementById('chat-text');
+    const text = input.value.trim();
+    if(!text) return;
+    await addDoc(collection(db, "chats"), { user: currentUsername, text: text, timestamp: Date.now() });
+    input.value = '';
+}
+
+function initRealtimeChat() {
+    const q = query(collection(db, "chats"), orderBy("timestamp", "asc"));
+    onSnapshot(q, (snapshot) => {
+        const chatBox = document.getElementById('chat-box');
+        chatBox.innerHTML = '';
+        snapshot.forEach((doc) => {
+            const data = doc.data();
+            chatBox.innerHTML += `<div><b>${escapeHtml(data.user)}:</b> ${escapeHtml(data.text)}</div>`;
         });
-    } catch (e) {
-        console.error("Σφάλμα συμμετοχής: ", e);
-    }
+        chatBox.scrollTop = chatBox.scrollHeight;
+    });
+}
+
+// Rides
+window.joinRide = async function(rideId) {
+    if (!currentUsername) { alert("Εισάγετε το όνομά σας πρώτα."); return; }
+    const rideRef = doc(db, "rides", rideId);
+    await updateDoc(rideRef, { participants: arrayUnion(currentUsername) });
 };
 
 async function addNewRide() {
     const title = document.getElementById('ride-title').value.trim();
     const dateInput = document.getElementById('ride-date').value;
-    if (!title || !dateInput) { alert("Συμπληρώστε τίτλο και ημερομηνία."); return; }
-
-    try {
-        await addDoc(collection(db, "rides"), {
-            title: title,
-            date: dateInput.replace('T', ' '),
-            participants: [currentUsername], 
-            timestamp: Date.now()
-        });
-    } catch (e) { console.error("Σφάλμα δημιουργίας: ", e); }
+    if (!title || !dateInput) return;
+    await addDoc(collection(db, "rides"), {
+        title: title,
+        date: dateInput.replace('T', ' '),
+        participants: [currentUsername],
+        timestamp: Date.now()
+    });
 }
 
 function initRealtimeRides() {
@@ -73,25 +110,33 @@ function initRealtimeRides() {
         container.innerHTML = '';
         snapshot.forEach((doc) => {
             const ride = doc.data();
-            const participantsList = ride.participants ? ride.participants.join(', ') : 'Κανείς ακόμα';
+            const list = ride.participants ? ride.participants.join(', ') : 'Κανείς';
             container.innerHTML += `
-                <div style="background:#fff; padding:12px; border-radius:10px; margin-top:10px; border:1px solid #ddd;">
-                    <b>${ride.title}</b><br>
-                    <small>📅 ${ride.date}</small><br>
-                    <div style="margin:8px 0; font-size:0.85rem; color:#333;">
-                        <b>Ποιοι πάνε:</b> ${participantsList}
-                    </div>
-                    <button onclick="window.joinRide('${doc.id}')" style="background:#fc4c02; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer;">Συμμετοχή</button>
-                </div>
-            `;
+                <div style="background:#f9f9f9; padding:10px; border-radius:8px; margin-top:8px; border:1px solid #eee;">
+                    <b>${escapeHtml(ride.title)}</b><br>
+                    <small>📅 ${ride.date}</small>
+                    <div style="font-size:0.8rem; margin:5px 0;"><b>Συμμετέχοντες:</b> ${list}</div>
+                    <button onclick="window.joinRide('${doc.id}')">Συμμετοχή</button>
+                </div>`;
         });
     });
 }
 
 function updateShareLinks() {
     const shareUrl = window.location.href;
-    const msg = "Ελα στην ποδηλατική βόλτα BikeHub!";
-    document.getElementById('whatsapp-link').href = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg + ' ' + shareUrl)}`;
+    document.getElementById('whatsapp-link').href = `https://api.whatsapp.com/send?text=Έλα στο BikeHub: ${shareUrl}`;
     document.getElementById('messenger-link').href = `fb-messenger://share?link=${encodeURIComponent(shareUrl)}`;
     document.getElementById('facebook-link').href = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
+    document.getElementById('email-link').href = `mailto:?subject=Πρόσκληση στο BikeHub&body=Έλα στην παρέα μας: ${shareUrl}`;
+}
+
+function sendEmailInvite() {
+    const emailInput = document.getElementById('invite-email').value;
+    if(!emailInput) return;
+    const shareUrl = window.location.href;
+    window.location.href = `mailto:${emailInput}?subject=Πρόσκληση στο BikeHub&body=Έλα στην παρέα μας: ${shareUrl}`;
+}
+
+function escapeHtml(str) {
+    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
