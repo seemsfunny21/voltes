@@ -3,49 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BikeHub - Ποδηλατική Κοινότητα</title>
+    <title>BikeHub Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div id="name-modal" class="modal-overlay">
         <div class="modal-card">
             <h2>🚴‍♂️ Καλώς ήρθατε στο BikeHub!</h2>
-            <p>Παρακαλώ εισάγετε το ψευδώνυμό σας για να συνεχίσετε:</p>
             <input type="text" id="modal-username-input" placeholder="Το όνομα σας...">
             <button id="save-name-btn">Είσοδος</button>
         </div>
     </div>
     <div class="container">
         <header class="app-header">
-            <h1>🚴‍♂️ BikeHub Community</h1>
-            <p>Οργανώστε τις βόλτες σας! (<span id="display-username">Χρήστης</span>)</p>
+            <h1>🚴‍♂️ BikeHub</h1>
+            <p>(<span id="display-username">Χρήστης</span>) | <span id="theme-toggle" onclick="toggleTheme()">Dark Mode 🌗</span></p>
         </header>
         <div class="card">
-            <h2>💬 Ομάδα Συζήτησης</h2>
+            <h2>💬 Συζήτηση</h2>
             <div id="chat-box"></div>
             <div class="chat-input-group">
-                <input type="text" id="chat-text" placeholder="Γράψτε μήνυμα...">
+                <input type="text" id="chat-text" placeholder="Μήνυμα...">
                 <button id="send-chat-btn">Αποστολή</button>
             </div>
         </div>
         <div class="card">
-            <h2>📅 Προγραμματισμός Ποδηλασίας</h2>
-            <div class="ride-form">
-                <select id="ride-title-select" onchange="checkNewRoute()"></select>
-                <select id="start-point-select" onchange="checkNewPoint()"></select>
-                <input type="datetime-local" id="ride-date">
-                <button id="add-ride-btn">Δημιουργία</button>
-            </div>
+            <h2>📅 Πρόγραμμα</h2>
+            <select id="ride-title-select" onchange="checkNewRoute()"></select>
+            <select id="start-point-select" onchange="checkNewPoint()"></select>
+            <input type="datetime-local" id="ride-date">
+            <button id="add-ride-btn">Δημιουργία</button>
             <div class="rides-list" id="rides-container"></div>
-        </div>
-        <div class="card">
-            <h2>✉️ Πρόσκληση Φίλων</h2>
-            <div class="invite-btns">
-                <a href="#" id="whatsapp-link" class="btn-social btn-whatsapp" target="_blank">WhatsApp</a>
-                <a href="#" id="messenger-link" class="btn-social btn-messenger" target="_blank">Messenger</a>
-                <a href="#" id="facebook-link" class="btn-social btn-facebook" target="_blank">Facebook</a>
-                <a href="#" id="email-link" class="btn-social btn-email">E-mail</a>
-            </div>
         </div>
     </div>
     <script type="module" src="script.js"></script>
