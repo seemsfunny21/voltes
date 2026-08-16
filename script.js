@@ -51,12 +51,12 @@ function populateDropdowns() {
     
     if (routeSelect) {
         routeSelect.innerHTML = '<option value="">Επιλέξτε διαδρομή...</option><option value="NEW">--- Νέα διαδρομή ---</option>';
-        routes.forEach(r => routeSelect.innerHTML += `<option value="${r}">${r}</option>');
+        routes.forEach(r => routeSelect.innerHTML += `<option value="${r}">${r}</option>`);
     }
 
     if (startSelect) {
         startSelect.innerHTML = '<option value="">Επιλέξτε αφετηρία...</option><option value="NEW">--- Νέο σημείο ---</option>';
-        startPoints.forEach(s => startSelect.innerHTML += `<option value="${s}">${s}</option>');
+        startPoints.forEach(s => startSelect.innerHTML += `<option value="${s}">${s}</option>`);
     }
 }
 
