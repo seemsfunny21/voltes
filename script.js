@@ -13,7 +13,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const IMGBB_API_KEY = '7716f9a03e1a8a25c192d6e386047230'; // Προσωρινό κλειδί
+const IMGBB_API_KEY = '7716f9a03e1a8a25c192d6e386047230';
 
 let currentUsername = "";
 
@@ -27,7 +27,7 @@ window.addEventListener('DOMContentLoaded', () => {
     updateShareLinks();
     initRealtimeChat();
     initRealtimeRides();
-    initRealtimeRoutes(); // Φόρτωση αποθηκευμένων διαδρομών
+    initRealtimeRoutes();
 
     document.getElementById('save-name-btn').addEventListener('click', saveModalUsername);
     document.getElementById('send-chat-btn').addEventListener('click', sendChatMessage);
@@ -38,7 +38,6 @@ window.addEventListener('DOMContentLoaded', () => {
         document.getElementById('real-file-input').click();
     });
 
-    // Ανέβασμα στο ImgBB και αποθήκευση στη βάση
     document.getElementById('real-file-input').addEventListener('change', async function(e) {
         const file = e.target.files[0];
         if (!file) return;
@@ -56,18 +55,20 @@ window.addEventListener('DOMContentLoaded', () => {
             if (data.success) {
                 const imageUrl = data.data.url;
                 
-                // Αποθήκευση στη βάση δεδομένων (Firestore)
                 await addDoc(collection(db, "routes"), {
                     imageUrl: imageUrl,
-                    user: currentUsername,
+                    user: currentUsername || 'Χρήστης',
                     timestamp: Date.now()
                 });
 
                 alert("Η διαδρομή ανέβηκε και αποθηκεύτηκε επιτυχώς!");
+                e.target.value = ''; // καθαρισμός input
+            } else {
+                alert("Αποτυχία ανεβάσματος στο ImgBB.");
             }
         } catch (error) {
             console.error("Σφάλμα:", error);
-            alert("Αποτυχία ανεβάσματος εικόνας.");
+            alert("Σφάλμα δικτύου κατά το ανέβασμα.");
         }
     });
 });
@@ -81,12 +82,11 @@ function saveModalUsername() {
     document.getElementById('display-username').innerText = "Καλώς ήρθες, " + currentUsername;
 }
 
-// Chat
 async function sendChatMessage() {
     const input = document.getElementById('chat-text');
     const text = input.value.trim();
     if(!text) return;
-    await addDoc(collection(db, "chats"), { user: currentUsername, text: text, timestamp: Date.now() });
+    await addDoc(collection(db, "chats"), { user: currentUsername || 'Χρήστης', text: text, timestamp: Date.now() });
     input.value = '';
 }
 
@@ -103,12 +103,12 @@ function initRealtimeChat() {
     });
 }
 
-// Routes / Screenshots
 function initRealtimeRoutes() {
     const q = query(collection(db, "routes"), orderBy("timestamp", "desc"));
     onSnapshot(q, (snapshot) => {
-        const previewContainer = document.getElementById('map-preview');
-        previewContainer.innerHTML = ''; // Καθαρισμός για να μπουν όλες οι ενημερωμένες
+        const previewContainer = document.getElementById('routes-preview-container');
+        if (!previewContainer) return;
+        previewContainer.innerHTML = '';
         
         snapshot.forEach((doc) => {
             const data = doc.data();
@@ -122,9 +122,8 @@ function initRealtimeRoutes() {
     });
 }
 
-// Rides
 window.joinRide = async function(rideId) {
-    if (!currentUsername) { alert("Εισάγετε το όνομά σας πρώτα."); return; }
+    if (!currentUsername) { alert("Εισάγετε το όνομα σας πρώτα."); return; }
     const rideRef = doc(db, "rides", rideId);
     await updateDoc(rideRef, { participants: arrayUnion(currentUsername) });
 };
@@ -136,15 +135,18 @@ async function addNewRide() {
     await addDoc(collection(db, "rides"), {
         title: title,
         date: dateInput.replace('T', ' '),
-        participants: [currentUsername],
+        participants: [currentUsername || 'Χρήστης'],
         timestamp: Date.now()
     });
+    document.getElementById('ride-title').value = '';
+    document.getElementById('ride-date').value = '';
 }
 
 function initRealtimeRides() {
     const q = query(collection(db, "rides"), orderBy("timestamp", "desc"));
     onSnapshot(q, (snapshot) => {
         const container = document.getElementById('rides-container');
+        if (!container) return;
         container.innerHTML = '';
         snapshot.forEach((doc) => {
             const ride = doc.data();
@@ -162,10 +164,15 @@ function initRealtimeRides() {
 
 function updateShareLinks() {
     const shareUrl = window.location.href;
-    document.getElementById('whatsapp-link').href = `https://api.whatsapp.com/send?text=Έλα στο BikeHub: ${shareUrl}`;
-    document.getElementById('messenger-link').href = `fb-messenger://share?link=${encodeURIComponent(shareUrl)}`;
-    document.getElementById('facebook-link').href = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
-    document.getElementById('email-link').href = `mailto:?subject=Πρόσκληση στο BikeHub&body=Έλα στην παρέα μας: ${shareUrl}`;
+    const wLink = document.getElementById('whatsapp-link');
+    const mLink = document.getElementById('messenger-link');
+    const fLink = document.getElementById('facebook-link');
+    const eLink = document.getElementById('email-link');
+
+    if(wLink) wLink.href = `https://api.whatsapp.com/send?text=Έλα στο BikeHub: ${shareUrl}`;
+    if(mLink) mLink.href = `fb-messenger://share?link=${encodeURIComponent(shareUrl)}`;
+    if(fLink) fLink.href = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
+    if(eLink) eLink.href = `mailto:?subject=Πρόσκληση στο BikeHub&body=Έλα στην παρέα μας: ${shareUrl}`;
 }
 
 function sendEmailInvite() {
@@ -176,5 +183,6 @@ function sendEmailInvite() {
 }
 
 function escapeHtml(str) {
-    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    if (!str) return '';
+    return str.toString().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
