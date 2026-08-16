@@ -1,218 +1,429 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="el">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>RideTogether — Cycling Community</title>
-<style>
-:root{
-  --bg:#07100d; --panel:#0d1915; --panel2:#12221c; --line:#20352c;
-  --text:#edf7f1; --muted:#91a79c; --green:#48d597; --green2:#1fb978;
-  --danger:#ff6f7d; --shadow:0 18px 45px rgba(0,0,0,.28);
-}
-*{box-sizing:border-box}
-body{margin:0;background:radial-gradient(circle at top right,#123226 0,#07100d 38%,#050b08 100%);
-font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;color:var(--text)}
-button,input,textarea{font:inherit}
-button{cursor:pointer}
-.topbar{height:70px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;background:rgba(7,16,13,.9);backdrop-filter:blur(12px);z-index:5}
-.logo{font-weight:900;letter-spacing:.3px;font-size:21px}.logo span{color:var(--green)}
-.profile{display:flex;gap:10px;align-items:center;color:var(--muted)}
-.avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--green),#177b57);display:grid;place-items:center;color:#03110b;font-weight:900}
-.container{max-width:1320px;margin:auto;padding:25px}
-.grid{display:grid;grid-template-columns:1.5fr .85fr;gap:20px}
-.card{background:linear-gradient(180deg,rgba(18,34,28,.96),rgba(10,22,17,.96));border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);overflow:hidden}
-.card h2{font-size:17px;margin:0}.head{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
-.content{padding:18px 20px}
-.tabs{display:flex;gap:8px;flex-wrap:wrap}.tab{border:1px solid var(--line);background:#0b1712;color:var(--muted);padding:9px 13px;border-radius:10px}.tab.active,.primary{background:var(--green);color:#03110b;border-color:var(--green);font-weight:800}
-.hero{margin-bottom:20px;padding:23px;border-radius:18px;background:linear-gradient(110deg,#10271d,#0b1712);border:1px solid var(--line)}
-.hero h1{margin:0 0 6px;font-size:28px}.hero p{margin:0;color:var(--muted)}
-.upload{border:1.5px dashed #315244;border-radius:14px;padding:28px;text-align:center;background:#09150f}
-.upload strong{display:block;font-size:17px;margin-bottom:6px}.upload small{color:var(--muted)}
-input[type=file]{display:none}
-.btn{border:1px solid var(--line);background:#0b1712;color:var(--text);padding:10px 14px;border-radius:10px}
-.btn.primary{border:0}
-.routebox{margin-top:15px;position:relative;background:#06100c;border:1px solid var(--line);border-radius:14px;overflow:hidden;min-height:310px}
-#routeCanvas{width:100%;height:310px;display:block}
-.route-note{position:absolute;left:12px;bottom:12px;background:rgba(5,13,10,.82);padding:8px 10px;border-radius:9px;color:var(--muted);font-size:12px}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}.stat{background:#09150f;border:1px solid var(--line);border-radius:11px;padding:12px}.stat b{display:block;font-size:18px}.stat span{font-size:12px;color:var(--muted)}
-.chat{height:390px;display:flex;flex-direction:column}.messages{flex:1;padding:15px;overflow:auto}.msg{margin:0 0 12px;max-width:88%}.msg.me{margin-left:auto}.bubble{background:#09150f;border:1px solid var(--line);padding:9px 11px;border-radius:12px}.me .bubble{background:#123c2d;border-color:#1b674b}.name{font-size:11px;color:var(--green);margin-bottom:3px}.chatform{display:flex;gap:8px;padding:12px;border-top:1px solid var(--line)}.chatform input{flex:1;background:#07100d;border:1px solid var(--line);color:var(--text);padding:11px;border-radius:10px}
-.event{padding:14px;border:1px solid var(--line);border-radius:13px;background:#09150f;margin-bottom:10px}.eventtop{display:flex;justify-content:space-between;gap:10px}.event h3{margin:0 0 4px;font-size:15px}.event p{margin:3px 0;color:var(--muted);font-size:13px}.badge{color:var(--green);font-size:12px;font-weight:800}.actions{display:flex;gap:7px;margin-top:10px}.actions .btn{padding:7px 10px;font-size:12px}
-.invite{display:grid;grid-template-columns:1fr auto;gap:8px}.invite input,.modal input{background:#07100d;border:1px solid var(--line);color:var(--text);padding:10px;border-radius:10px;width:100%}
-.friend{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)}.friend:last-child{border:0}.friend small{display:block;color:var(--muted)}
-.modalbg{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;z-index:20}.modal{width:min(480px,92vw);background:#0d1915;border:1px solid var(--line);border-radius:16px;padding:20px}.modal h3{margin-top:0}.modalrow{display:flex;gap:8px;margin-top:10px}.modalrow>*{flex:1}
-.muted{color:var(--muted)}.tiny{font-size:12px}
-@media(max-width:900px){.grid{grid-template-columns:1fr}.topbar{padding:0 15px}.container{padding:15px}.stats{grid-template-columns:1fr 1fr 1fr}}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BikeHub - Ποδηλατική Κοινότητα</title>
+    <style>
+        :root {
+            --primary: #fc4c02; /* Strava Orange */
+            --bg-color: #f4f6f9;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --border-color: #e1e8ed;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            color: var(--primary);
+            font-size: 2.2rem;
+            margin-bottom: 5px;
+        }
+
+        header p {
+            color: #666;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+
+        .card h2 {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 8px;
+            color: #2c3e50;
+        }
+
+        /* 1. Chat Styles */
+        #chat-box {
+            height: 200px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow-y: scroll;
+            padding: 10px;
+            background: #fafbfc;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+        .chat-msg {
+            margin-bottom: 8px;
+        }
+        .chat-msg span {
+            font-weight: bold;
+            color: var(--primary);
+        }
+        .chat-input-group, .user-setting {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            outline: none;
+        }
+        input:focus, textarea:focus {
+            border-color: var(--primary);
+        }
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+
+        /* 2. Route Upload & Map Styles */
+        .upload-area {
+            border: 2px dashed var(--border-color);
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            background: #fafbfc;
+            margin-bottom: 15px;
+        }
+        .upload-area:hover {
+            border-color: var(--primary);
+        }
+        #map-preview {
+            width: 100%;
+            height: 220px;
+            background: #e9ecef;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+        #map-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: none;
+        }
+        .map-placeholder-text {
+            color: #888;
+            font-size: 0.9rem;
+            text-align: center;
+            padding: 0 15px;
+        }
+
+        /* 3. Invites Styles */
+        .invite-btns {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+        .btn-social {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            color: white;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        .btn-whatsapp { background-color: #25D366; }
+        .btn-viber { background-color: #7360F2; }
+        .btn-email { background-color: #0078D4; }
+
+        /* 4. Rides Scheduling Styles */
+        .ride-form {
+            display: grid;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .rides-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .ride-item {
+            background: #fafbfc;
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .ride-info h4 {
+            font-size: 0.95rem;
+            color: #2c3e50;
+        }
+        .ride-info p {
+            font-size: 0.8rem;
+            color: #666;
+        }
+        .participants-count {
+            font-size: 0.8rem;
+            background: #e1e8ed;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-top: 4px;
+            display: inline-block;
+        }
+    </style>
 </head>
 <body>
-<header class="topbar">
-  <div class="logo">Ride<span>Together</span> 🚴</div>
-  <div class="profile"><span id="nickLabel">Guest</span><div class="avatar" id="avatar">G</div></div>
-</header>
 
-<main class="container">
-  <section class="hero">
-    <h1>Η ποδηλατική σου παρέα, σε ένα μέρος.</h1>
-    <p>Ανέβασε διαδρομές, μίλησε με την παρέα και οργάνωσε την επόμενη ποδηλασία.</p>
-    <div style="margin-top:15px" class="tabs">
-      <button class="tab active">Αρχική</button>
-      <button class="tab" onclick="openNick()">Ψευδώνυμο</button>
-      <button class="tab" onclick="document.getElementById('eventModal').style.display='flex'">+ Νέα ποδηλασία</button>
-    </div>
-  </section>
+    <header>
+        <h1>🚴‍♂️ BikeHub Community</h1>
+        <p>Μοιραστείτε τις διαδρομές σας και οργανώστε τις επόμενες βόλτες σας!</p>
+    </header>
 
-  <div class="grid">
-    <div>
-      <section class="card">
-        <div class="head"><h2>📍 Νέα διαδρομή</h2><span class="tiny muted">Strava / screenshots</span></div>
-        <div class="content">
-          <label class="upload" for="routeFile">
-            <strong>Κάνε κλικ για upload screenshot</strong>
-            <small>Η εφαρμογή αναλύει οπτικά τη χρωματιστή γραμμή της διαδρομής.</small>
-            <input id="routeFile" type="file" accept="image/*">
-          </label>
-          <div class="routebox">
-            <canvas id="routeCanvas"></canvas>
-            <div class="route-note">Prototype: οπτική εξαγωγή γραμμής από το screenshot</div>
-          </div>
-          <div class="stats">
-            <div class="stat"><b id="distance">—</b><span>Απόσταση</span></div>
-            <div class="stat"><b id="time">—</b><span>Χρόνος</span></div>
-            <div class="stat"><b id="elev">—</b><span>Υψομετρικά</span></div>
-          </div>
+    <div class="container">
+        <!-- Αριστερή Στήλη -->
+        <div>
+            <!-- 1. Chat -->
+            <div class="card">
+                <h2>💬 Ομάδα Συζήτησης</h2>
+                <div class="user-setting">
+                    <input type="text" id="username-input" placeholder="Το ψευδώνυμο σου..." value="Ποδηλάτης">
+                    <button onclick="saveUsername()">Αλλαγή</button>
+                </div>
+                <div id="chat-box">
+                    <div class="chat-msg"><span>System:</span> Καλώς ήρθατε στην παρέα!</div>
+                </div>
+                <div class="chat-input-group">
+                    <input type="text" id="chat-text" placeholder="Γράψτε μήνυμα..." onkeypress="checkEnter(event)">
+                    <button onclick="sendChatMessage()">Αποστολή</button>
+                </div>
+            </div>
+
+            <!-- 2. Screenshot & Map Simulation -->
+            <div class="card">
+                <h2>🗺️ Ανέβαστη Στιγμιότυπου Διαδρομής</h2>
+                <div class="upload-area" onclick="document.getElementById('file-input').click()">
+                    <p>📁 Κάντε κλικ εδώ για να ανεβάσετε screenshot (Strava/Garmin)</p>
+                    <input type="hidden" id="file-input"> <!-- Προσομοίωση με κουμπί ή αρχείο -->
+                </div>
+                <input type="file" id="real-file-input" accept="image/*" style="display:none" onchange="previewImage(event)">
+                
+                <div id="map-preview">
+                    <span class="map-placeholder-text">Η απεικόνιση της διαδρομής ή του χάρτη θα εμφανιστεί εδώ μετά την ανέβαστη.</span>
+                    <img id="uploaded-map-img" alt="Διαδρομή Χάρτη">
+                </div>
+            </div>
         </div>
-      </section>
 
-      <section class="card" style="margin-top:20px">
-        <div class="head"><h2>🚴 Προγραμματισμένες ποδηλασίες</h2><button class="btn primary" onclick="openEvent()">+ Προσθήκη</button></div>
-        <div class="content" id="events"></div>
-      </section>
+        <!-- Δεξιά Στήλη -->
+        <div>
+            <!-- 3. Invites -->
+            <div class="card">
+                <h2>✉️ Πρόσκληση Φίλων</h2>
+                <p style="font-size: 0.9rem; margin-bottom: 10px; color: #666;">Προσκαλέστε φίλους σας να συμμετέχουν στην κοινότητα:</p>
+                <div class="user-setting">
+                    <input type="email" id="invite-email" placeholder="E-mail φίλου...">
+                    <button onclick="sendEmailInvite()">Αποστολή</button>
+                </div>
+                <div class="invite-btns">
+                    <a href="#" id="whatsapp-link" class="btn-social btn-whatsapp" target="_blank">💬 WhatsApp</a>
+                    <a href="#" id="viber-link" class="btn-social btn-viber" target="_blank">🟣 Viber</a>
+                    <a href="#" id="email-link" class="btn-social btn-email">📧 E-mail</a>
+                </div>
+            </div>
+
+            <!-- 4. Schedule Rides -->
+            <div class="card">
+                <h2>📅 Προγραμματισμός Ποδηλασίας</h2>
+                <div class="ride-form">
+                    <input type="text" id="ride-title" placeholder="Τίτλος (π.χ. Πάρνηθα Climb)">
+                    <input type="datetime-local" id="ride-date">
+                    <button onclick="addNewRide()">Δημιουργία Βόλτας</button>
+                </div>
+                <h3>Επερχόμενες Βόλτες:</h3>
+                <div class="rides-list" id="rides-container">
+                    <!-- Εδώ θα προστίθενται δυναμικά οι βόλτες -->
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div>
-      <section class="card chat">
-        <div class="head"><h2>💬 Παρέα</h2><span class="tiny muted">μικρό chat</span></div>
-        <div class="messages" id="messages">
-          <div class="msg"><div class="name">PedalMaster</div><div class="bubble">Καλημέρα! Ποιος βγαίνει σήμερα για ποδήλατο;</div></div>
-          <div class="msg"><div class="name">RoadFox</div><div class="bubble">Εγώ είμαι μέσα 🚴‍♂️</div></div>
-        </div>
-        <form class="chatform" id="chatForm"><input id="chatInput" placeholder="Γράψε μήνυμα…" autocomplete="off"><button class="btn primary">Αποστολή</button></form>
-      </section>
+    <script>
+        // --- 1. Chat Logic ---
+        let currentUsername = "Ποδηλάτης";
 
-      <section class="card" style="margin-top:20px">
-        <div class="head"><h2>👥 Πρόσκληση φίλων</h2></div>
-        <div class="content">
-          <div class="invite"><input id="inviteEmail" placeholder="email φίλου"><button class="btn primary" onclick="invite()">Πρόσκληση</button></div>
-          <div class="actions">
-            <button class="btn" onclick="share('WhatsApp')">WhatsApp</button>
-            <button class="btn" onclick="share('Messenger')">Messenger</button>
-            <button class="btn" onclick="copyInvite()">Αντιγραφή link</button>
-          </div>
-          <p id="inviteStatus" class="tiny muted"></p>
-          <div style="margin-top:12px">
-            <div class="friend"><div><b>RoadFox</b><small>online</small></div><span class="badge">●</span></div>
-            <div class="friend"><div><b>PedalMaster</b><small>online</small></div><span class="badge">●</span></div>
-          </div>
-        </div>
-      </section>
-    </div>
-  </div>
-</main>
+        function saveUsername() {
+            const val = document.getElementById('username-input').value.trim();
+            if(val) {
+                currentUsername = val;
+                alert("Το ψευδώνυμο αποθηκεύτηκε!");
+            }
+        }
 
-<div class="modalbg" id="nickModal">
-  <div class="modal">
-    <h3>Το ψευδώνυμό σου</h3>
-    <input id="nickInput" placeholder="π.χ. RoadFox">
-    <div class="modalrow"><button class="btn" onclick="closeNick()">Άκυρο</button><button class="btn primary" onclick="saveNick()">Αποθήκευση</button></div>
-  </div>
-</div>
+        function sendChatMessage() {
+            const input = document.getElementById('chat-text');
+            const text = input.value.trim();
+            if(!text) return;
 
-<div class="modalbg" id="eventModal">
-  <div class="modal">
-    <h3>Νέα ποδηλασία</h3>
-    <input id="eventName" placeholder="π.χ. Κυριακάτικη βόλτα">
-    <div class="modalrow"><input id="eventDate" type="date"><input id="eventTime" type="time"></div>
-    <div class="modalrow"><input id="eventPlace" placeholder="Σημείο συνάντησης"></div>
-    <div class="modalrow"><button class="btn" onclick="closeEvent()">Άκυρο</button><button class="btn primary" onclick="saveEvent()">Δημιουργία</button></div>
-  </div>
-</div>
+            const chatBox = document.getElementById('chat-box');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'chat-msg';
+            msgDiv.innerHTML = `<span>${currentUsername}:</span> ${escapeHtml(text)}`;
+            chatBox.appendChild(msgDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+            input.value = '';
+        }
 
-<script>
-const $=id=>document.getElementById(id);
-let nick=localStorage.getItem('rt_nick')||'Guest';
-function setNick(){ $('nickLabel').textContent=nick; $('avatar').textContent=nick[0]?.toUpperCase()||'G'; }
-function openNick(){ $('nickInput').value=nick==='Guest'?'':nick; $('nickModal').style.display='flex'; }
-function closeNick(){ $('nickModal').style.display='none'; }
-function saveNick(){ const n=$('nickInput').value.trim(); if(n){nick=n;localStorage.setItem('rt_nick',n);setNick();closeNick();} }
-setNick();
+        function checkEnter(e) {
+            if(e.key === 'Enter') sendChatMessage();
+        }
 
-$('chatForm').addEventListener('submit',e=>{
- e.preventDefault(); const text=$('chatInput').value.trim(); if(!text)return;
- const d=document.createElement('div'); d.className='msg me'; d.innerHTML='<div class="name">'+esc(nick)+'</div><div class="bubble">'+esc(text)+'</div>';
- $('messages').appendChild(d); $('chatInput').value=''; $('messages').scrollTop=$('messages').scrollHeight;
-});
-function esc(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
 
-let events=JSON.parse(localStorage.getItem('rt_events')||'null')||[
- {name:'Κυριακάτικη διαδρομή',date:'2026-08-23',time:'09:00',place:'Λευκός Πύργος',joined:4},
- {name:'Βραδινή βόλτα',date:'2026-08-27',time:'19:30',place:'Νέα Παραλία',joined:7}
-];
-function renderEvents(){
- $('events').innerHTML='';
- events.forEach((e,i)=>{
-  const d=document.createElement('div'); d.className='event';
-  d.innerHTML=`<div class="eventtop"><div><h3>${esc(e.name)}</h3><p>📅 ${e.date} · ⏰ ${e.time}</p><p>📍 ${esc(e.place)}</p></div><span class="badge">${e.joined} συμμετοχές</span></div>
-  <div class="actions"><button class="btn primary" onclick="joinEvent(${i})">${e.joined?'Θα έρθω':'Συμμετοχή'}</button><button class="btn" onclick="shareEvent(${i})">Πρόσκληση</button></div>`;
-  $('events').appendChild(d);
- });
-}
-function openEvent(){$('eventModal').style.display='flex'}
-function closeEvent(){$('eventModal').style.display='none'}
-function saveEvent(){
- const name=$('eventName').value.trim(),date=$('eventDate').value,time=$('eventTime').value,place=$('eventPlace').value.trim();
- if(!name||!date||!time||!place){alert('Συμπλήρωσε όλα τα πεδία.');return}
- events.unshift({name,date,time,place,joined:1}); localStorage.setItem('rt_events',JSON.stringify(events)); renderEvents(); closeEvent();
- ['eventName','eventDate','eventTime','eventPlace'].forEach(id=>$(id).value='');
-}
-function joinEvent(i){events[i].joined++;localStorage.setItem('rt_events',JSON.stringify(events));renderEvents()}
-function shareEvent(i){navigator.clipboard?.writeText(`RideTogether: ${events[i].name} — ${events[i].date} ${events[i].time}, ${events[i].place}`);alert('Οι πληροφορίες αντιγράφηκαν.')}
-renderEvents();
 
-function invite(){
- const email=$('inviteEmail').value.trim(); if(!email||!email.includes('@')){alert('Βάλε έγκυρο email.');return}
- $('inviteStatus').textContent='Η πρόσκληση είναι έτοιμη για αποστολή στο '+email+'.';
-}
-function share(name){ $('inviteStatus').textContent='Άνοιξε το '+name+' για να μοιραστείς την πρόσκληση.'; }
-function copyInvite(){navigator.clipboard?.writeText(location.href);$('inviteStatus').textContent='Το link αντιγράφηκε.';}
+        // --- 2. Screenshot Upload Logic ---
+        // Συνδέουμε την περιοχή κλικ με το πραγματικό input αρχείου
+        document.querySelector('.upload-area').addEventListener('click', () => {
+            document.getElementById('real-file-input').click();
+        });
 
-// Screenshot route visualizer: detects saturated non-background pixels and draws a simplified route.
-// This is intentionally an MVP visual extractor; accurate geographic placement requires GPS/GPX or map georeferencing.
-$('routeFile').addEventListener('change',e=>{
- const file=e.target.files[0]; if(!file)return;
- const img=new Image();
- img.onload=()=>{
-  const c=$('routeCanvas'),ctx=c.getContext('2d');
-  c.width=img.naturalWidth;c.height=img.naturalHeight;
-  ctx.drawImage(img,0,0);
-  const src=ctx.getImageData(0,0,c.width,c.height), d=src.data;
-  const pts=[];
-  for(let y=0;y<c.height;y+=2) for(let x=0;x<c.width;x+=2){
-   const i=(y*c.width+x)*4,r=d[i],g=d[i+1],b=d[i+2],mx=Math.max(r,g,b),mn=Math.min(r,g,b);
-   const sat=mx-mn;
-   if(sat>85 && mx>135 && !(g>r*1.35 && g>b*1.1)) pts.push([x,y]);
-  }
-  ctx.lineWidth=Math.max(4,c.width/220);ctx.strokeStyle='#48d597';ctx.lineCap='round';
-  if(pts.length>20){
-   const minX=Math.min(...pts.map(p=>p[0])),maxX=Math.max(...pts.map(p=>p[0]));
-   const minY=Math.min(...pts.map(p=>p[1])),maxY=Math.max(...pts.map(p=>p[1]));
-   const route=pts.filter((p,j)=>j%Math.max(1,Math.floor(pts.length/600))===0);
-   ctx.beginPath();route.forEach((p,j)=>j?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.stroke();
-   $('distance').textContent='Ανιχνεύθηκε';$('time').textContent='Screenshot';$('elev').textContent='—';
-  }else{$('distance').textContent='Δεν βρέθηκε';$('time').textContent='—';$('elev').textContent='—'}
- };
- img.src=URL.createObjectURL(file);
-});
-</script>
+        function previewImage(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.getElementById('uploaded-map-img');
+                    const placeholder = document.querySelector('.map-placeholder-text');
+                    img.src = e.target.result;
+                    img.style.display = 'block';
+                    placeholder.style.display = 'none';
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+
+        // --- 3. Invite Logic ---
+        const shareText = "Έλα στην ποδηλατική μας παρέα στο BikeHub! Δες διαδρομές και δήλωσε συμμετοχή στις επόμενες βόλτες μας.";
+        const shareUrl = window.location.href;
+
+        document.getElementById('whatsapp-link.href') // helper setup
+        document.getElementById('whatsapp-link').href = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`;
+        document.getElementById('viber-link').href = `viber://forward?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`;
+        document.getElementById('email-link').href = `mailto:?subject=${encodeURIComponent("Πρόσκληση στο BikeHub")}&body=${encodeURIComponent(shareText + '\n\n' + shareUrl)}`;
+
+        function sendEmailInvite() {
+            const email = document.getElementById('invite-email').value;
+            if(!email) {
+                alert("Παρακαλώ εισάγετε ένα έγκυρο e-mail.");
+                return;
+            }
+            window.location.href = `mailto:${email}?subject=${encodeURIComponent("Πρόσκληση στο BikeHub")}&body=${encodeURIComponent(shareText + '\n\n' + shareUrl)}`;
+        }
+
+
+        // --- 4. Rides Scheduling Logic ---
+        let rides = [
+            { id: 1, title: "Πρωινή βόλτα παραλιακής", date: "2026-04-20 08:30", participants: 3 }
+        ];
+
+        function renderRides() {
+            const container = document.getElementById('rides-container');
+            container.innerHTML = '';
+            
+            rides.forEach(ride => {
+                const item = document.createElement('div');
+                item.className = 'ride-item';
+                item.innerHTML = `
+                    <div class="ride-info">
+                        <h4>${escapeHtml(ride.title)}</h4>
+                        <p>📅 ${ride.date}</p>
+                        <span class="participants-count">👥 Συμμετοχές: ${ride.participants}</span>
+                    </div>
+                    <button onclick="joinRide(${ride.id})" style="padding: 5px 10px; font-size: 0.8rem;">Συμμετοχή</button>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function addNewRide() {
+            const title = document.getElementById('ride-title').value.trim();
+            const dateInput = document.getElementById('ride-date').value;
+
+            if(!title || !dateInput) {
+                alert("Συμπληρώστε τίτλο και ημερομηνία για τη βόλτα.");
+                return;
+            }
+
+            const formattedDate = dateInput.replace('T', ' ');
+            rides.push({
+                id: Date.now(),
+                title: title,
+                date: formattedDate,
+                participants: 1
+            });
+
+            document.getElementById('ride-title').value = '';
+            document.getElementById('ride-date').value = '';
+            renderRides();
+        }
+
+        function joinRide(id) {
+            const ride = rides.find(r => r.id === id);
+            if(ride) {
+                ride.participants += 1;
+                renderRides();
+                alert(`Δηλώσατε επιτυχώς συμμετοχή στη βόλτα: "${ride.title}"!`);
+            }
+        }
+
+        // Αρχική φόρτωση λίστας βόλτων
+        renderRides();
+    </script>
 </body>
 </html>
