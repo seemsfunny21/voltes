@@ -1,5 +1,3 @@
-
-// Firebase placeholders (would be filled with actual config)
 let currentUsername = "";
 
 function saveModalUsername() {
@@ -27,6 +25,7 @@ function addNewRide() {
     console.log("Δημιουργία βόλτας: " + rideTitle);
 }
 
+// Event Listeners για να δουλεύουν τα modules σωστά
 window.addEventListener('DOMContentLoaded', () => {
     const savedUser = localStorage.getItem('bikehub_username');
     if (savedUser) {
@@ -35,11 +34,15 @@ window.addEventListener('DOMContentLoaded', () => {
         document.getElementById('display-username').innerText = currentUsername;
     }
 
-    // Event Listeners for Module functionality
-    document.getElementById('save-name-btn').addEventListener('click', saveModalUsername);
-    document.getElementById('send-chat-btn').addEventListener('click', sendChatMessage);
-    document.getElementById('add-ride-btn').addEventListener('click', addNewRide);
-    
+    const saveBtn = document.getElementById('save-name-btn');
+    if (saveBtn) saveBtn.addEventListener('click', saveModalUsername);
+
+    const sendBtn = document.getElementById('send-chat-btn');
+    if (sendBtn) sendBtn.addEventListener('click', sendChatMessage);
+
+    const addRideBtn = document.getElementById('add-ride-btn');
+    if (addRideBtn) addRideBtn.addEventListener('click', addNewRide);
+
     document.getElementById('chat-text').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') sendChatMessage();
     });
