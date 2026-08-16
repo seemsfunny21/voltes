@@ -7,8 +7,7 @@ const firebaseConfig = {
     projectId: "bikehub-4fb57",
     storageBucket: "bikehub-4fb57.firebasestorage.app",
     messagingSenderId: "952858705924",
-    appId: "1:952858705924:web:be6548cf16b2463d4ff551",
-    measurementId: "G-2T4HXRLYQL"
+    appId: "1:952858705924:web:be6548cf16b2463d4ff551"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -17,62 +16,67 @@ const db = getFirestore(app);
 let currentUsername = "";
 let showAllRides = false; 
 
-let routes = JSON.parse(localStorage.getItem('bikehub_routes')) || ["Γύρος Λίμνης", "Γεφυράκια (16χλμ)", "Καταρράκτης Κλίφκης"];
-let startPoints = JSON.parse(localStorage.getItem('bikehub_startpoints')) || ["Πλατεία Μαβίλης", "Καφετέρια εδώ", "Κατσικά καφετέρια diman"];
+// Reference to global config in Firestore
+const configRef = doc(db, "config", "routes_data");
 
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
     const savedUser = localStorage.getItem('bikehub_username');
     if (savedUser) {
         currentUsername = savedUser;
         document.getElementById('name-modal').style.display = 'none';
         document.getElementById('display-username').innerText = currentUsername;
     }
-    updateShareLinks();
+    
+    // Initialize real-time listeners
+    initRealtimeConfig();
     initRealtimeChat();
     initRealtimeRides();
-    populateDropdowns();
+    
     document.getElementById('save-name-btn').addEventListener('click', saveModalUsername);
     document.getElementById('send-chat-btn').addEventListener('click', sendChatMessage);
     document.getElementById('add-ride-btn').addEventListener('click', addNewRide);
 });
 
-function populateDropdowns() {
-    const routeSelect = document.getElementById('ride-title-select');
-    const startSelect = document.getElementById('start-point-select');
-    const currentRoute = routeSelect.value;
-    const currentStart = startSelect.value;
-    routeSelect.innerHTML = '<option value="">Επιλέξτε διαδρομή...</option><option value="NEW">--- Νέα διαδρομή ---</option>';
-    routes.forEach(r => routeSelect.innerHTML += `<option value="${r}">${r}</option>`);
-    startSelect.innerHTML = '<option value="">Επιλέξτε αφετηρία...</option><option value="NEW">--- Νέο σημείο ---</option>';
-    startPoints.forEach(s => startSelect.innerHTML += `<option value="${s}">${s}</option>`);
-    routeSelect.value = currentRoute;
-    startSelect.value = currentStart;
+function initRealtimeConfig() {
+    onSnapshot(configRef, (docSnap) => {
+        const data = docSnap.exists() ? docSnap.data() : { routes: [], startPoints: [] };
+        populateDropdowns(data.routes || [], data.startPoints || []);
+    });
 }
 
-window.checkNewRoute = function() {
-    if (document.getElementById('ride-title-select').value === 'NEW') {
-        const val = prompt("Εισάγετε νέα διαδρομή:");
+function populateDropdowns(routes, startPoints) {
+    const routeSelect = document.getElementById('ride-title-select');
+    const startSelect = document.getElementById('start-point-select');
+    
+    routeSelect.innerHTML = '<option value="">Επιλέξτε διαδρομή...</option><option value="NEW">+ Προσθήκη νέας...</option>';
+    routes.forEach(r => routeSelect.innerHTML += `<option value="${r}">${r}</option>`);
+    
+    startSelect.innerHTML = '<option value="">Επιλέξτε αφετηρία...</option><option value="NEW">+ Προσθήκη νέου...</option>';
+    startPoints.forEach(s => startSelect.innerHTML += `<option value="${s}">${s}</option>`);
+}
+
+window.checkNewRoute = async function() {
+    const select = document.getElementById('ride-title-select');
+    if (select.value === 'NEW') {
+        const val = prompt("Πώς ονομάζεται η νέα διαδρομή;");
         if (val) {
-            routes.push(val);
-            localStorage.setItem('bikehub_routes', JSON.stringify(routes));
-            populateDropdowns();
-            document.getElementById('ride-title-select').value = val;
+            await updateDoc(configRef, { routes: arrayUnion(val) });
+            select.value = val;
         } else {
-            document.getElementById('ride-title-select').value = "";
+            select.value = "";
         }
     }
 };
 
-window.checkNewPoint = function() {
-    if (document.getElementById('start-point-select').value === 'NEW') {
-        const val = prompt("Εισάγετε νέο σημείο αφετηρίας:");
+window.checkNewPoint = async function() {
+    const select = document.getElementById('start-point-select');
+    if (select.value === 'NEW') {
+        const val = prompt("Πού είναι η νέα αφετηρία;");
         if (val) {
-            startPoints.push(val);
-            localStorage.setItem('bikehub_startpoints', JSON.stringify(startPoints));
-            populateDropdowns();
-            document.getElementById('start-point-select').value = val;
+            await updateDoc(configRef, { startPoints: arrayUnion(val) });
+            select.value = val;
         } else {
-            document.getElementById('start-point-select').value = "";
+            select.value = "";
         }
     }
 };
@@ -168,18 +172,6 @@ function initRealtimeRides() {
                 </button>`;
         }
     });
-}
-
-function updateShareLinks() {
-    const shareUrl = window.location.href;
-    const wLink = document.getElementById('whatsapp-link');
-    const mLink = document.getElementById('messenger-link');
-    const fLink = document.getElementById('facebook-link');
-    const eLink = document.getElementById('email-link');
-    if(wLink) wLink.href = `https://api.whatsapp.com/send?text=Έλα στο BikeHub: ${encodeURIComponent(shareUrl)}`;
-    if(mLink) mLink.href = `fb-messenger://share?link=${encodeURIComponent(shareUrl)}`;
-    if(fLink) fLink.href = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
-    if(eLink) eLink.href = `mailto:?subject=Πρόσκληση στο BikeHub&body=Έλα στην παρέα μας: ${encodeURIComponent(shareUrl)}`;
 }
 
 function escapeHtml(str) {
