@@ -25,15 +25,25 @@ window.addEventListener('DOMContentLoaded', () => {
         currentUsername = savedUser;
         document.getElementById('name-modal').style.display = 'none';
         document.getElementById('display-username').innerText = currentUsername;
+    } else {
+        document.getElementById('name-modal').style.display = 'flex';
     }
+    
     updateShareLinks();
     initRealtimeChat();
     initRealtimeRides();
     populateDropdowns();
+    
     document.getElementById('save-name-btn').addEventListener('click', saveModalUsername);
+    document.getElementById('change-name-btn').addEventListener('click', openNameModal);
     document.getElementById('send-chat-btn').addEventListener('click', sendChatMessage);
     document.getElementById('add-ride-btn').addEventListener('click', addNewRide);
 });
+
+function openNameModal() {
+    document.getElementById('modal-username-input').value = currentUsername;
+    document.getElementById('name-modal').style.display = 'flex';
+}
 
 function populateDropdowns() {
     const routeSelect = document.getElementById('ride-title-select');
