@@ -13,7 +13,6 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const IMGBB_API_KEY = '7716f9a03e1a8a25c192d6e386047230';
 
 let currentUsername = "";
 
@@ -27,58 +26,10 @@ window.addEventListener('DOMContentLoaded', () => {
     updateShareLinks();
     initRealtimeChat();
     initRealtimeRides();
-    initRealtimeRoutes();
 
     document.getElementById('save-name-btn').addEventListener('click', saveModalUsername);
     document.getElementById('send-chat-btn').addEventListener('click', sendChatMessage);
     document.getElementById('add-ride-btn').addEventListener('click', addNewRide);
-    document.getElementById('send-email-btn').addEventListener('click', sendEmailInvite);
-
-    document.getElementById('drop-zone').addEventListener('click', () => {
-        document.getElementById('real-file-input').click();
-    });
-
-    document.getElementById('real-file-input').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = async function(event) {
-            const base64Image = event.target.result.split(',')[1];
-
-            const formData = new URLSearchParams();
-            formData.append('key', IMGBB_API_KEY);
-            formData.append('image', base64Image);
-
-            try {
-                const response = await fetch('https://api.imgbb.com/1/upload', {
-                    method: 'POST',
-                    body: formData
-                });
-                const data = await response.json();
-                
-                if (data.success) {
-                    const imageUrl = data.data.url;
-                    
-                    await addDoc(collection(db, "routes"), {
-                        imageUrl: imageUrl,
-                        user: currentUsername || 'Χρήστης',
-                        timestamp: Date.now()
-                    });
-
-                    alert("Η διαδρομή ανέβηκε και αποθηκεύτηκε επιτυχώς!");
-                    e.target.value = '';
-                } else {
-                    console.error("ImgBB Error:", data);
-                    alert("Αποτυχία ανεβάσματος στο ImgBB: " + (data.error?.message || 'Άγνωστο σφάλμα'));
-                }
-            } catch (error) {
-                console.error("Σφάλμα:", error);
-                alert("Σφάλμα δικτύου κατά το ανέβασμα.");
-            }
-        };
-        reader.readAsDataURL(file);
-    });
 });
 
 function saveModalUsername() {
@@ -108,25 +59,6 @@ function initRealtimeChat() {
             chatBox.innerHTML += `<div><b>${escapeHtml(data.user)}:</b> ${escapeHtml(data.text)}</div>`;
         });
         chatBox.scrollTop = chatBox.scrollHeight;
-    });
-}
-
-function initRealtimeRoutes() {
-    const q = query(collection(db, "routes"), orderBy("timestamp", "desc"));
-    onSnapshot(q, (snapshot) => {
-        const previewContainer = document.getElementById('routes-preview-container');
-        if (!previewContainer) return;
-        previewContainer.innerHTML = '';
-        
-        snapshot.forEach((doc) => {
-            const data = doc.data();
-            previewContainer.innerHTML += `
-                <div style="margin-top: 10px; background: #fafafa; padding: 10px; border-radius: 10px; border: 1px solid #eee;">
-                    <small><b>${escapeHtml(data.user || 'Χρήστης')}</b></small>
-                    <img src="${data.imageUrl}" alt="Διαδρομή" style="width: 100%; border-radius: 8px; margin-top: 5px; display: block;">
-                </div>
-            `;
-        });
     });
 }
 
@@ -181,13 +113,6 @@ function updateShareLinks() {
     if(mLink) mLink.href = `fb-messenger://share?link=${encodeURIComponent(shareUrl)}`;
     if(fLink) fLink.href = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
     if(eLink) eLink.href = `mailto:?subject=Πρόσκληση στο BikeHub&body=Έλα στην παρέα μας: ${shareUrl}`;
-}
-
-function sendEmailInvite() {
-    const emailInput = document.getElementById('invite-email').value;
-    if(!emailInput) return;
-    const shareUrl = window.location.href;
-    window.location.href = `mailto:${emailInput}?subject=Πρόσκληση στο BikeHub&body=Έλα στην παρέα μας: ${shareUrl}`;
 }
 
 function escapeHtml(str) {
