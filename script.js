@@ -13,6 +13,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const IMGBB_API_KEY = '7716f9a03e1a8a25c192d6e386047230'; // Προσωρινό κλειδί
 
 let currentUsername = "";
 
@@ -32,37 +33,48 @@ window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('add-ride-btn').addEventListener('click', addNewRide);
     document.getElementById('send-email-btn').addEventListener('click', sendEmailInvite);
 
-    document.getElementById('chat-text').addEventListener('keypress', (e) => {
-        if(e.key === 'Enter') sendChatMessage();
-    });
-
     document.getElementById('drop-zone').addEventListener('click', () => {
         document.getElementById('real-file-input').click();
     });
 
-    document.getElementById('real-file-input').addEventListener('change', function(e) {
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            const img = document.getElementById('uploaded-map-img');
-            img.src = event.target.result;
-            img.style.display = 'block';
-        }
-        if (e.target.files[0]) {
-            reader.readAsDataURL(e.target.files[0]);
+    // Ανέβασμα στο ImgBB
+    document.getElementById('real-file-input').addEventListener('change', async function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('image', file);
+
+        try {
+            const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+            
+            if (data.success) {
+                const img = document.getElementById('uploaded-map-img');
+                img.src = data.data.url;
+                img.style.display = 'block';
+                alert("Η διαδρομή ανέβηκε επιτυχώς!");
+            }
+        } catch (error) {
+            console.error("Σφάλμα:", error);
+            alert("Αποτυχία ανεβάσματος εικόνας.");
         }
     });
 });
 
 function saveModalUsername() {
     const inputVal = document.getElementById('modal-username-input').value.trim();
-    if (!inputVal) { alert("Παρακαλώ εισάγετε ένα όνομα."); return; }
+    if (!inputVal) return;
     currentUsername = inputVal;
     localStorage.setItem('bikehub_username', currentUsername);
     document.getElementById('name-modal').style.display = 'none';
     document.getElementById('display-username').innerText = "Καλώς ήρθες, " + currentUsername;
 }
 
-// Chat
+// Chat functions (omitted for brevity in this block, but included in full file write)
 async function sendChatMessage() {
     const input = document.getElementById('chat-text');
     const text = input.value.trim();
