@@ -24,66 +24,88 @@ window.addEventListener('DOMContentLoaded', () => {
     const savedUser = localStorage.getItem('bikehub_username');
     if (savedUser) {
         currentUsername = savedUser;
-        document.getElementById('name-modal').style.display = 'none';
-        document.getElementById('display-username').innerText = currentUsername;
+        const modal = document.getElementById('name-modal');
+        if (modal) modal.style.display = 'none';
+        
+        const displayUser = document.getElementById('display-username');
+        if (displayUser) displayUser.innerText = currentUsername;
     }
     updateShareLinks();
     initRealtimeChat();
     initRealtimeRides();
     populateDropdowns();
 
-    document.getElementById('save-name-btn').addEventListener('click', saveModalUsername);
-    document.getElementById('send-chat-btn').addEventListener('click', sendChatMessage);
-    document.getElementById('add-ride-btn').addEventListener('click', addNewRide);
+    const saveNameBtn = document.getElementById('save-name-btn');
+    if (saveNameBtn) saveNameBtn.addEventListener('click', saveModalUsername);
+
+    const sendChatBtn = document.getElementById('send-chat-btn');
+    if (sendChatBtn) sendChatBtn.addEventListener('click', sendChatMessage);
+
+    const addRideBtn = document.getElementById('add-ride-btn');
+    if (addRideBtn) addRideBtn.addEventListener('click', addNewRide);
 });
 
 function populateDropdowns() {
     const routeSelect = document.getElementById('ride-title-select');
     const startSelect = document.getElementById('start-point-select');
     
-    routeSelect.innerHTML = '<option value="">Επιλέξτε διαδρομή...</option><option value="NEW">--- Νέα διαδρομή ---</option>';
-    routes.forEach(r => routeSelect.innerHTML += `<option value="${r}">${r}</option>`);
+    if (routeSelect) {
+        routeSelect.innerHTML = '<option value="">Επιλέξτε διαδρομή...</option><option value="NEW">--- Νέα διαδρομή ---</option>';
+        routes.forEach(r => routeSelect.innerHTML += `<option value="${r}">${r}</option>');
+    }
 
-    startSelect.innerHTML = '<option value="">Επιλέξτε αφετηρία...</option><option value="NEW">--- Νέο σημείο ---</option>';
-    startPoints.forEach(s => startSelect.innerHTML += `<option value="${s}">${s}</option>`);
+    if (startSelect) {
+        startSelect.innerHTML = '<option value="">Επιλέξτε αφετηρία...</option><option value="NEW">--- Νέο σημείο ---</option>';
+        startPoints.forEach(s => startSelect.innerHTML += `<option value="${s}">${s}</option>');
+    }
 }
 
 // Logic to handle "New" entries
 window.checkNewRoute = function() {
-    if (document.getElementById('ride-title-select').value === 'NEW') {
+    const routeSelect = document.getElementById('ride-title-select');
+    if (routeSelect && routeSelect.value === 'NEW') {
         const val = prompt("Εισάγετε νέα διαδρομή:");
         if (val) {
             routes.push(val);
             localStorage.setItem('bikehub_routes', JSON.stringify(routes));
             populateDropdowns();
-            document.getElementById('ride-title-select').value = val;
+            routeSelect.value = val;
         }
     }
 };
 
 window.checkNewPoint = function() {
-    if (document.getElementById('start-point-select').value === 'NEW') {
+    const startSelect = document.getElementById('start-point-select');
+    if (startSelect && startSelect.value === 'NEW') {
         const val = prompt("Εισάγετε νέο σημείο αφετηρίας:");
         if (val) {
             startPoints.push(val);
             localStorage.setItem('bikehub_startpoints', JSON.stringify(startPoints));
             populateDropdowns();
-            document.getElementById('start-point-select').value = val;
+            startSelect.value = val;
         }
     }
 };
 
 function saveModalUsername() {
-    const inputVal = document.getElementById('modal-username-input').value.trim();
+    const inputEl = document.getElementById('modal-username-input');
+    if (!inputEl) return;
+    const inputVal = inputEl.value.trim();
     if (!inputVal) return;
+    
     currentUsername = inputVal;
     localStorage.setItem('bikehub_username', currentUsername);
-    document.getElementById('name-modal').style.display = 'none';
-    document.getElementById('display-username').innerText = "Καλώς ήρθες, " + currentUsername;
+    
+    const modal = document.getElementById('name-modal');
+    if (modal) modal.style.display = 'none';
+    
+    const displayUser = document.getElementById('display-username');
+    if (displayUser) displayUser.innerText = "Καλώς ήρθες, " + currentUsername;
 }
 
 async function sendChatMessage() {
     const input = document.getElementById('chat-text');
+    if (!input) return;
     const text = input.value.trim();
     if(!text) return;
     await addDoc(collection(db, "chats"), { user: currentUsername || 'Χρήστης', text: text, timestamp: Date.now() });
@@ -94,6 +116,7 @@ function initRealtimeChat() {
     const q = query(collection(db, "chats"), orderBy("timestamp", "asc"));
     onSnapshot(q, (snapshot) => {
         const chatBox = document.getElementById('chat-box');
+        if (!chatBox) return;
         chatBox.innerHTML = '';
         snapshot.forEach((doc) => {
             const data = doc.data();
@@ -110,11 +133,20 @@ window.joinRide = async function(rideId) {
 };
 
 async function addNewRide() {
-    const title = document.getElementById('ride-title-select').value;
-    const start = document.getElementById('start-point-select').value;
-    const dateInput = document.getElementById('ride-date').value;
+    const routeSelect = document.getElementById('ride-title-select');
+    const startSelect = document.getElementById('start-point-select');
+    const dateInputEl = document.getElementById('ride-date');
+
+    if (!routeSelect || !startSelect || !dateInputEl) return;
+
+    const title = routeSelect.value;
+    const start = startSelect.value;
+    const dateInput = dateInputEl.value;
     
-    if (!title || !start || !dateInput) { alert("Συμπληρώστε όλα τα πεδία!"); return; }
+    if (!title || title === "NEW" || !start || start === "NEW" || !dateInput) { 
+        alert("Συμπληρώστε όλα τα πεδία σωστά!"); 
+        return; 
+    }
     
     await addDoc(collection(db, "rides"), {
         title: title,
@@ -123,7 +155,7 @@ async function addNewRide() {
         participants: [currentUsername || 'Χρήστης'],
         timestamp: Date.now()
     });
-    document.getElementById('ride-date').value = '';
+    dateInputEl.value = '';
 }
 
 function initRealtimeRides() {
