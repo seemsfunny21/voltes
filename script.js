@@ -27,6 +27,7 @@ window.addEventListener('DOMContentLoaded', () => {
     updateShareLinks();
     initRealtimeChat();
     initRealtimeRides();
+    initRealtimeRoutes(); // Φόρτωση αποθηκευμένων διαδρομών
 
     document.getElementById('save-name-btn').addEventListener('click', saveModalUsername);
     document.getElementById('send-chat-btn').addEventListener('click', sendChatMessage);
@@ -37,7 +38,7 @@ window.addEventListener('DOMContentLoaded', () => {
         document.getElementById('real-file-input').click();
     });
 
-    // Ανέβασμα στο ImgBB
+    // Ανέβασμα στο ImgBB και αποθήκευση στη βάση
     document.getElementById('real-file-input').addEventListener('change', async function(e) {
         const file = e.target.files[0];
         if (!file) return;
@@ -53,10 +54,16 @@ window.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             
             if (data.success) {
-                const img = document.getElementById('uploaded-map-img');
-                img.src = data.data.url;
-                img.style.display = 'block';
-                alert("Η διαδρομή ανέβηκε επιτυχώς!");
+                const imageUrl = data.data.url;
+                
+                // Αποθήκευση στη βάση δεδομένων (Firestore)
+                await addDoc(collection(db, "routes"), {
+                    imageUrl: imageUrl,
+                    user: currentUsername,
+                    timestamp: Date.now()
+                });
+
+                alert("Η διαδρομή ανέβηκε και αποθηκεύτηκε επιτυχώς!");
             }
         } catch (error) {
             console.error("Σφάλμα:", error);
@@ -74,7 +81,7 @@ function saveModalUsername() {
     document.getElementById('display-username').innerText = "Καλώς ήρθες, " + currentUsername;
 }
 
-// Chat functions (omitted for brevity in this block, but included in full file write)
+// Chat
 async function sendChatMessage() {
     const input = document.getElementById('chat-text');
     const text = input.value.trim();
@@ -93,6 +100,25 @@ function initRealtimeChat() {
             chatBox.innerHTML += `<div><b>${escapeHtml(data.user)}:</b> ${escapeHtml(data.text)}</div>`;
         });
         chatBox.scrollTop = chatBox.scrollHeight;
+    });
+}
+
+// Routes / Screenshots
+function initRealtimeRoutes() {
+    const q = query(collection(db, "routes"), orderBy("timestamp", "desc"));
+    onSnapshot(q, (snapshot) => {
+        const previewContainer = document.getElementById('map-preview');
+        previewContainer.innerHTML = ''; // Καθαρισμός για να μπουν όλες οι ενημερωμένες
+        
+        snapshot.forEach((doc) => {
+            const data = doc.data();
+            previewContainer.innerHTML += `
+                <div style="margin-top: 10px; background: #fafafa; padding: 10px; border-radius: 10px; border: 1px solid #eee;">
+                    <small><b>${escapeHtml(data.user || 'Χρήστης')}</b></small>
+                    <img src="${data.imageUrl}" alt="Διαδρομή" style="width: 100%; border-radius: 8px; margin-top: 5px; display: block;">
+                </div>
+            `;
+        });
     });
 }
 
