@@ -24,6 +24,7 @@ window.addEventListener('DOMContentLoaded', () => {
     if (savedUser) {
         currentUsername = savedUser;
         document.getElementById('name-modal').style.display = 'none';
+        document.getElementById('display-username').innerText = currentUsername;
     }
     updateShareLinks();
     initRealtimeChat();
@@ -76,6 +77,7 @@ function saveModalUsername() {
     currentUsername = inputVal;
     localStorage.setItem('bikehub_username', currentUsername);
     document.getElementById('name-modal').style.display = 'none';
+    document.getElementById('display-username').innerText = currentUsername;
 }
 
 async function sendChatMessage() {
@@ -110,7 +112,7 @@ async function addNewRide() {
     const start = document.getElementById('start-point-select').value;
     const dateInput = document.getElementById('ride-date').value;
     
-    if (!title || !start || !dateInput) { alert("Συμπληρώστε όλα τα πεδία!"); return; }
+    if (!title || title === "NEW" || !start || start === "NEW" || !dateInput) { alert("Συμπληρώστε όλα τα πεδία!"); return; }
     
     await addDoc(collection(db, "rides"), {
         title: title,
