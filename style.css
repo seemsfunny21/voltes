@@ -24,7 +24,7 @@ body {
 
 .card { background: var(--card-bg); padding: 18px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
 
-input, button { padding: 12px; border-radius: 10px; border: 1px solid #ddd; width: 100%; margin-top: 6px; box-sizing: border-box; }
+input, button, select { padding: 12px; border-radius: 10px; border: 1px solid #ddd; width: 100%; margin-top: 6px; box-sizing: border-box; }
 
 button { background: var(--primary); color: white; border: none; font-weight: bold; cursor: pointer; }
 

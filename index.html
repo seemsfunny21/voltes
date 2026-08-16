@@ -7,12 +7,9 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-    <!-- Modal Εισαγωγής Ονόματος -->
     <div id="name-modal" class="modal-overlay">
         <div class="modal-card">
             <h2>🚴‍♂️ Καλώς ήρθατε στο BikeHub!</h2>
-            <p>Παρακαλώ εισάγετε το ψευδώνυμό σας για να συνεχίσετε:</p>
             <input type="text" id="modal-username-input" placeholder="Το όνομα σας...">
             <button id="save-name-btn">Είσοδος</button>
         </div>
@@ -21,10 +18,8 @@
     <div class="container">
         <header class="app-header">
             <h1>🚴‍♂️ BikeHub Community</h1>
-            <p>Οργανώστε τις βόλτες σας! (<span id="display-username">Χρήστης</span>)</p>
         </header>
 
-        <!-- 1. Chat -->
         <div class="card">
             <h2>💬 Ομάδα Συζήτησης</h2>
             <div id="chat-box"></div>
@@ -34,7 +29,17 @@
             </div>
         </div>
 
-        <!-- 2. Invites -->
+        <div class="card">
+            <h2>📅 Προγραμματισμός Ποδηλασίας</h2>
+            <div class="ride-form">
+                <select id="ride-title-select" onchange="checkNewRoute()"></select>
+                <select id="start-point-select" onchange="checkNewPoint()"></select>
+                <input type="datetime-local" id="ride-date">
+                <button id="add-ride-btn">Δημιουργία</button>
+            </div>
+            <div class="rides-list" id="rides-container"></div>
+        </div>
+
         <div class="card">
             <h2>✉️ Πρόσκληση Φίλων</h2>
             <div class="invite-btns">
@@ -44,19 +49,7 @@
                 <a href="#" id="email-link" class="btn-social btn-email">E-mail</a>
             </div>
         </div>
-
-        <!-- 3. Schedule Rides -->
-        <div class="card">
-            <h2>📅 Προγραμματισμός Ποδηλασίας</h2>
-            <div class="ride-form">
-                <input type="text" id="ride-title" placeholder="Τίτλος διαδρομής">
-                <input type="datetime-local" id="ride-date">
-                <button id="add-ride-btn">Δημιουργία</button>
-            </div>
-            <div class="rides-list" id="rides-container"></div>
-        </div>
     </div>
-
     <script type="module" src="script.js"></script>
 </body>
 </html>
