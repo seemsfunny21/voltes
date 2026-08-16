@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyAxuyaH2Oszddmsd8fNlcc-tGo6QN3r_GQ",
@@ -15,8 +15,8 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 let currentUsername = "";
+let showAllRides = false; 
 
-// Load from LocalStorage or use defaults
 let routes = JSON.parse(localStorage.getItem('bikehub_routes')) || ["Γύρος Λίμνης", "Γεφυράκια (16χλμ)", "Καταρράκτης Κλίφκης"];
 let startPoints = JSON.parse(localStorage.getItem('bikehub_startpoints')) || ["Πλατεία Μαβίλης", "Καφετέρια εδώ", "Κατσικά καφετέρια diman"];
 
@@ -27,14 +27,10 @@ window.addEventListener('DOMContentLoaded', () => {
         document.getElementById('name-modal').style.display = 'none';
         document.getElementById('display-username').innerText = currentUsername;
     }
-    
-    // Set share links immediately to prevent '#' navigation
     updateShareLinks();
-    
     initRealtimeChat();
     initRealtimeRides();
     populateDropdowns();
-
     document.getElementById('save-name-btn').addEventListener('click', saveModalUsername);
     document.getElementById('send-chat-btn').addEventListener('click', sendChatMessage);
     document.getElementById('add-ride-btn').addEventListener('click', addNewRide);
@@ -43,17 +39,12 @@ window.addEventListener('DOMContentLoaded', () => {
 function populateDropdowns() {
     const routeSelect = document.getElementById('ride-title-select');
     const startSelect = document.getElementById('start-point-select');
-    
-    // Keep current selection
     const currentRoute = routeSelect.value;
     const currentStart = startSelect.value;
-
     routeSelect.innerHTML = '<option value="">Επιλέξτε διαδρομή...</option><option value="NEW">--- Νέα διαδρομή ---</option>';
     routes.forEach(r => routeSelect.innerHTML += `<option value="${r}">${r}</option>`);
-
     startSelect.innerHTML = '<option value="">Επιλέξτε αφετηρία...</option><option value="NEW">--- Νέο σημείο ---</option>';
     startPoints.forEach(s => startSelect.innerHTML += `<option value="${s}">${s}</option>`);
-    
     routeSelect.value = currentRoute;
     startSelect.value = currentStart;
 }
@@ -116,24 +107,31 @@ function initRealtimeChat() {
     });
 }
 
-window.joinRide = async function(rideId) {
+window.toggleRide = async function(rideId, isParticipating) {
     if (!currentUsername) { alert("Εισάγετε το όνομα σας πρώτα."); return; }
     const rideRef = doc(db, "rides", rideId);
-    await updateDoc(rideRef, { participants: arrayUnion(currentUsername) });
+    if (isParticipating) {
+        await updateDoc(rideRef, { participants: arrayRemove(currentUsername) });
+    } else {
+        await updateDoc(rideRef, { participants: arrayUnion(currentUsername) });
+    }
+};
+
+window.toggleShowAll = function() {
+    showAllRides = !showAllRides;
+    initRealtimeRides();
 };
 
 async function addNewRide() {
     const title = document.getElementById('ride-title-select').value;
     const start = document.getElementById('start-point-select').value;
     const dateInput = document.getElementById('ride-date').value;
-    
     if (!title || title === "NEW" || !start || start === "NEW" || !dateInput) { alert("Συμπληρώστε όλα τα πεδία!"); return; }
-    
     await addDoc(collection(db, "rides"), {
         title: title,
         start: start,
         date: dateInput.replace('T', ' '),
-        participants: [currentUsername || 'Χρήστης'],
+        participants: [currentUsername],
         timestamp: Date.now()
     });
     document.getElementById('ride-date').value = '';
@@ -145,17 +143,30 @@ function initRealtimeRides() {
         const container = document.getElementById('rides-container');
         if (!container) return;
         container.innerHTML = '';
-        snapshot.forEach((doc) => {
-            const ride = doc.data();
-            const list = ride.participants ? ride.participants.join(', ') : 'Κανείς';
+        let docs = [];
+        snapshot.forEach(doc => docs.push({id: doc.id, ...doc.data()}));
+        const displayLimit = showAllRides ? docs.length : 3;
+        const visibleDocs = docs.slice(0, displayLimit);
+        visibleDocs.forEach((ride) => {
+            const participants = ride.participants || [];
+            const isJoined = participants.includes(currentUsername);
+            const list = participants.length > 0 ? participants.join(', ') : 'Κανείς';
             container.innerHTML += `
                 <div style="background:#f9f9f9; padding:10px; border-radius:8px; margin-top:8px; border:1px solid #eee;">
                     <b>${escapeHtml(ride.title)}</b><br>
                     <small>📍 ${escapeHtml(ride.start)} | 📅 ${ride.date}</small>
                     <div style="font-size:0.8rem; margin:5px 0;"><b>Συμμετέχοντες:</b> ${list}</div>
-                    <button onclick="window.joinRide('${doc.id}')">Συμμετοχή</button>
+                    <button onclick="window.toggleRide('${ride.id}', ${isJoined})">
+                        ${isJoined ? 'Ακύρωση' : 'Συμμετοχή'}
+                    </button>
                 </div>`;
         });
+        if (docs.length > 3) {
+            container.innerHTML += `
+                <button style="margin-top:10px; background: #eee; color: #333;" onclick="window.toggleShowAll()">
+                    ${showAllRides ? 'Λιγότερα...' : 'Δείτε περισσότερα (' + (docs.length - 3) + ')'}
+                </button>`;
+        }
     });
 }
 
@@ -165,21 +176,10 @@ function updateShareLinks() {
     const mLink = document.getElementById('messenger-link');
     const fLink = document.getElementById('facebook-link');
     const eLink = document.getElementById('email-link');
-
-    // Use absolute links and ensure no default behavior
-    if(wLink) {
-        wLink.href = `https://api.whatsapp.com/send?text=Έλα στο BikeHub: ${encodeURIComponent(shareUrl)}`;
-        wLink.onclick = null; 
-    }
-    if(mLink) {
-        mLink.href = `fb-messenger://share?link=${encodeURIComponent(shareUrl)}`;
-    }
-    if(fLink) {
-        fLink.href = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
-    }
-    if(eLink) {
-        eLink.href = `mailto:?subject=Πρόσκληση στο BikeHub&body=Έλα στην παρέα μας: ${encodeURIComponent(shareUrl)}`;
-    }
+    if(wLink) wLink.href = `https://api.whatsapp.com/send?text=Έλα στο BikeHub: ${encodeURIComponent(shareUrl)}`;
+    if(mLink) mLink.href = `fb-messenger://share?link=${encodeURIComponent(shareUrl)}`;
+    if(fLink) fLink.href = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
+    if(eLink) eLink.href = `mailto:?subject=Πρόσκληση στο BikeHub&body=Έλα στην παρέα μας: ${encodeURIComponent(shareUrl)}`;
 }
 
 function escapeHtml(str) {

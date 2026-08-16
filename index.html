@@ -7,8 +7,6 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-    <!-- Modal Εισαγωγής Ονόματος -->
     <div id="name-modal" class="modal-overlay">
         <div class="modal-card">
             <h2>🚴‍♂️ Καλώς ήρθατε στο BikeHub!</h2>
@@ -17,14 +15,11 @@
             <button id="save-name-btn">Είσοδος</button>
         </div>
     </div>
-
     <div class="container">
         <header class="app-header">
             <h1>🚴‍♂️ BikeHub Community</h1>
             <p>Οργανώστε τις βόλτες σας! (<span id="display-username">Χρήστης</span>)</p>
         </header>
-
-        <!-- 1. Chat -->
         <div class="card">
             <h2>💬 Ομάδα Συζήτησης</h2>
             <div id="chat-box"></div>
@@ -33,8 +28,6 @@
                 <button id="send-chat-btn">Αποστολή</button>
             </div>
         </div>
-
-        <!-- 2. Schedule Rides -->
         <div class="card">
             <h2>📅 Προγραμματισμός Ποδηλασίας</h2>
             <div class="ride-form">
@@ -45,8 +38,6 @@
             </div>
             <div class="rides-list" id="rides-container"></div>
         </div>
-
-        <!-- 3. Invites -->
         <div class="card">
             <h2>✉️ Πρόσκληση Φίλων</h2>
             <div class="invite-btns">
@@ -57,7 +48,6 @@
             </div>
         </div>
     </div>
-
     <script type="module" src="script.js"></script>
 </body>
 </html>
