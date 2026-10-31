@@ -1,0 +1,12 @@
+{
+  "name": "voltes",
+  "private": true,
+  "scripts": {
+    "test": "node tests/completion.cjs",
+    "test:db": "node tests/database.cjs",
+    "preview": "node tests/preview.cjs"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.3.14"
+  }
+}

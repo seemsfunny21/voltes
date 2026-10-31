@@ -1,0 +1,3 @@
+# Preserve the existing PIN-authorized anonymous API contract.
+[functions.rapid-responder]
+verify_jwt = false
