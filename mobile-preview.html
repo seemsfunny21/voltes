@@ -81,8 +81,14 @@ body,:root{background:#0b1220;color:#fff}
 /* V9: force the section headings to the exact horizontal center */
 .section{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;width:100%!important;text-align:center!important}
 .section h2,.section span{display:block!important;width:100%!important;text-align:center!important;margin-left:auto!important;margin-right:auto!important}
+
+/* V10: navigation stays above scrollable content on mobile */
+html{min-height:100%;scroll-padding-bottom:100px}
+.shell{padding-bottom:calc(105px + env(safe-area-inset-bottom,0px))}
+.bottom{position:fixed!important;inset:auto 0 0 0!important;z-index:1000;width:100%;transform:none;isolation:isolate;box-shadow:0 -8px 28px #0007;-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px)}
+@supports(height:100dvh){body{min-height:100dvh}}
 </style></head><body>
-<div class="shell"><div class="preview">ΠΡΟΕΠΙΣΚΟΠΗΣΗ V9 · ΚΕΝΤΡΑΡΙΣΜΕΝΗ · ΕΝΔΕΙΚΤΙΚΑ ΣΤΟΙΧΕΙΑ</div>
+<div class="shell"><div class="preview">ΠΡΟΕΠΙΣΚΟΠΗΣΗ V10 · ΣΤΑΘΕΡΗ ΠΛΟΗΓΗΣΗ · ΕΝΔΕΙΚΤΙΚΑ ΣΤΟΙΧΕΙΑ</div>
 <header class="top"><div class="emblem"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="17.5" r="4"/><circle cx="18.5" cy="17.5" r="4"/><path d="M5.5 17.5 10 8h5l3.5 9.5M5.5 17.5h9L10 8M8 8h4M15 5h2l1 3"/></svg></div><div class="identity"><b>Ποδηλασία στα Ιωάννινα</b><small>Η παρέα μας, οι διαδρομές μας</small></div></header>
 
 <section class="section"><h2>Επόμενη βόλτα</h2><span>Ενδεικτική</span></section>
@@ -95,7 +101,7 @@ body,:root{background:#0b1220;color:#fff}
 <div class="stats"><div class="stat"><b>12</b><span>Βόλτες</span></div><div class="stat"><b>356</b><span>Χιλιόμετρα</span></div><div class="stat"><b>10</b><span>Μέλη</span></div></div>
 <section class="section"><h2>Από το ιστορικό</h2><span>Παλαιότερες</span></section>
 <article class="history"><div class="ico">↗</div><div class="desc"><b>Γύρος λίμνης</b><small>26 Οκτωβρίου · Ομαδική βόλτα</small></div><em>31 km</em></article>
-<footer style="text-align:center;color:#7e96b8;font-size:11px;padding:27px 0">Προεπισκόπηση σχεδιασμού κινητού · v9</footer>
+<footer style="text-align:center;color:#7e96b8;font-size:11px;padding:27px 0">Προεπισκόπηση σχεδιασμού κινητού · v10</footer>
 </div>
 <nav class="bottom" aria-label="Δοκιμαστική πλοήγηση"><button class="active" onclick="selectTab(this)"><b>⌂</b>Αρχική</button><button onclick="selectTab(this)"><b>▦</b>Βόλτες</button><button onclick="selectTab(this)"><b>◷</b>Ιστορικό</button><button onclick="selectTab(this)"><b>☷</b>Μενού</button></nav><div class="toast" id="toast">Η σελίδα αυτή είναι μόνο προεπισκόπηση εμφάνισης.</div>
 <script>function notify(){let t=document.getElementById('toast');t.style.display='block';setTimeout(()=>t.style.display='none',2500)}function selectTab(e){document.querySelectorAll('.bottom button').forEach(b=>b.classList.remove('active'));e.classList.add('active');notify()}</script>
