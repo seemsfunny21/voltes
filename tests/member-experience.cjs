@@ -1,0 +1,45 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
+const {webcrypto:crypto}=require('node:crypto');const {stripTypeScriptTypes}=require('node:module');
+async function main(){
+const root=path.resolve(__dirname,'..'),read=p=>fs.readFileSync(path.join(root,p),'utf8');let checks=0;
+const check=(name,fn)=>{fn();checks++;console.log('PASS '+name)};
+let handler,pin='1234',rpcCalls=[];
+const id='12345678-1234-1234-1234-123456789abc',riderId='12345678-1234-1234-1234-123456789abd';
+const rows={voltes_admin_sessions:[],voltes_rides:[{id,date:'2026-10-31',time:'09:00',title:'Test',done:false,attendees:[],slowed:[]}],voltes_riders:[{id:riderId,name:'Μέλος Δοκιμής',member:true,avatar_data_url:null}],voltes_signups:[],voltes_ride_admin_notes:[]};
+function from(table){let mode='select',value,filters=[],single=false;const q={select(){return q},order(){return q},eq(k,v){filters.push([k,v]);return q},maybeSingle(){single=true;return q},insert(v){mode='insert';value=v;return q},update(v){mode='update';value=v;return q},delete(){mode='delete';return q},then(resolve,reject){try{let matched=rows[table].filter(r=>filters.every(([k,v])=>r[k]===v));if(mode==='insert'){rows[table].push(value);matched=[value]}if(mode==='delete')rows[table]=rows[table].filter(r=>!matched.includes(r));if(mode==='update')matched.forEach(r=>Object.assign(r,value));return Promise.resolve({data:single?(matched[0]||null):matched,error:null}).then(resolve,reject)}catch(e){return Promise.reject(e).then(resolve,reject)}}};return q}
+const db={from,async rpc(name,args){rpcCalls.push({name,args});if(name==='voltes_signup'){if(!rows.voltes_signups.some(r=>r.cancel_token_hash===args.p_hash))rows.voltes_signups.push({ride_id:args.p_id,name:args.p_name,cancel_token_hash:args.p_hash})}else if(name==='voltes_cancel_signup'){rows.voltes_signups=rows.voltes_signups.filter(r=>r.ride_id!==args.p_id||r.cancel_token_hash!==args.p_hash)}return {error:null}}};
+const ctx={URL,Request,Response,console,crypto,TextEncoder,atob,Deno:{env:{get:key=>key==='ADMIN_PIN'?pin:'test-key'},serve:fn=>handler=fn},createClient:()=>db};vm.createContext(ctx);vm.runInContext(read('completion.js'),ctx);vm.runInContext(stripTypeScriptTypes(read('supabase/functions/rapid-responder/index.ts').replace(/^import .*;$/gm,'')),ctx);
+const request=async body=>{const r=await handler(new Request('https://test.local',{method:'POST',body:JSON.stringify(body)}));return {status:r.status,body:await r.json()}};
+let r=await request({action:'login',pin:'0000'});check('wrong PIN never creates session',()=>{assert.equal(r.status,403);assert.equal(rows.voltes_admin_sessions.length,0)});
+r=await request({action:'login',pin:'1234'});const token=r.body.adminToken;
+check('login stores only token hash',()=>{assert.match(token,/^[0-9a-f]{64}$/);assert.notEqual(rows.voltes_admin_sessions[0].token_hash,token);assert.equal(JSON.stringify(rows).includes('1234"'),false)});
+r=await request({action:'state',adminToken:token});check('saved session authorizes later state without PIN',()=>assert.equal(r.body.admin,true));
+const savedVersion=rows.voltes_admin_sessions[0].pin_version;rows.voltes_admin_sessions[0].pin_version='obsolete';r=await request({action:'state',adminToken:token});check('obsolete PIN fingerprint invalidates existing session',()=>assert.equal(r.body.admin,false));rows.voltes_admin_sessions[0].pin_version=savedVersion;
+await request({action:'logout',adminToken:token});r=await request({action:'state',adminToken:token});check('logout revokes token on server',()=>{assert.equal(r.body.admin,false);assert.equal(rows.voltes_admin_sessions.length,0)});
+const cancelToken='a'.repeat(64),otherToken='b'.repeat(64);
+r=await request({action:'signup',id,name:'Ποδηλάτης',cancelToken});check('signup stores hash instead of cancellation secret',()=>{assert.equal(r.status,200);assert.notEqual(rows.voltes_signups[0].cancel_token_hash,cancelToken)});
+await request({action:'signup',id,name:'Ποδηλάτης',cancelToken});check('retrying signup is idempotent',()=>assert.equal(rows.voltes_signups.length,1));
+r=await request({action:'state',signupTokens:{[id]:cancelToken}});check('own browser sees cancellation action without identity disclosure',()=>{assert.equal(r.body.rides[0].mySignup,true);assert.equal('signups' in r.body.rides[0],false);assert.equal(JSON.stringify(r.body).includes(cancelToken),false);assert.equal(JSON.stringify(r.body).includes(rows.voltes_signups[0].cancel_token_hash),false)});
+r=await request({action:'state',signupTokens:{[id]:otherToken}});check('another browser cannot claim signup',()=>assert.equal(r.body.rides[0].mySignup,false));
+await request({action:'cancelSignup',id,cancelToken:otherToken});check('wrong cancellation key cannot remove signup',()=>assert.equal(rows.voltes_signups.length,1));
+await request({action:'cancelSignup',id,cancelToken});check('correct key cancels only own signup',()=>assert.equal(rows.voltes_signups.length,0));
+r=await request({action:'cancelSignup',id,cancelToken:'bad'});check('malformed key rejected',()=>assert.equal(r.status,400));
+const avatar='data:image/jpeg;base64,/9j/2Q==';r=await request({action:'setAvatar',id:riderId,avatar});check('anonymous avatar write forbidden',()=>assert.equal(r.status,403));
+r=await request({action:'setAvatar',pin:'1234',id:riderId,avatar:'data:image/svg+xml;base64,PHN2Zz4='});check('SVG avatar rejected',()=>assert.equal(r.status,400));
+r=await request({action:'setAvatar',pin:'1234',id:riderId,avatar});check('admin can save JPEG avatar',()=>{assert.equal(r.status,200);assert.equal(rows.voltes_riders[0].avatar_data_url,avatar)});
+r=await request({action:'state'});check('anonymous response never includes rider avatar',()=>{assert.equal(r.body.riders.length,0);assert.equal(JSON.stringify(r.body).includes('/9j/'),false)});
+r=await request({action:'setAvatar',pin:'1234',id:riderId,avatar:null});check('admin can remove avatar',()=>assert.equal(rows.voltes_riders[0].avatar_data_url,null));
+const elements={},listeners={};for(const selector of ['#app','#nav','#menuBtn','#adminNav','#authBtn'])elements[selector]={innerHTML:'',classList:{add(){},toggle(){},contains(){return false}},setAttribute(){},addEventListener(name,fn){listeners[selector+name]=fn}};
+const storage=new Map([['voltesAdminToken','c'.repeat(64)]]),b={URL,console,crypto,sessionStorage:{removeItem(){}},localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)},window:{VOLTES_API_URL:'https://test.local',scrollTo(){}},navigator:{},location:{protocol:'file:'},document:{querySelector:s=>elements[s]},fetch:async()=>({ok:true,json:async()=>({admin:true,rides:[],riders:[],members:0,capabilities:{rideCompletionV2:true}})})};
+vm.createContext(b);vm.runInContext(read('completion.js'),b);vm.runInContext(read('app.js'),b);await new Promise(resolve=>setTimeout(resolve,0));
+check('frontend restores token without storing PIN',()=>{assert.equal(vm.runInContext('adminToken',b),'c'.repeat(64));assert.equal(vm.runInContext('pin',b),'')});
+const rides=Array.from({length:12},(_,i)=>({id:'ride'+i,title:'History '+i,date:'2026-10-'+String(i+1).padStart(2,'0'),done:true,km:10,attendees:[]}));rides.push({id:'future',title:'Future ride',date:'2026-11-01',done:false,signups:[]});
+vm.runInContext('db={rides:'+JSON.stringify(rides)+',riders:[],members:0}',b);
+check('home keeps five completed rides and archive button',()=>{const html=vm.runInContext('home()',b);assert.equal((html.match(/class="card ride-card"/g)||[]).length,6);assert.ok(html.includes('Παλαιότερες διαδρομές'))});
+await listeners['#appclick']({target:{closest:()=>({dataset:{do:'olderHistory'}})}});check('archive opens older rides and can load remaining',()=>{assert.equal(vm.runInContext('historyLimit',b),10);assert.equal((vm.runInContext('history()',b).match(/class="card ride-card"/g)||[]).length,10)});
+await listeners['#appclick']({target:{closest:()=>({dataset:{do:'moreHistory'}})}});check('archive can reach entire history',()=>assert.equal((vm.runInContext('history()',b).match(/class="card ride-card"/g)||[]).length,12));
+check('avatar initials escaped and external URLs ignored',()=>{assert.ok(vm.runInContext('riderAvatar({name:"Άννα Παππά"})',b).includes('ΑΠ'));assert.ok(!vm.runInContext('riderAvatar({name:"Test",avatar_data_url:"https://evil.test/a.jpg"})',b).includes('<img'))});
+vm.runInContext('db.rides[0].done=false;db.rides[0].mySignup=true',b);check('signup button becomes cancel button for own declaration',()=>assert.ok(vm.runInContext('rideCard(db.rides[0])',b).includes('data-do="cancelSignup"')));
+console.log(checks+' member experience checks passed');
+}
+main().catch(e=>{console.error(e);process.exitCode=1});

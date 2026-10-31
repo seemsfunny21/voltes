@@ -8,6 +8,9 @@ const secret=Deno.env.get('ADMIN_PIN');
 const norm=(s:unknown,max=100)=>String(s??'').trim().slice(0,max);
 const validPin=(p:unknown)=>Boolean(secret)&&typeof p==='string'&&/^\d{4}$/.test(p)&&p===secret;
 const bad=(msg='Μη έγκυρα δεδομένα',status=400)=>reply({error:msg},status);
+const digest=async(value:string)=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value))),b=>b.toString(16).padStart(2,'0')).join('');
+const tokenValid=(value:unknown):value is string=>typeof value==='string'&&/^[0-9a-f]{64}$/.test(value);
+const pinVersion=()=>digest((Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')||'')+':'+secret);
 Deno.serve(async req=>{
  if(req.method==='OPTIONS')return new Response(null,{status:204,headers:cors});
  if(req.method!=='POST')return bad('Method not allowed',405);
@@ -15,35 +18,61 @@ Deno.serve(async req=>{
  try{payload=await req.json()}catch{return bad()}
  if(!payload||typeof payload!=='object'||Array.isArray(payload))return bad();
  try{
- const action=norm(payload.action,40),admin=validPin(payload.pin);
- if(!['state','signup','login'].includes(action)&&!admin)return bad('Απαιτείται PIN διαχειριστή',403);
- if(action==='login')return admin?reply({ok:true}):bad('Λάθος PIN',403);
+ const action=norm(payload.action,40);
+ let admin=validPin(payload.pin);
+ const sessionHash=tokenValid(payload.adminToken)?await digest(payload.adminToken):null;
+ if(!admin&&sessionHash){const {data,error}=await db.from('voltes_admin_sessions').select('pin_version').eq('token_hash',sessionHash).maybeSingle();if(error)throw error;admin=!!data&&data.pin_version===await pinVersion()}
+ if(!['state','signup','cancelSignup','login','logout'].includes(action)&&!admin)return bad('Απαιτείται PIN διαχειριστή',403);
+ if(action==='logout'){if(sessionHash){const {error}=await db.from('voltes_admin_sessions').delete().eq('token_hash',sessionHash);if(error)throw error}return reply({ok:true})}
+ if(action==='login'){
+  if(!validPin(payload.pin))return bad('Λάθος PIN',403);
+  const token=Array.from(crypto.getRandomValues(new Uint8Array(32)),b=>b.toString(16).padStart(2,'0')).join('');
+  const {error}=await db.from('voltes_admin_sessions').insert({token_hash:await digest(token),pin_version:await pinVersion()});if(error)throw error;
+  return reply({ok:true,adminToken:token});
+ }
  if(action==='state'){
   const [a,b,c,d]=await Promise.all([
    db.from('voltes_rides').select('*').order('date',{ascending:false}),
    admin?db.from('voltes_riders').select('*').order('name'):Promise.resolve({data:[],error:null}),
-   db.from('voltes_signups').select('ride_id,name'),
+   db.from('voltes_signups').select('ride_id,name,cancel_token_hash'),
    admin?db.from('voltes_ride_admin_notes').select('ride_id,slowdown_notes'):Promise.resolve({data:[],error:null})
   ]);
   if(a.error||b.error||c.error||d.error)throw a.error||b.error||c.error||d.error;
+  const ownTokens=new Map<string,string>();
+  if(payload.signupTokens&&typeof payload.signupTokens==='object'&&!Array.isArray(payload.signupTokens)){
+   const entries=Object.entries(payload.signupTokens).slice(0,500);
+   await Promise.all(entries.map(async([id,token])=>{if(tokenValid(token))ownTokens.set(id,await digest(token))}));
+  }
   const notes=new Map((d.data||[]).map(n=>[n.ride_id,n.slowdown_notes]));
   const rides=(a.data||[]).map(r=>{
    const signups=(c.data||[]).filter(s=>s.ride_id===r.id);
    const base={id:r.id,date:r.date,time:r.time,place:r.place,title:r.title,estimate:r.estimate,done:r.done,km:r.km,
     elevationGain:r.elevation_gain_m??null,movingMinutes:r.moving_minutes??null,
-    signupCount:signups.length,attendeeCount:Array.isArray(r.attendees)?r.attendees.length:0};
+    signupCount:signups.length,mySignup:!r.done&&signups.some(s=>!!s.cancel_token_hash&&s.cancel_token_hash===ownTokens.get(r.id)),attendeeCount:Array.isArray(r.attendees)?r.attendees.length:0};
    return admin?{...base,speed:r.speed,strava:r.strava,attendees:r.attendees,slowed:r.slowed,slowdownNotes:notes.get(r.id)||'',signups:signups.map(s=>({name:s.name}))}:base;
   });
   const members=admin?(b.data||[]).filter(r=>r.member).length:0;
-  return reply({rides,riders:admin?(b.data||[]):[],members,admin,capabilities:{rideCompletionV2:true}});
+  return reply({rides,riders:admin?(b.data||[]):[],members,admin,capabilities:{rideCompletionV2:true,memberExperienceV2:true}});
  }
- if(action==='signup'){
+ if(action==='signup'||action==='cancelSignup'){
   const id=norm(payload.id,40),name=norm(payload.name,70);
-  if(!/^[0-9a-f-]{36}$/i.test(id)||name.length<2)return bad();
-  const {data:ride,error:er}=await db.from('voltes_rides').select('done').eq('id',id).single();
-  if(er||!ride||ride.done)return bad('Η βόλτα δεν δέχεται συμμετοχές',409);
-  const {error}=await db.from('voltes_signups').insert({ride_id:id,name});
-  if(error){if(error.code==='23505')return bad('Υπάρχει ήδη δήλωση με αυτό το όνομα',409);throw error}
+  if(!/^[0-9a-f-]{36}$/i.test(id))return bad();
+  if(action==='cancelSignup'&&!tokenValid(payload.cancelToken))return bad();
+  if(action==='signup'&&(name.length<2||(payload.cancelToken!=null&&!tokenValid(payload.cancelToken))))return bad();
+  const hash=tokenValid(payload.cancelToken)?await digest(payload.cancelToken):null;
+  const {error}=await db.rpc(action==='signup'?'voltes_signup':'voltes_cancel_signup',action==='signup'?{p_id:id,p_name:name,p_hash:hash}:{p_id:id,p_hash:hash});
+  if(error){if(error.code==='23505')return bad('Υπάρχει ήδη δήλωση με αυτό το όνομα.',409);if(error.code==='P0002')return bad('Η βόλτα δεν δέχεται αλλαγές συμμετοχής.',409);throw error}
+  return reply({ok:true});
+ }
+ if(action==='setAvatar'){
+  const id=norm(payload.id,40),avatar=payload.avatar;
+  if(!/^[0-9a-f-]{36}$/i.test(id))return bad();
+  if(avatar!==null){
+   if(typeof avatar!=='string'||avatar.length>90000||!/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(avatar))return bad('Μη έγκυρη φωτογραφία.');
+   let bytes;try{bytes=atob(avatar.split(',')[1])}catch{return bad('Μη έγκυρη φωτογραφία.')}
+   if(bytes.length<4||bytes.charCodeAt(0)!==255||bytes.charCodeAt(1)!==216||bytes.charCodeAt(2)!==255)return bad('Απαιτείται φωτογραφία JPEG.');
+  }
+  const {data,error}=await db.from('voltes_riders').update({avatar_data_url:avatar}).eq('id',id).select('id').maybeSingle();if(error)throw error;if(!data)return bad('Ο ποδηλάτης δεν βρέθηκε.',404);
   return reply({ok:true});
  }
  if(action==='create'){

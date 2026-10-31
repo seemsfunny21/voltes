@@ -24,8 +24,7 @@ function query(table){calls.push(table);const q={select(){return q},order(){retu
 const database={from:query,async rpc(name,args){calls.push({name,args});return {error:rpcError}}};
 const ctx={URL,Request,Response,console,Deno:{env:{get:key=>key==='ADMIN_PIN'?'1234':'test'},serve:fn=>handler=fn},createClient:()=>database};vm.createContext(ctx);vm.runInContext(read('completion.js'),ctx);
 let server=read('supabase/functions/rapid-responder/index.ts').replace(/^import .*;$/gm,'');
-// Type annotations are removed only for this Node-based test harness.
-server=server.replace(/\)!/g,')').replace('(body:unknown,','(body,').replace('(s:unknown,','(s,').replace('(p:unknown)','(p)').replace('(globalThis as unknown as {VoltesCompletion:{validateCompletion:(input:any)=>any;formatMovingTime:(minutes:number)=>string}}).VoltesCompletion','globalThis.VoltesCompletion');
+server=require('node:module').stripTypeScriptTypes(server);
 vm.runInContext(server,ctx);
 async function request(body){return handler(new Request('https://test.local',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}))}
 calls=[];let response=await request({action:'state'}),publicState=await response.json();
@@ -42,7 +41,7 @@ rpcError={code:'P0002'};response=await request({action:'finish',pin:'1234',id,..
 check('repeat completion returns conflict',()=>assert.equal(response.status,409));
 let events={};const elements={};const el=()=>({innerHTML:'',textContent:'',classList:{add(){},toggle(){},contains(){return false}},setAttribute(){},addEventListener(event,fn){events[event]=fn}});
 for(const selector of ['#app','#nav','#menuBtn','#adminNav','#authBtn'])elements[selector]=el();
-const browser={URL,console,window:{VOLTES_API_URL:'https://test.local',scrollTo(){}},location:{protocol:'file:'},navigator:{},sessionStorage:{getItem(){return ''},setItem(){},removeItem(){}},document:{querySelector:s=>elements[s]},fetch:async()=>({ok:true,json:async()=>privateState})};
+const browser={URL,console,localStorage:{getItem(){return null},setItem(){},removeItem(){}},window:{VOLTES_API_URL:'https://test.local',scrollTo(){}},location:{protocol:'file:'},navigator:{},sessionStorage:{getItem(){return ''},setItem(){},removeItem(){}},document:{querySelector:s=>elements[s]},fetch:async()=>({ok:true,json:async()=>privateState})};
 vm.createContext(browser);vm.runInContext(read('completion.js'),browser);vm.runInContext(read('app.js'),browser);await new Promise(resolve=>setTimeout(resolve,0));
 vm.runInContext('admin=true;completionV2=true;db='+JSON.stringify(privateState)+';',browser);
 const form=vm.runInContext('finish(db.rides[0])',browser);

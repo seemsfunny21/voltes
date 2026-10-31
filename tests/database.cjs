@@ -44,7 +44,34 @@ async function main(){
  create trigger reject_rider before insert on voltes_riders for each row execute function reject_rider();`);
  await assert.rejects(()=>db.query('select voltes_finish_ride($1,$2::jsonb)',[second,JSON.stringify({...details,attendees:['Rollback rider'],slowed:[]})]));
  assert.equal((await db.query('select done from voltes_rides where id=$1',[second])).rows[0].done,false);assert.equal((await db.query('select * from voltes_ride_admin_notes')).rows.length,0);checks++;
- await db.close();console.log('PASS PostgreSQL migration, permissions, atomicity: '+arrayType);
+ await db.exec(await fs.readFile(path.join(root,'supabase/migrations/202610310002_member_experience.sql'),'utf8'));
+ const hashA='a'.repeat(64),hashB='b'.repeat(64);
+ await db.query('select voltes_signup($1,$2,$3)',[second,'First rider',hashA]);
+ await db.query('select voltes_signup($1,$2,$3)',[second,'Second rider',hashB]);
+ await db.query('select voltes_signup($1,$2,$3)',[second,'First rider',hashA]);
+ assert.equal((await db.query('select * from voltes_signups')).rows.length,2);checks++;
+ await db.query('select voltes_cancel_signup($1,$2)',[second,'c'.repeat(64)]);
+ assert.equal((await db.query('select * from voltes_signups')).rows.length,2);checks++;
+ await db.query('select voltes_cancel_signup($1,$2)',[second,hashA]);
+ assert.equal((await db.query('select name from voltes_signups')).rows[0].name,'Second rider');checks++;
+ await db.query('select voltes_cancel_signup($1,$2)',[second,hashA]);
+ assert.equal((await db.query('select * from voltes_signups')).rows.length,1);checks++;
+ await db.query('update voltes_rides set done=true where id=$1',[second]);
+ await assert.rejects(()=>db.query('select voltes_signup($1,$2,$3)',[second,'Late rider',hashA]),e=>e.code==='P0002');checks++;
+ await assert.rejects(()=>db.query('select voltes_cancel_signup($1,$2)',[second,hashB]),e=>e.code==='P0002');checks++;
+ await db.exec('set role anon');
+ await assert.rejects(()=>db.query('select * from voltes_admin_sessions'),e=>e.code==='42501');checks++;
+ await assert.rejects(()=>db.query('select voltes_cancel_signup($1,$2)',[second,hashB]),e=>e.code==='42501');checks++;
+ await db.exec('reset role; set role service_role');
+ await db.query('insert into voltes_admin_sessions(token_hash,pin_version) values($1,$2)',[hashA,'fingerprint']);
+ assert.equal((await db.query('select count(*)::int n from voltes_admin_sessions')).rows[0].n,1);checks++;
+ await db.query('delete from voltes_admin_sessions where token_hash=$1',[hashA]);
+ assert.equal((await db.query('select * from voltes_admin_sessions')).rows.length,0);checks++;
+ await db.exec('reset role');
+ await assert.rejects(()=>db.query('update voltes_riders set avatar_data_url=$1',['data:image/svg+xml;base64,AAA=']));checks++;
+ await db.query('update voltes_riders set avatar_data_url=$1',['data:image/jpeg;base64,/9j/2Q==']);
+ assert.equal((await db.query('select avatar_data_url from voltes_riders limit 1')).rows[0].avatar_data_url,'data:image/jpeg;base64,/9j/2Q==');checks++;
+ await db.close();console.log('PASS PostgreSQL migration, permissions, atomicity and member experience: '+arrayType);
  }
  console.log(checks+' database checks passed');
 }
