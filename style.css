@@ -12,3 +12,5 @@ input::placeholder,textarea::placeholder{color:#a4ada7;opacity:1}
 
 /* Center button labels, including form actions and file-picker buttons. */
 button,.btn{text-align:center}.btn{justify-content:center}.avatar-picker{text-align:center!important}
+
+#adminNav>p{text-align:center}
