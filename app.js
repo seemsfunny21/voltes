@@ -27,7 +27,7 @@ async function start(){
 }
 const datefmt=d=>new Date(d+'T12:00:00').toLocaleDateString('el-GR',{day:'2-digit',month:'2-digit',year:'numeric'});
 function toast(v){message=v;render()}
-function navigate(v){route=v;if(v==='history')historyLimit=5;nav.classList.add('hidden');document.querySelector('#menuBtn').setAttribute('aria-expanded','false');render();window.scrollTo(0,0)}
+function navigate(v){route=v;if(v==='history')historyLimit=5;nav.classList.add('hidden');document.querySelector('#menuBtn').setAttribute('aria-expanded','false');render();if(v==='auth')document.querySelector('#login input[name="pin"]')?.focus({preventScroll:true});window.scrollTo(0,0)}
 function renderNotice(){return message?`<p class="alert" role="status">${safe(message)}</p>`:''}
 function stats(){let completed=db.rides.filter(x=>x.done);return `<section class="metrics"><div class="metric"><b>${completed.length}</b><small>Βόλτες</small></div><div class="metric"><b>${Math.round(completed.reduce((a,x)=>a+Number(x.km||0),0))}</b><small>Χιλιόμετρα</small></div><div class="metric"><b>${(admin?db.riders.filter(x=>x.member).length:db.members)}</b><small>Μέλη</small></div></section>`}
 function active(){return db.rides.filter(r=>!r.done).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time))}
