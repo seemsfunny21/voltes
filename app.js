@@ -81,7 +81,21 @@ function auth(){return `<h1>Είσοδος Admin</h1><div class="card"><form id=
 function render(){if(!admin&&['new','riders','stats','finish'].includes(route))route='home';document.querySelector('#adminNav').classList.toggle('hidden',!admin);document.querySelector('#authBtn').textContent=admin?'Αποσύνδεση Admin':'Είσοδος Admin';let html=route==='home'?home():route==='members'?publicMembers():route==='upcoming'?upcoming():route==='history'?history():route==='new'?newRide():route==='riders'?riders():route==='stats'?analytics():route==='auth'?auth():route==='signup'&&window.currentRide?signup(window.currentRide):route==='finish'&&window.currentRide&&admin?finish(window.currentRide):home();app.innerHTML=renderNotice()+html;message='';syncBottomNav()}
 const bottomNav=document.querySelector('#bottomNav');
 function syncBottomNav(){bottomNav.querySelectorAll('button').forEach(b=>{const selected=b.dataset.bottomRoute===(nav.classList.contains('hidden')?(['home','members','history'].includes(route)?route:'menu'):'menu');b.classList.toggle('active',selected)});}
-bottomNav.addEventListener('click',e=>{const b=e.target.closest('button[data-bottom-route]');if(!b)return;const page=b.dataset.bottomRoute;if(page==='menu'){if(!admin){navigate('auth');return}nav.classList.toggle('hidden');b.setAttribute('aria-expanded',String(!nav.classList.contains('hidden')));document.querySelector('.shell').scrollTo(0,0);syncBottomNav()}else{navigate(page);syncBottomNav()}});
+bottomNav.addEventListener('click',async e=>{
+ const b=e.target.closest('button[data-bottom-route]');if(!b)return;
+ const page=b.dataset.bottomRoute;
+ if(page==='menu'){
+  if(!admin){navigate('auth');return}
+  nav.classList.toggle('hidden');b.setAttribute('aria-expanded',String(!nav.classList.contains('hidden')));
+  document.querySelector('.shell').scrollTo(0,0);syncBottomNav();return;
+ }
+ navigate(page);
+ // The current page opens immediately; fresh server data is then loaded.
+ // If the connection fails, retain the page and show a visible error.
+ if(page==='home'||page==='members'){
+  try{await refresh()}catch(err){toast('Δεν ήταν δυνατή η ανανέωση: '+err.message)}
+ }
+});
 
 nav.addEventListener('click',async e=>{let b=e.target.closest('button');if(!b)return;if(b.dataset.route)navigate(b.dataset.route);else if(b.id==='authBtn'){if(admin){try{await api('logout')}catch{toast('Η σύνδεση αφαιρέθηκε από αυτή τη συσκευή. Η υπηρεσία δεν ήταν διαθέσιμη.')}finally{admin=false;pin='';adminToken='';writeLocal('voltesAdminToken','');try{await refresh()}catch{db.riders=[];db.rides=[]}navigate('home')}}else navigate('auth')}});
 app.addEventListener('click',async e=>{
