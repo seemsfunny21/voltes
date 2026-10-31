@@ -26,7 +26,7 @@
   const distances=[...joined.matchAll(/(\d{1,4}(?:[.,]\d{1,2})?)\s*k\s*m(?!\s*[\/]\s*h)\b/gi)];
   if(distances.length)km=decimal(distances[distances.length-1][1]);
   const times=[...joined.matchAll(/\b(\d{1,3}):([0-5]\d)(?::([0-5]\d))?\b/g)];
-  if(times.length){const m=times[0];movingTime=Number(m[1])+':'+m[2]}
+  if(times.length){const m=times[0];let minutes=Number(m[1])*60+Number(m[2])+Math.round(Number(m[3]||0)/60);movingTime=Math.floor(minutes/60)+':'+String(minutes%60).padStart(2,'0')}
   const elevations=[...joined.matchAll(/\b(\d{1,5}(?:[.,]\d{1,2})?)\s*m\b(?!\s*[\/]\s*s)/gi)];
   if(elevations.length)elevationGain=Math.round(decimal(elevations[elevations.length-1][1]));
   // Accept only values in the same ranges as the manual form.
