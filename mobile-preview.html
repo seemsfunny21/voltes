@@ -33,9 +33,28 @@
 .bottom button{color:#d2e9d8}.bottom button.active{color:#fff;background:#2d7246;border-radius:12px}
 .eyebrow{color:#a8ebba}.preview{background:#21472d;color:#fff}
 .section span,.identity small{color:#b7dac1}
+
+/* V6 – centrally aligned header, restored cycling icon */
+.top{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:18px 0 12px;text-align:center}
+.identity{width:100%;flex:none;text-align:center}
+.identity b{font-size:18px;letter-spacing:-.35px}
+.identity small{font-size:12px;color:#cfdef6}
+.emblem{height:47px;width:47px;background:#254f92;color:#fff;border:1px solid #689fe9;border-radius:15px}
+body,:root{background:#0b1220;color:#fff}
+.card,.stat,.history{background:#214d8c;border:1px solid #427ac1;color:#fff}
+.fact,.track{background:#183b70;border-color:#3968a3;color:#fff}
+.tag{background:#2d65aa;border-color:#75a4e3;color:#fff}
+.sub,.fact small,.stat span,.history small,.history em,.track,.kicker{color:#eff5ff}
+.history .ico{background:#3372bf;border:1px solid #78aff3}
+.action{background:#307ddd;border:1px solid #80b8ff;color:#fff;box-shadow:none}
+.bottom{background:#122b50f7;border-top:1px solid #4b7dbf}
+.bottom button{color:#ceddf7}
+.bottom button.active{color:#fff;background:#2a65b0;border-radius:12px}
+.preview{background:#234d85;color:#fff}
+.section span,.identity small{color:#d2e3fa}
 </style></head><body>
-<div class="shell"><div class="preview">ΠΡΟΕΠΙΣΚΟΠΗΣΗ V5 · ΠΡΑΣΙΝΕΣ ΚΑΡΤΕΣ · ΕΝΔΕΙΚΤΙΚΑ ΣΤΟΙΧΕΙΑ</div>
-<header class="top"><div class="emblem">♧</div><div class="identity"><b>Ποδηλασία στα Ιωάννινα</b><small>Η παρέα μας, οι διαδρομές μας</small></div><button class="circle" aria-label="Μενού" onclick="notify()">☰</button></header>
+<div class="shell"><div class="preview">ΠΡΟΕΠΙΣΚΟΠΗΣΗ V6 · ΜΠΛΕ ΚΑΡΤΕΣ · ΕΝΔΕΙΚΤΙΚΑ ΣΤΟΙΧΕΙΑ</div>
+<header class="top"><div class="emblem"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="17.5" r="4"/><circle cx="18.5" cy="17.5" r="4"/><path d="M5.5 17.5 10 8h5l3.5 9.5M5.5 17.5h9L10 8M8 8h4M15 5h2l1 3"/></svg></div><div class="identity"><b>Ποδηλασία στα Ιωάννινα</b><small>Η παρέα μας, οι διαδρομές μας</small></div></header>
 
 <section class="section"><h2>Επόμενη βόλτα</h2><span>Ενδεικτική</span></section>
 <article class="card"><div class="kicker"><span>ΚΥΡΙΑΚΗ · 09:00</span><span class="tag">Προγραμματισμένη</span></div>
@@ -47,7 +66,7 @@
 <div class="stats"><div class="stat"><b>12</b><span>Βόλτες</span></div><div class="stat"><b>356</b><span>Χιλιόμετρα</span></div><div class="stat"><b>10</b><span>Μέλη</span></div></div>
 <section class="section"><h2>Από το ιστορικό</h2><span>Παλαιότερες</span></section>
 <article class="history"><div class="ico">↗</div><div class="desc"><b>Γύρος λίμνης</b><small>26 Οκτωβρίου · Ομαδική βόλτα</small></div><em>31 km</em></article>
-<footer style="text-align:center;color:#7e96b8;font-size:11px;padding:27px 0">Προεπισκόπηση σχεδιασμού κινητού · v5</footer>
+<footer style="text-align:center;color:#7e96b8;font-size:11px;padding:27px 0">Προεπισκόπηση σχεδιασμού κινητού · v6</footer>
 </div>
 <nav class="bottom" aria-label="Δοκιμαστική πλοήγηση"><button class="active" onclick="selectTab(this)"><b>⌂</b>Αρχική</button><button onclick="selectTab(this)"><b>▦</b>Βόλτες</button><button onclick="selectTab(this)"><b>◷</b>Ιστορικό</button><button onclick="selectTab(this)"><b>☷</b>Μενού</button></nav><div class="toast" id="toast">Η σελίδα αυτή είναι μόνο προεπισκόπηση εμφάνισης.</div>
 <script>function notify(){let t=document.getElementById('toast');t.style.display='block';setTimeout(()=>t.style.display='none',2500)}function selectTab(e){document.querySelectorAll('.bottom button').forEach(b=>b.classList.remove('active'));e.classList.add('active');notify()}</script>
