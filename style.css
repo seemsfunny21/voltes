@@ -2,3 +2,6 @@
 
 /* Consistent text hierarchy; green is reserved for actions and status. */
 input::placeholder,textarea::placeholder{color:#a4ada7;opacity:1}
+
+/* Readable rider names and membership labels in Admin. */
+.rider-identity{display:flex;flex-direction:column;align-items:flex-start;gap:8px;flex:1;min-width:0}.rider-name{font-size:17px;font-weight:700;line-height:1.45;color:#f1f3f2;overflow-wrap:anywhere}.rider-status{display:inline-flex;align-items:center;padding:5px 10px;border-radius:8px;font-size:14px;font-weight:650;line-height:1.4}.rider-status.is-member{background:#244c30;color:#e0f8e5;border:1px solid #578765}.rider-status.is-guest{background:#303936;color:#f1f3f2;border:1px solid #69756f}.item:has(.rider-identity){gap:16px;padding:18px 0}
