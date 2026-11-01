@@ -152,3 +152,8 @@ html[data-theme] .rider-status.is-guest{background:var(--secondary);border-color
 .ride-card .weather-grid small{font-size:11px;font-weight:500;line-height:1.3}
 .ride-card .ride-heading{margin-bottom:4px}
 /* Re-publish v42: styles unchanged. */
+
+/* Admin: selectable meeting places, wrapping naturally across phone/desktop. */
+.meeting-place-options{display:flex;flex-wrap:wrap;justify-content:flex-start;align-items:center;gap:8px;margin:-3px 0 8px}
+.meeting-place-options[hidden]{display:none!important}
+.meeting-place-options .btn{font-size:13px;padding:8px 12px;flex:0 1 auto;max-width:100%;overflow-wrap:anywhere}
