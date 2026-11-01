@@ -31,10 +31,10 @@
   if(elevations.length)elevationGain=Math.round(decimal(elevations[elevations.length-1][1]));
   // Date can be shown as 07/10/2026, 7 Οκτωβρίου 2026, or Oct 7, 2026.
   const dateCheck=(y,m,d)=>{const dt=new Date(Date.UTC(y,m-1,d));return dt.getUTCFullYear()===y&&dt.getUTCMonth()===m-1&&dt.getUTCDate()===d&&y>=2000&&dt.getTime()<=Date.now()+86400000?y+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0'):null};
-  const numeric=joined.match(/\\b([0-3]?\\d)[/.-]([01]?\\d)[/.-](20\\d{2})\\b/);
+  const numeric=joined.match(/\b([0-3]?\d)[/.-]([01]?\d)[/.-](20\d{2})\b/);
   if(numeric)date=dateCheck(Number(numeric[3]),Number(numeric[2]),Number(numeric[1]));
   const months={'ιαν':1,'φεβ':2,'μαρ':3,'απρ':4,'μαϊ':5,'μαι':5,'ιουν':6,'ιουλ':7,'αυγ':8,'σεπ':9,'οκτ':10,'νοε':11,'δεκ':12,'jan':1,'feb':2,'mar':3,'apr':4,'may':5,'jun':6,'jul':7,'aug':8,'sep':9,'oct':10,'nov':11,'dec':12};
-  if(!date){const words=joined.toLocaleLowerCase('el').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'');const pattern=/(\\d{1,2})\\s+([a-zα-ω]{3,15})\\s*,?\\s*(20\\d{2})/g;for(const match of words.matchAll(pattern)){let token=match[2].slice(0,3);const month=months[token];if(month){date=dateCheck(Number(match[3]),month,Number(match[1]));if(date)break}}}
+  if(!date){const words=joined.toLocaleLowerCase('el').normalize('NFD').replace(/[\u0300-\u036f]/g,'');const pattern=/(\d{1,2})\s+([a-zα-ω]{3,20})\s*,?\s*(20\d{2})/g;for(const match of words.matchAll(pattern)){let token=match[2].slice(0,3);const month=months[token]||months[match[2].slice(0,3).replace('ϊ','ι')];if(month){date=dateCheck(Number(match[3]),month,Number(match[1]));if(date)break}}}
   // Accept only values in the same ranges as the manual form.
   const valid=(n,min,max)=>Number.isFinite(n)&&n>=min&&n<=max?n:null;
   return {km:valid(km,.1,1000),speed:valid(speed,1,100),elevationGain:valid(elevationGain,0,50000),movingTime,date,rawText:lines.join('\n')};
@@ -42,7 +42,7 @@
  async function read(file,onProgress=()=>{}){
   if(!file||!/^image\/(png|jpeg|webp)$/.test(file.type)||file.size>10*1024*1024)throw Error('Επίλεξε εικόνα JPG, PNG ή WebP έως 10 MB.');
   const engine=await loadEngine();
-  const result=await engine.recognize(file,'eng',{logger:m=>{if(m.status==='recognizing text')onProgress(Math.round((m.progress||0)*100))}});
+  const result=await engine.recognize(file,'eng+ell',{logger:m=>{if(m.status==='recognizing text')onProgress(Math.round((m.progress||0)*100))}});
   return parse(result.data?.text);
  }
  scope.VoltesStravaOCR={read,parse};
