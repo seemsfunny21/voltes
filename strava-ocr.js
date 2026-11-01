@@ -64,6 +64,16 @@
   const valid=(n,min,max)=>Number.isFinite(n)&&n>=min&&n<=max?n:null;
   return {km:valid(km,.1,1000),speed:valid(speed,1,100),elevationGain:valid(elevationGain,0,50000),movingTime,date,startTime,rawText:lines.join('\n')};
  }
+ // Extract the only AM/PM clock in the focused Strava activity header.
+ // We do not use numeric clocks from the phone status bar or map.
+ function parseActivityClock(text){
+  const source=String(text||'').replace(/\s+/g,' ');
+  const re=/\b([0-1]?\d)\s*[:.]\s*([0-5]\d)\s*([AP])\s*\.?\s*M\b/gi;
+  const found=[...source.matchAll(re)].filter(m=>Number(m[1])>=1&&Number(m[1])<=12);
+  if(found.length!==1)return null;
+  const m=found[0],hour=Number(m[1])%12+(m[3].toLowerCase()==='p'?12:0);
+  return String(hour).padStart(2,'0')+':'+m[2];
+ }
  async function read(file,onProgress=()=>{},options={}){
   if(!file||!/^image\/(png|jpeg|webp)$/.test(file.type)||file.size>10*1024*1024)throw Error('Επίλεξε εικόνα JPG, PNG ή WebP έως 10 MB.');
   const engine=await loadEngine();
@@ -85,12 +95,14 @@
       const focus=await engine.recognize(canvas,'eng');
       const header=parse(focus.data?.text);
       if(header.date)parsed.date=header.date;
-      if(header.startTime)parsed.startTime=header.startTime; // Never discard an already recognized clock.
+      const focusedClock=parseActivityClock(focus.data?.text);
+      if(focusedClock)parsed.startTime=focusedClock;
+      else if(header.startTime)parsed.startTime=header.startTime;
      }
     }finally{bitmap.close()}
    }catch{/* Keep unambiguous date/time read from the full screenshot. */}
   }
   return parsed;
  }
- scope.VoltesStravaOCR={read,parse};
+ scope.VoltesStravaOCR={read,parse,parseActivityClock};
 })(globalThis);
