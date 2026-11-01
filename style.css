@@ -189,3 +189,14 @@ html[data-theme] .rider-status.is-guest{background:var(--secondary);border-color
 .admin-member-card .rider-identity{display:flex;flex-direction:column;align-items:center;gap:8px}
 .admin-member-card .member-type-toggle{margin:0;max-width:185px;width:100%;font-size:13px;padding:9px 12px}
 .admin-member-card .rider-actions{align-items:center}
+
+/* Form choice and theme-adaptive scrollbars. */
+.rider-type-choice{display:flex;flex-wrap:wrap;gap:12px 20px;border:1px solid var(--edge,#356295);border-radius:12px;padding:12px 14px;margin:0;justify-content:flex-start}
+.rider-type-choice legend{padding:0 6px;color:var(--fg,#fff);font-size:14px}
+.rider-type-choice .check{display:inline-flex;align-items:center;gap:8px;width:auto;margin:0;cursor:pointer}
+.rider-type-choice input[type=radio]{width:18px;height:18px;margin:0;accent-color:var(--accent,#307ddd)}
+html[data-theme] .shell{scrollbar-width:thin;scrollbar-color:var(--accent) var(--nav)}
+html[data-theme] .shell::-webkit-scrollbar{width:8px}
+html[data-theme] .shell::-webkit-scrollbar-track{background:var(--nav);border-radius:12px}
+html[data-theme] .shell::-webkit-scrollbar-thumb{background:var(--accent);border:1px solid var(--edge);border-radius:12px}
+html[data-theme] .shell::-webkit-scrollbar-thumb:hover{background:var(--accent-edge)}
