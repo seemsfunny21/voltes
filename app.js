@@ -97,7 +97,8 @@ app.addEventListener('change',async e=>{
  if(input.id!=='stravaScreenshot'||!input.files?.length||!admin)return;
  const form=input.closest('form'),status=form?.querySelector('#stravaOcrStatus');
  if(!form||!status)return;
- input.disabled=true;status.textContent='Ανάγνωση εικόνας…';
+ if(form.id==='historicalForm'){for(const key of ['date','time']){const field=form.elements.namedItem(key);if(field)field.value=''}}
+ input.disabled=true;status.textContent='Ανάγνωση εικόνας Strava v40…';
  try{
   if(!globalThis.VoltesStravaOCR)throw Error('Δεν φορτώθηκε το εργαλείο ανάγνωσης.');
   const result=await globalThis.VoltesStravaOCR.read(input.files[0],p=>{status.textContent='Αναγνώριση: '+p+'%'},{activityDate:form.id==='historicalForm'});
@@ -107,7 +108,7 @@ app.addEventListener('change',async e=>{
   if(form.id==='historicalForm'){
    const dateLabel=result.date?new Date(result.date+'T12:00:00').toLocaleDateString('el-GR',{day:'numeric',month:'long',year:'numeric'}):'δεν αναγνωρίστηκε';
    const clockLabel=result.startTime||'δεν αναγνωρίστηκε';
-   status.textContent='Αναγνώριση Strava: Ημερομηνία '+dateLabel+' · Ώρα '+clockLabel+'. Έλεγξε τα στοιχεία πριν αποθηκεύσεις.';
+   status.textContent='Strava OCR v40 · Ημερομηνία: '+dateLabel+' · Ώρα έναρξης: '+clockLabel+(result.startTime?'. Έλεγξε τις τιμές πριν αποθηκεύσεις.':'. Δεν θα μπει αυτόματα 09:00· συμπλήρωσε την πραγματική ώρα χειροκίνητα.');
   }else{
    status.textContent=count?'Συμπληρώθηκαν '+count+'/'+entries.length+' πεδία. Επιβεβαίωσε τις τιμές από το Strava πριν την αποθήκευση.':'Δεν αναγνωρίστηκαν με σιγουριά τα στοιχεία. Συμπλήρωσέ τα χειροκίνητα.';
   }
