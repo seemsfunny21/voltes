@@ -49,7 +49,9 @@
   // Do not infer ambiguous numeric OCR dates like "10 3 2026".
   // Prefer a visible, written month from the activity header.
   if(date){
-   const start=normalized.match(/\b20\d{2}\s+(?:at|στις)\s+(\d{1,2}):([0-5]\d)\s*([ap])\.?\s*m\.?\b/i);
+   // Tesseract may omit "at" or add punctuation after the year.
+   // Only accept a nearby 12-hour clock with an explicit AM/PM marker.
+   const start=normalized.match(/\b20\d{2}\b[^\d]{0,20}(\d{1,2})\s*[:.]\s*([0-5]\d)\s*([ap])\s*\.?\s*m\b/i);
    if(start){
     const hour=Number(start[1]);
     if(hour>=1&&hour<=12){
@@ -82,7 +84,8 @@
       ctx.drawImage(bitmap,sx,sy,width,height,0,0,canvas.width,canvas.height);
       const focus=await engine.recognize(canvas,'eng');
       const header=parse(focus.data?.text);
-      if(header.date){parsed.date=header.date;parsed.startTime=header.startTime}
+      if(header.date)parsed.date=header.date;
+      if(header.startTime)parsed.startTime=header.startTime; // Never discard an already recognized clock.
      }
     }finally{bitmap.close()}
    }catch{/* Keep unambiguous date/time read from the full screenshot. */}
