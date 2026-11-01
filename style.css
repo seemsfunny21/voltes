@@ -62,3 +62,36 @@ form>button{justify-self:center;min-width:180px}
 .bottom-nav button.active{background:#285b9a;color:#fff}
 footer{margin:25px 0 0;color:#aabfdd}
 @media(min-width:720px){.shell{padding:0 28px 18px}.bottom-nav{border-radius:20px 20px 0 0}}
+
+
+/* Personal themes (the original navy blue remains default). */
+html[data-theme=blue]{--bg:#0b1220;--panel:#17365f;--edge:#356295;--fg:#fff;--sub:#e1edff;--accent:#307ddd;--accent-edge:#80b8ff;--nav:#122b50;--active:#285b9a;--field:#101e32;--secondary:#22558f;--pill:#2d65aa;color-scheme:dark}
+html[data-theme=green]{--bg:#09140f;--panel:#204d32;--edge:#43835a;--fg:#fff;--sub:#e2f5e8;--accent:#267e45;--accent-edge:#7bd498;--nav:#163921;--active:#327b4a;--field:#0d2719;--secondary:#266943;--pill:#327b4a;color-scheme:dark}
+html[data-theme=white]{--bg:#f4f7fb;--panel:#fff;--edge:#b9cadb;--fg:#17283b;--sub:#415970;--accent:#1f64a9;--accent-edge:#14518f;--nav:#e6eef7;--active:#c4daef;--field:#fff;--secondary:#d7e7f5;--pill:#d9e9f8;color-scheme:light}
+html[data-theme=black]{--bg:#050505;--panel:#191919;--edge:#555;--fg:#fff;--sub:#ddd;--accent:#424242;--accent-edge:#aaa;--nav:#111;--active:#353535;--field:#161616;--secondary:#333;--pill:#303030;color-scheme:dark}
+html[data-theme],html[data-theme] body{background:var(--bg);color:var(--fg)}
+html[data-theme] .card,html[data-theme] .metric,html[data-theme] .empty{background:var(--panel);border-color:var(--edge);color:var(--fg)}
+html[data-theme] .card b,html[data-theme] .card strong,html[data-theme] .metric b,html[data-theme] .brand strong,html[data-theme] h1,html[data-theme] h2,html[data-theme] label,html[data-theme] .rider-name{color:var(--fg)}
+html[data-theme] .muted,html[data-theme] .note,html[data-theme] .metric small,html[data-theme] .brand small,html[data-theme] footer{color:var(--sub)}
+html[data-theme] .btn{background:var(--accent);border-color:var(--accent-edge);color:#fff}
+html[data-theme] .btn.secondary{background:var(--secondary);border-color:var(--edge);color:var(--fg)}
+html[data-theme] .btn.danger{background:#863943;border-color:#bd6771;color:#fff}
+html[data-theme] .pill,html[data-theme] .rider-status.is-member,html[data-theme] .avatar-initials{background:var(--pill);border-color:var(--edge);color:var(--fg)}
+html[data-theme] .brand-icon{background:var(--accent);color:#fff;border-color:var(--accent-edge)}
+html[data-theme] .bottom-nav,html[data-theme] nav#nav{background:var(--nav);border-color:var(--edge)}
+html[data-theme] .bottom-nav button{color:var(--fg)}
+html[data-theme] .bottom-nav button.active{background:var(--active);color:var(--fg)}
+html[data-theme] nav#nav button{background:var(--panel);color:var(--fg)}
+html[data-theme] input,html[data-theme] select,html[data-theme] textarea{background:var(--field);border-color:var(--edge);color:var(--fg)}
+html[data-theme] input::placeholder,html[data-theme] textarea::placeholder{color:var(--sub)}
+html[data-theme] .item{border-color:var(--edge)}
+html[data-theme] .statbar{background:var(--nav)}
+html[data-theme] .statbar>div{background:var(--accent)}
+html[data-theme] .rider-avatar{border-color:var(--accent-edge)}
+html[data-theme] .rider-status.is-guest{background:var(--secondary);border-color:var(--edge);color:var(--fg)}
+.theme-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:16px}
+.theme-option{min-height:66px;border-radius:14px;padding:12px 6px;font:750 15px system-ui,sans-serif;cursor:pointer;border:2px solid transparent}
+.theme-option:focus-visible{outline:3px solid var(--accent-edge);outline-offset:3px}
+.theme-option[aria-pressed=true]{border-color:#85b6fa;outline:2px solid var(--accent-edge);outline-offset:2px}
+.theme-blue{background:#24568c;color:#fff}.theme-green{background:#21643b;color:#fff}.theme-white{background:#fff;color:#16273c;border-color:#b6c6d7}.theme-black{background:#101010;color:#fff;border-color:#666}
+.admin-settings{display:grid;gap:10px;margin-top:12px}

@@ -9,6 +9,11 @@ let completionV2=false;
 const readLocal=(key,fallback='')=>{try{return localStorage.getItem(key)||fallback}catch{return fallback}};
 const writeLocal=(key,value)=>{try{value?localStorage.setItem(key,value):localStorage.removeItem(key);return true}catch{return false}};
 let admin=false,pin='',adminToken=readLocal('voltesAdminToken'),route='home',message='',historyLimit=5;
+const themes={blue:'Μπλε',green:'Πράσινο',white:'Λευκό',black:'Μαύρο'};
+let chosenTheme=readLocal('voltesTheme','blue');
+function setTheme(v){chosenTheme=Object.hasOwn(themes,v)?v:'blue';document.documentElement.dataset.theme=chosenTheme;writeLocal('voltesTheme',chosenTheme)}
+setTheme(chosenTheme);
+function themeSettings(){return `<h1>Ρυθμίσεις</h1><div class="card"><h2>Χρώμα εφαρμογής</h2><p>Το χρώμα αποθηκεύεται μόνο στη συσκευή σου.</p><div class="theme-options">${Object.entries(themes).map(([k,v])=>`<button type="button" class="theme-option theme-${k}" data-theme="${k}" aria-pressed="${k===chosenTheme}">${v}${k===chosenTheme?' ✓':''}</button>`).join('')}</div></div><div class="card"><h2>Διαχείριση Admin</h2>${admin?`<div class="admin-settings"><button class="btn" data-go="new">+ Νέα βόλτα</button><button class="btn secondary" data-go="riders">Ποδηλάτες & επισκέπτες</button><button class="btn secondary" data-go="stats">Στατιστικά</button><button class="btn secondary" data-do="adminLogout">Αποσύνδεση</button></div>`:`<button class="btn" data-go="auth">Είσοδος Admin</button>`}</div>`}
 let signupTokens;try{signupTokens=JSON.parse(readLocal('voltesSignupTokens','{}'));if(!signupTokens||typeof signupTokens!=='object'||Array.isArray(signupTokens))signupTokens={}}catch{signupTokens={}}
 sessionStorage.removeItem('voltesAdminPin');
 function newToken(){return Array.from(crypto.getRandomValues(new Uint8Array(32)),b=>b.toString(16).padStart(2,'0')).join('')}
@@ -78,17 +83,13 @@ app.addEventListener('change',async e=>{
 app.addEventListener('change',async e=>{const input=e.target;if(!input.dataset.avatarId||!admin||!input.files?.length)return;input.disabled=true;try{const avatar=await prepareAvatar(input.files[0]);await perform('setAvatar',{id:input.dataset.avatarId,avatar},'Η φωτογραφία αποθηκεύτηκε.')}catch(err){toast(err.message)}finally{input.disabled=false;input.value=''}});
 function analytics(){let list=db.riders.map(p=>{let rides=completed().filter(r=>(r.attendees||[]).includes(p.name));let total=rides.reduce((s,r)=>s+Number(r.km),0);return {name:p.name,count:rides.length,km:total,elevation:rides.some(r=>r.elevationGain!=null)?rides.reduce((s,r)=>s+Number(r.elevationGain||0),0):null,moving:rides.some(r=>r.movingMinutes!=null)?rides.reduce((s,r)=>s+Number(r.movingMinutes||0),0):null,mean:rides.length?rides.reduce((s,r)=>s+Number(r.speed),0)/rides.length:0}}).sort((a,b)=>b.km-a.km);return `<h1>Στατιστικά ποδηλατών</h1><p class="alert">Ο κοινός μέσος όρος των διαδρομών δεν αποτελεί μέτρηση ατομικής ταχύτητας. Δεν παράγεται ακόμη αυτόματη κατάταξη.</p>${list.length?list.map(p=>`<article class="card"><div class="row"><strong>${safe(p.name)}</strong><span>${p.count} βόλτες</span></div><p>${p.km.toFixed(1)} km · Μ.Ο. ομάδων ${p.count?p.mean.toFixed(1)+' km/h':'—'}</p><p class="muted">Καταγεγραμμένη ανάβαση: ${p.elevation==null?'—':safe(p.elevation)+' m'} · Χρόνος κίνησης: ${p.moving==null?'—':safe(formatMovingTime(p.moving))}</p></article>`).join(''):'<p class="empty">Πρόσθεσε μέλη και ολοκληρωμένες βόλτες για να εμφανιστούν στατιστικά.</p>'}`}
 function auth(){return `<h1>Είσοδος Admin</h1><div class="card"><form id="login"><label>PIN Admin <input type="password" name="pin" required inputmode="numeric" maxlength="4" minlength="4" pattern="[0-9]{4}" placeholder="••••"></label><button class="btn">Είσοδος</button></form></div>`}
-function render(){if(!admin&&['new','riders','stats','finish'].includes(route))route='home';document.querySelector('#adminNav').classList.toggle('hidden',!admin);document.querySelector('#authBtn').textContent=admin?'Αποσύνδεση Admin':'Είσοδος Admin';let html=route==='home'?home():route==='members'?publicMembers():route==='upcoming'?upcoming():route==='history'?history():route==='new'?newRide():route==='riders'?riders():route==='stats'?analytics():route==='auth'?auth():route==='signup'&&window.currentRide?signup(window.currentRide):route==='finish'&&window.currentRide&&admin?finish(window.currentRide):home();app.innerHTML=renderNotice()+html;message='';syncBottomNav()}
+function render(){if(!admin&&['new','riders','stats','finish'].includes(route))route='home';document.querySelector('#adminNav').classList.toggle('hidden',!admin);document.querySelector('#authBtn').textContent=admin?'Αποσύνδεση Admin':'Είσοδος Admin';let html=route==='settings'?themeSettings():route==='home'?home():route==='members'?publicMembers():route==='upcoming'?upcoming():route==='history'?history():route==='new'?newRide():route==='riders'?riders():route==='stats'?analytics():route==='auth'?auth():route==='signup'&&window.currentRide?signup(window.currentRide):route==='finish'&&window.currentRide&&admin?finish(window.currentRide):home();app.innerHTML=renderNotice()+html;message='';syncBottomNav()}
 const bottomNav=document.querySelector('#bottomNav');
 function syncBottomNav(){bottomNav.querySelectorAll('button').forEach(b=>{const selected=b.dataset.bottomRoute===(nav.classList.contains('hidden')?(['home','members','history'].includes(route)?route:'menu'):'menu');b.classList.toggle('active',selected)});}
 bottomNav.addEventListener('click',async e=>{
  const b=e.target.closest('button[data-bottom-route]');if(!b)return;
  const page=b.dataset.bottomRoute;
- if(page==='menu'){
-  if(!admin){navigate('auth');return}
-  nav.classList.toggle('hidden');b.setAttribute('aria-expanded',String(!nav.classList.contains('hidden')));
-  document.querySelector('.shell').scrollTo(0,0);syncBottomNav();return;
- }
+ if(page==='menu'){navigate('settings');return}
  navigate(page);
  // The current page opens immediately; fresh server data is then loaded.
  // If the connection fails, retain the page and show a visible error.
@@ -100,10 +101,12 @@ bottomNav.addEventListener('click',async e=>{
 nav.addEventListener('click',async e=>{let b=e.target.closest('button');if(!b)return;if(b.dataset.route)navigate(b.dataset.route);else if(b.id==='authBtn'){if(admin){try{await api('logout')}catch{toast('Η σύνδεση αφαιρέθηκε από αυτή τη συσκευή. Η υπηρεσία δεν ήταν διαθέσιμη.')}finally{admin=false;pin='';adminToken='';writeLocal('voltesAdminToken','');try{await refresh()}catch{db.riders=[];db.rides=[]}navigate('home')}}else navigate('auth')}});
 app.addEventListener('click',async e=>{
  let b=e.target.closest('button');if(!b)return;
+ if(b.dataset.theme){setTheme(b.dataset.theme);render();return}
  if(b.dataset.go){navigate(b.dataset.go);return}
  if(!b.dataset.do)return;
  let r=db.rides.find(x=>x.id===b.dataset.id);
  switch(b.dataset.do){
+ case 'adminLogout':if(admin){try{await api('logout')}catch{}admin=false;adminToken='';pin='';writeLocal('voltesAdminToken','');await refresh().catch(()=>{});navigate('settings')}break;
  case 'signup':window.currentRide=r;navigate('signup');break;
  case 'olderHistory':historyLimit=10;route='history';render();window.scrollTo(0,0);break;
  case 'moreHistory':historyLimit+=5;render();break;
@@ -129,7 +132,7 @@ app.addEventListener('submit',async e=>{
  if(f.id==='login'){
   const attempted=String(d.get('pin')||'');
   pin=attempted;
-  try{const result=await api('login');adminToken=result.adminToken;pin='';if(!adminToken)throw Error('Απαιτείται ενημέρωση της υπηρεσίας.');if(!writeLocal('voltesAdminToken',adminToken))message='Η σύνδεση ισχύει για τώρα, αλλά ο browser δεν επιτρέπει να αποθηκευτεί.';await refresh();navigate('home');nav.classList.remove('hidden');document.querySelector('[data-bottom-route="menu"]')?.setAttribute('aria-expanded','true');syncBottomNav()}
+  try{const result=await api('login');adminToken=result.adminToken;pin='';if(!adminToken)throw Error('Απαιτείται ενημέρωση της υπηρεσίας.');if(!writeLocal('voltesAdminToken',adminToken))message='Η σύνδεση ισχύει για τώρα, αλλά ο browser δεν επιτρέπει να αποθηκευτεί.';await refresh();navigate('settings')}
   catch(err){pin='';adminToken='';writeLocal('voltesAdminToken','');toast(err.message)}
  }else if(f.id==='saveRouteForm'&&admin){
   const points=String(values.points||'').split(',').map(x=>x.trim()).filter(Boolean);
