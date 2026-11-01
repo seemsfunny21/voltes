@@ -106,3 +106,5 @@ html[data-theme] .rider-status.is-guest{background:var(--secondary);border-color
 .member-card .rider-actions{width:100%;justify-content:center;gap:8px;margin-top:6px}
 .member-card .rider-status{align-self:center}
 @media(min-width:720px){.member-list{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.member-card .btn{max-width:240px;width:100%;margin-top:8px}.member-card .note{color:var(--sub,#e1edff)}
