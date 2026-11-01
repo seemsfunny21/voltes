@@ -47,8 +47,8 @@ function rideCard(r){let n=r.done?(r.attendeeCount??(r.attendees||[]).length):(r
 function home(){const next=active();return `${stats()}<h2>Προγραμματισμένες βόλτες</h2>${next.length?next.map(rideCard).join(''):'<p class="empty">Δεν υπάρχουν προγραμματισμένες βόλτες.</p>'}`}
 function publicMembers(){
  const ordered=[...db.publicMembers].sort((a,b)=>(Number(b.activityCount)||0)-(Number(a.activityCount)||0)||String(a.name).localeCompare(String(b.name),'el'));
- const selected=memberName(),total=Math.max(0,Math.min(10,Number(ordered[0]?.activityTotal)||0));
- const intro=total?`<p class="member-activity-intro">Κατάταξη βάσει συμμετοχών στις ${total} πιο πρόσφατες ολοκληρωμένες βόλτες.</p>`:'<p class="member-activity-intro">Η κατάταξη θα εμφανιστεί μετά την πρώτη ολοκληρωμένη βόλτα.</p>';
+ const selected=memberName(),total=Math.max(0,Number(ordered[0]?.activityTotal)||0);
+ const intro=total?`<p class="member-activity-intro">Κατάταξη βάσει συμμετοχών σε όλες τις ${total} ολοκληρωμένες βόλτες της ομάδας.</p>`:'<p class="member-activity-intro">Η κατάταξη θα εμφανιστεί μετά την πρώτη ολοκληρωμένη βόλτα.</p>';
  const cards=ordered.map(person=>{
   const attended=Math.min(total,Math.max(0,Number(person.activityCount)||0));
   const pct=total?Math.round(attended/total*100):0;
