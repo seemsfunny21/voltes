@@ -32,7 +32,7 @@
   // Date can be shown as 07/10/2026, 7 Οκτωβρίου 2026, or Oct 7, 2026.
   const dateCheck=(y,m,d)=>{const dt=new Date(Date.UTC(y,m-1,d));return dt.getUTCFullYear()===y&&dt.getUTCMonth()===m-1&&dt.getUTCDate()===d&&y>=2000&&dt.getTime()<=Date.now()+86400000?y+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0'):null};
   const months={'ιαν':1,'φεβ':2,'μαρ':3,'απρ':4,'μαι':5,'ιουν':6,'ιουλ':7,'αυγ':8,'σεπ':9,'οκτ':10,'νοε':11,'δεκ':12,'jan':1,'feb':2,'mar':3,'apr':4,'may':5,'jun':6,'jul':7,'aug':8,'sep':9,'oct':10,'nov':11,'dec':12};
-  const normalized=joined.toLocaleLowerCase('en').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const normalized=lines.join(' ').toLocaleLowerCase('en').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
   // Prefer explicitly named months over ambiguous numeric patterns.
   const monthFirst=/\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)\.?\s+(\d{1,2})\s*,?\s*(20\d{2})\b/g;
   for(const m of normalized.matchAll(monthFirst)){
