@@ -108,3 +108,5 @@ html[data-theme] .rider-status.is-guest{background:var(--secondary);border-color
 @media(min-width:720px){.member-list{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 .member-card .btn{max-width:240px;width:100%;margin-top:8px}.member-card .note{color:var(--sub,#e1edff)}
+
+.ride-weather{margin:14px 0;padding:12px 6px;background:var(--nav,#122b50);color:var(--fg,#fff);border:1px solid var(--edge,#356295);border-radius:12px}.weather-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}.weather-grid>div{display:flex;flex-direction:column;gap:5px;align-items:center;text-align:center;font-size:22px}.weather-grid b{font-size:12px;white-space:nowrap}.weather-grid small{font-size:10px;color:var(--sub,#cbdff9)}.weather-updated{text-align:center;font-size:11px;color:var(--sub,#cbdff9);margin:10px 0 0}
