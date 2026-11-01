@@ -62,6 +62,16 @@ function syncRouteChoice(){
  if(area)area.textContent='Σημεία: '+(chosen.points||[]).join(' → ');
  updateNewRideForecast();
 }
+async function submitRideSignup(id,name){
+ if(!name)return;
+ signupTokens[id] ||= newToken();
+ if(!saveSignupTokens()){toast('Δεν επιτρέπεται η αποθήκευση στη συσκευή. Χρειάζεται για την ακύρωση συμμετοχής.');return}
+ try{
+  await api('signup',{id,name,cancelToken:signupTokens[id]});
+  writeLocal('voltesLastSignupName',name);
+  await refresh();navigate('home');
+ }catch(err){toast(err.message)}
+}
 function signup(r){return `<h1>Δήλωση συμμετοχής</h1><div class="card"><h2>${safe(r.title||'Ποδηλατική βόλτα')}</h2><p class="muted">${datefmt(r.date)} · ${safe(r.time)} · ${safe(r.place)}</p><form id="signupForm" data-id="${r.id}"><label>Το όνομά σου <input required maxlength="70" name="name" autocomplete="name" value="${safe(memberName()||readLocal('voltesLastSignupName'))}" placeholder="Όνομα και επώνυμο"></label><button class="btn">Θα συμμετέχω</button></form><p class="note">Το όνομα θα είναι ορατό μόνο στους Admin. Η δήλωση αποθηκεύεται στην κοινή βάση της ομάδας.</p></div>`}
 function finish(r){let names=[...new Set([...(r.signups||[]).map(x=>x.name),...db.riders.map(x=>x.name)])];return `<h1>Ολοκλήρωση βόλτας</h1><div class="card"><h2>${safe(r.title||'Ποδηλατική βόλτα')}</h2><form id="finishForm" data-id="${r.id}"><div class="ocr-box"><label>Screenshot από Strava (προαιρετικά) <input id="stravaScreenshot" type="file" accept="image/png,image/jpeg,image/webp" aria-describedby="stravaOcrHelp"></label><p id="stravaOcrHelp" class="note">Η εικόνα διαβάζεται στη συσκευή σου. Έλεγξε και διόρθωσε τις τιμές πριν αποθηκεύσεις.</p><p id="stravaOcrStatus" class="note" role="status"></p></div><label>Πραγματική απόσταση (km) <input required name="km" type="number" min="0.1" max="1000" step="0.01"></label><label>Κοινή μέση ταχύτητα (km/h) <input required name="speed" type="number" min="1" max="100" step="0.1"></label><label>Υψομετρική ανάβαση (m) <input required name="elevationGain" type="number" min="0" max="50000" step="1" inputmode="numeric"></label><label>Χρόνος κίνησης (ώρες:λεπτά) <input required name="movingTime" type="text" inputmode="text" pattern="[0-9]{1,3}:[0-5][0-9]" placeholder="1:40" maxlength="6" aria-describedby="movingTimeHelp"></label><p id="movingTimeHelp" class="note">Μόνο ο χρόνος κίνησης από το Strava, χωρίς στάσεις (π.χ. 1:40).</p><label>Σύνδεσμος Strava (προαιρετικά) <input name="strava" type="url" placeholder="https://www.strava.com/activities/..."></label><p>Πραγματικοί συμμετέχοντες — επιλέξτε όσους ήρθαν</p>${names.length?names.map((n,i)=>`<label class="check"><input type="checkbox" name="person" value="${safe(n)}" ${(r.signups||[]).some(s=>s.name===n)?'checked':''}>${safe(n)}</label>`).join(''):'<p class="note">Δεν υπάρχουν ακόμη συμμετέχοντες. Πρόσθεσέ τους πρώτα από το μητρώο ποδηλατών.</p>'}<label>Ποιος δυσκολεύτηκε να ακολουθήσει; (προαιρετικά, μόνο Admin)</label>${names.map(n=>`<label class="check"><input type="checkbox" name="slowed" value="${safe(n)}">${safe(n)}</label>`).join('')}<label>Ιδιωτική παρατήρηση Admin (προαιρετικά)<textarea name="slowdownNotes" maxlength="2000" rows="3" placeholder="Σημείωση για τον ρυθμό των επιλεγμένων συμμετεχόντων"></textarea></label>${!completionV2?'<p class="alert">Απαιτείται ενημέρωση του backend πριν αποθηκευτούν τα νέα στοιχεία. Η βόλτα δεν έχει αλλάξει.</p>':''}<button class="btn" ${!completionV2?'disabled':''}>Αποθήκευση στο ιστορικό</button></form></div>`}
 function riders(){let r=db.riders;return `<h1>Ποδηλάτες & επισκέπτες</h1><div class="card"><form id="addRider"><label>Όνομα <input name="name" required maxlength="70" placeholder="Όνομα και επώνυμο"></label><label class="check"><input type="checkbox" name="member" checked>Μόνιμο μέλος</label><button class="btn">Προσθήκη ποδηλάτη</button></form></div><div class="member-list">${r.length?r.map(x=>`<article class="card member-card admin-member-card">${riderAvatar(x)}<div class="rider-identity"><strong class="rider-name">${safe(x.name)}</strong><span class="rider-status ${x.member?'is-member':'is-guest'}">${x.member?'Μόνιμο μέλος':'Επισκέπτης'}</span></div><div class="rider-actions"><label class="btn secondary avatar-picker">${x.avatar_data_url?'Αλλαγή φωτογραφίας':'Προσθήκη φωτογραφίας'}<input type="file" accept="image/jpeg,image/png,image/webp" data-avatar-id="${safe(x.id)}" aria-label="Φωτογραφία για ${safe(x.name)}"></label>${x.avatar_data_url?`<button class="btn secondary" data-do="removeAvatar" data-id="${safe(x.id)}">Αφαίρεση φωτογραφίας</button>`:''}<button class="btn secondary" data-do="toggleMember" data-id="${x.id}">Αλλαγή τύπου</button><button class="btn danger" data-do="deleteRider" data-id="${safe(x.id)}">Διαγραφή</button></div></article>`).join(''):'<p class="muted">Δεν υπάρχουν καταχωρισμένοι ποδηλάτες.</p>'}</div>`}
@@ -115,7 +125,7 @@ app.addEventListener('click',async e=>{
  case 'chooseMember':chooseMember(b.dataset.name);break;
  case 'changeMember':writeLocal(memberKey,'');render();break;
  case 'adminLogout':if(admin){try{await api('logout')}catch{}admin=false;adminToken='';pin='';writeLocal('voltesAdminToken','');await refresh().catch(()=>{});navigate('settings')}break;
- case 'signup':window.currentRide=r;navigate('signup');break;
+ case 'signup':if(memberName()){b.disabled=true;await submitRideSignup(r.id,memberName());}else{window.currentRide=r;navigate('signup')}break;
  case 'olderHistory':historyLimit=10;route='history';render();window.scrollTo(0,0);break;
  case 'moreHistory':historyLimit+=5;render();break;
  case 'cancelSignup':if(!r||!signupTokens[r.id])return;if(confirm('Να ακυρωθεί η συμμετοχή σου;')){b.disabled=true;try{await api('cancelSignup',{id:r.id,cancelToken:signupTokens[r.id]});delete signupTokens[r.id];saveSignupTokens();await refresh()}catch(err){b.disabled=false;toast(err.message)}}break;
@@ -160,10 +170,8 @@ app.addEventListener('submit',async e=>{
  }else if(f.id==='addRider'&&admin){
   await perform('addRider',{name:values.name,member:d.has('member')},'Ο ποδηλάτης προστέθηκε.');
  }else if(f.id==='signupForm'){
-  const id=f.dataset.id;signupTokens[id] ||= newToken();
-  if(!saveSignupTokens()){toast('Ο browser δεν επιτρέπει αποθήκευση. Ενεργοποίησέ την για να μπορείς να ακυρώσεις τη δήλωσή σου.');return}
   const button=f.querySelector('button');button.disabled=true;
-  try{await api('signup',{id,name:values.name,cancelToken:signupTokens[id]});writeLocal('voltesLastSignupName',String(values.name||'').trim());await refresh();navigate('home')}catch(err){button.disabled=false;toast(err.message)}
+  await submitRideSignup(f.dataset.id,String(values.name||'').trim());
  }else if(f.id==='finishForm'&&admin){
   if(!completionV2){toast('Απαιτείται ενημέρωση του backend.');return}
   let completion;
