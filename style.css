@@ -95,3 +95,14 @@ html[data-theme] .rider-status.is-guest{background:var(--secondary);border-color
 .theme-option[aria-pressed=true]{border-color:#85b6fa;outline:2px solid var(--accent-edge);outline-offset:2px}
 .theme-blue{background:#24568c;color:#fff}.theme-green{background:#21643b;color:#fff}.theme-white{background:#fff;color:#16273c;border-color:#b6c6d7}.theme-black{background:#101010;color:#fff;border-color:#666}
 .admin-settings{display:grid;gap:10px;margin-top:12px}
+
+/* Independent cards for each rider in both public and Admin sections. */
+.member-list{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;margin:16px 0}
+.member-list>.card{margin:0}
+.member-card{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:11px;text-align:center;padding:20px 15px}
+.member-card>.rider-avatar{width:66px;height:66px}
+.member-card>.rider-name{display:block;color:var(--fg,#fff)}
+.member-card .rider-identity{align-items:center;text-align:center;width:100%;gap:8px}
+.member-card .rider-actions{width:100%;justify-content:center;gap:8px;margin-top:6px}
+.member-card .rider-status{align-self:center}
+@media(min-width:720px){.member-list{grid-template-columns:repeat(2,minmax(0,1fr))}}
