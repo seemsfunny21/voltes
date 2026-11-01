@@ -35,6 +35,16 @@
   if(numeric)date=dateCheck(Number(numeric[3]),Number(numeric[2]),Number(numeric[1]));
   const months={'ιαν':1,'φεβ':2,'μαρ':3,'απρ':4,'μαϊ':5,'μαι':5,'ιουν':6,'ιουλ':7,'αυγ':8,'σεπ':9,'οκτ':10,'νοε':11,'δεκ':12,'jan':1,'feb':2,'mar':3,'apr':4,'may':5,'jun':6,'jul':7,'aug':8,'sep':9,'oct':10,'nov':11,'dec':12};
   if(!date){const words=joined.toLocaleLowerCase('el').normalize('NFD').replace(/[\u0300-\u036f]/g,'');const pattern=/(\d{1,2})\s+([a-zα-ω]{3,20})\s*,?\s*(20\d{2})/g;for(const match of words.matchAll(pattern)){let token=match[2].slice(0,3);const month=months[token]||months[match[2].slice(0,3).replace('ϊ','ι')];if(month){date=dateCheck(Number(match[3]),month,Number(match[1]));if(date)break}}}
+  // Strava mobile commonly displays: "October 12, 2025 at 1:17 PM".
+  // Match the month-first date independently from a status-bar clock.
+  if(!date){
+   const words=joined.toLocaleLowerCase('en').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+   const monthFirst=/\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)\.?\s+(\d{1,2})\s*,?\s*(20\d{2})\b/g;
+   for(const match of words.matchAll(monthFirst)){
+    const month=months[match[1].slice(0,3)],candidate=dateCheck(Number(match[3]),month,Number(match[2]));
+    if(candidate){date=candidate;break}
+   }
+  }
   // Accept only values in the same ranges as the manual form.
   const valid=(n,min,max)=>Number.isFinite(n)&&n>=min&&n<=max?n:null;
   return {km:valid(km,.1,1000),speed:valid(speed,1,100),elevationGain:valid(elevationGain,0,50000),movingTime,date,rawText:lines.join('\n')};
