@@ -242,3 +242,4 @@ app.addEventListener('submit',async e=>{
 });
 start();
 if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
+// Re-publish v42: retain all existing features and completed-ride editor.
