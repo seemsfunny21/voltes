@@ -186,6 +186,35 @@ bottomNav.addEventListener('click',async e=>{
  }
 });
 
+
+/* Horizontal touch navigation across the four principal tabs. Vertical scrolling remains native. */
+const swipeTabs=['home','members','history','settings'];
+const swipeShell=document.querySelector('.shell');
+let swipeStart=null;
+function swipeBlocked(target){
+ return !!(target instanceof Element&&target.closest('input,select,textarea,button,a,label,form,iframe,video,audio,[contenteditable],[data-no-swipe],[role="slider"],[role="tablist"],.meeting-place-options'));
+}
+swipeShell.addEventListener('touchstart',e=>{
+ swipeStart=null;
+ if(e.touches.length!==1||!swipeTabs.includes(route)||swipeBlocked(e.target))return;
+ const t=e.touches[0];
+ // Leave the outer edge free for the browser's back/forward gesture.
+ if(t.clientX<24||t.clientX>window.innerWidth-24)return;
+ swipeStart={x:t.clientX,y:t.clientY,time:Date.now()};
+},{passive:true});
+swipeShell.addEventListener('touchend',e=>{
+ if(!swipeStart||e.changedTouches.length!==1)return;
+ const from=swipeStart;swipeStart=null;
+ if(!swipeTabs.includes(route)||swipeBlocked(e.target))return;
+ const t=e.changedTouches[0],dx=t.clientX-from.x,dy=t.clientY-from.y;
+ if(Math.abs(dx)<70||Math.abs(dx)<Math.abs(dy)*1.6||Date.now()-from.time>1000)return;
+ const index=swipeTabs.indexOf(route),next=index+(dx<0?1:-1);
+ if(next<0||next>=swipeTabs.length)return;
+ const target=swipeTabs[next]==='settings'?'menu':swipeTabs[next];
+ bottomNav.querySelector('button[data-bottom-route="'+target+'"]')?.click();
+},{passive:true});
+swipeShell.addEventListener('touchcancel',()=>{swipeStart=null},{passive:true});
+
 nav.addEventListener('click',async e=>{let b=e.target.closest('button');if(!b)return;if(b.dataset.route)navigate(b.dataset.route);else if(b.id==='authBtn'){if(admin){try{await api('logout')}catch{toast('Η σύνδεση αφαιρέθηκε από αυτή τη συσκευή. Η υπηρεσία δεν ήταν διαθέσιμη.')}finally{admin=false;pin='';adminToken='';writeLocal('voltesAdminToken','');try{await refresh()}catch{db.riders=[];db.rides=[]}navigate('home')}}else navigate('auth')}});
 app.addEventListener('click',async e=>{
  let b=e.target.closest('button');if(!b)return;
