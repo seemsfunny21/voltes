@@ -184,3 +184,8 @@ html[data-theme] .rider-status.is-guest{background:var(--secondary);border-color
  .member-list .member-card{grid-template-columns:48px minmax(0,1fr)}
  .member-select{grid-column:2;justify-self:start;max-width:160px}
 }
+
+/* Admin member: membership toggle directly below status; photo/delete remain in action column. */
+.admin-member-card .rider-identity{display:flex;flex-direction:column;align-items:center;gap:8px}
+.admin-member-card .member-type-toggle{margin:0;max-width:185px;width:100%;font-size:13px;padding:9px 12px}
+.admin-member-card .rider-actions{align-items:center}
