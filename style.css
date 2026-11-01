@@ -110,3 +110,23 @@ html[data-theme] .rider-status.is-guest{background:var(--secondary);border-color
 .member-card .btn{max-width:240px;width:100%;margin-top:8px}.member-card .note{color:var(--sub,#e1edff)}
 
 .ride-weather{margin:14px 0;padding:12px 6px;background:var(--nav,#122b50);color:var(--fg,#fff);border:1px solid var(--edge,#356295);border-radius:12px}.weather-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}.weather-grid>div{display:flex;flex-direction:column;gap:5px;align-items:center;text-align:center;font-size:22px}.weather-grid b{font-size:12px;white-space:nowrap}.weather-grid small{font-size:10px;color:var(--sub,#cbdff9)}.weather-updated{text-align:center;font-size:11px;color:var(--sub,#cbdff9);margin:10px 0 0}
+
+
+/* Hierarchy for scheduled and completed ride cards, all four themes. */
+.ride-card{text-align:center;padding:20px 16px}
+.ride-heading{display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:12px}
+.ride-title{font-size:clamp(19px,4.8vw,23px);font-weight:700;line-height:1.3;color:var(--fg,#fff)}
+.ride-card .pill{font-size:11px;align-self:center}
+.ride-date,.ride-meeting{font-weight:600;color:var(--sub,#e1edff);font-size:14px;line-height:1.45;margin:7px 0}
+.ride-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:17px 0}
+.ride-metric{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;border-radius:12px;border:1px solid var(--edge,#356295);background:var(--active,#285b9a);padding:14px 7px;min-width:0;color:var(--fg,#fff)}
+.ride-metric>span{font-size:22px}.ride-metric>b{font-size:19px;font-weight:700}.ride-metric>small{font-size:11px;font-weight:500;color:var(--sub,#e1edff);text-align:center}
+.ride-route{margin:14px 0 16px;font-size:14px;color:var(--fg,#fff)}
+.ride-route>b{font-weight:700;display:block;margin-bottom:7px}.ride-route>p{margin:0;color:var(--sub,#e1edff);font-weight:600;line-height:1.6}
+.weather-heading{border-top:1px solid var(--edge,#356295);padding-top:14px;margin-top:16px;font-size:15px;font-weight:700;color:var(--fg,#fff)}
+.ride-card .ride-weather{margin:12px 0 18px;padding:12px 6px;background:var(--nav,#122b50)}
+.ride-card .weather-grid b{font-size:13px;font-weight:700}
+.ride-card .weather-grid small{font-size:10px;font-weight:500}
+.ride-card .weather-updated{font-size:11px;font-weight:400}
+.ride-card .actions{margin-top:18px}
+.ride-card .actions .btn{font-weight:700}
