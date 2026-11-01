@@ -157,3 +157,30 @@ html[data-theme] .rider-status.is-guest{background:var(--secondary);border-color
 .meeting-place-options{display:flex;flex-wrap:wrap;justify-content:flex-start;align-items:center;gap:8px;margin:-3px 0 8px}
 .meeting-place-options[hidden]{display:none!important}
 .meeting-place-options .btn{font-size:13px;padding:8px 12px;flex:0 1 auto;max-width:100%;overflow-wrap:anywhere}
+
+/* Compact, activity-ranked public member directory. */
+.member-activity-intro{margin:9px 0 14px;text-align:center;color:var(--sub,#e1edff);font-size:13px}
+.member-list{grid-template-columns:minmax(0,1fr);max-width:800px;margin:14px auto}
+.member-list .member-card{display:grid;grid-template-columns:56px minmax(0,1fr) minmax(106px,145px);align-items:center;justify-content:stretch;gap:12px;text-align:left;padding:14px}
+.member-list .member-card>.rider-avatar{width:56px;height:56px;justify-self:center;align-self:center}
+.member-details{min-width:0;align-self:center;text-align:left}
+.member-details .rider-name{display:block;font-size:clamp(14px,3.8vw,19px);line-height:1.25;margin:0 0 6px;overflow-wrap:anywhere;text-align:left}
+.member-meta{display:flex;flex-wrap:wrap;gap:5px 8px;align-items:center}
+.member-meta .rider-status{font-size:11px;padding:3px 8px;line-height:1.3;align-self:auto}
+.member-activity-label{font-size:11px;line-height:1.35;color:var(--sub,#e1edff)}
+.member-activity{margin-top:7px;color:var(--sub,#e1edff);font-size:12px;line-height:1.35}
+.member-activity b{color:var(--fg,#fff)}
+.member-activity-track{height:5px;border-radius:99px;overflow:hidden;background:var(--nav,#122b50);border:1px solid var(--edge,#356295);margin-top:5px}
+.member-activity-track>span{display:block;height:100%;border-radius:99px;background:var(--accent,#307ddd)}
+.member-select{align-self:center;justify-self:end;width:100%;max-width:145px;text-align:center}
+.member-card .member-select .btn{width:100%;max-width:none;margin:0;padding:10px 7px;min-width:0;font-size:13px;line-height:1.3;white-space:normal}
+.member-self{display:inline-block;font-size:13px;font-weight:700;color:var(--fg,#fff)}
+@media(max-width:440px){
+ .member-list .member-card{grid-template-columns:48px minmax(0,1fr) minmax(98px,112px);gap:8px;padding:12px 10px}
+ .member-list .member-card>.rider-avatar{width:48px;height:48px}
+ .member-card .member-select .btn{font-size:12px;padding:9px 5px}
+}
+@media(max-width:345px){
+ .member-list .member-card{grid-template-columns:48px minmax(0,1fr)}
+ .member-select{grid-column:2;justify-self:start;max-width:160px}
+}
