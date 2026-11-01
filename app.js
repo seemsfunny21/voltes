@@ -153,7 +153,7 @@ app.addEventListener('change',async e=>{
 app.addEventListener('change',async e=>{const input=e.target;if(!input.dataset.avatarId||!admin||!input.files?.length)return;input.disabled=true;try{const avatar=await prepareAvatar(input.files[0]);await perform('setAvatar',{id:input.dataset.avatarId,avatar},'Η φωτογραφία αποθηκεύτηκε.')}catch(err){toast(err.message)}finally{input.disabled=false;input.value=''}});
 function analytics(){let list=db.riders.map(p=>{let rides=completed().filter(r=>(r.attendees||[]).includes(p.name));let total=rides.reduce((s,r)=>s+Number(r.km),0);return {name:p.name,count:rides.length,km:total,elevation:rides.some(r=>r.elevationGain!=null)?rides.reduce((s,r)=>s+Number(r.elevationGain||0),0):null,moving:rides.some(r=>r.movingMinutes!=null)?rides.reduce((s,r)=>s+Number(r.movingMinutes||0),0):null,mean:rides.length?rides.reduce((s,r)=>s+Number(r.speed),0)/rides.length:0}}).sort((a,b)=>b.km-a.km);return `<h1>Στατιστικά ποδηλατών</h1><p class="alert">Ο κοινός μέσος όρος των διαδρομών δεν αποτελεί μέτρηση ατομικής ταχύτητας. Δεν παράγεται ακόμη αυτόματη κατάταξη.</p>${list.length?list.map(p=>`<article class="card"><div class="row"><strong>${safe(p.name)}</strong><span>${p.count} βόλτες</span></div><p>${p.km.toFixed(1)} km · Μ.Ο. ομάδων ${p.count?p.mean.toFixed(1)+' km/h':'—'}</p><p class="muted">Καταγεγραμμένη ανάβαση: ${p.elevation==null?'—':safe(p.elevation)+' m'} · Χρόνος κίνησης: ${p.moving==null?'—':safe(formatMovingTime(p.moving))}</p></article>`).join(''):'<p class="empty">Πρόσθεσε μέλη και ολοκληρωμένες βόλτες για να εμφανιστούν στατιστικά.</p>'}`}
 function auth(){return `<h1>Είσοδος Admin</h1><div class="card"><form id="login"><label>PIN Admin <input type="password" name="pin" required inputmode="numeric" maxlength="4" minlength="4" pattern="[0-9]{4}" placeholder="••••"></label><button class="btn">Είσοδος</button></form></div>`}
-function render(){if(!admin&&['new','riders','stats','finish','historyAdd','editDone'].includes(route))route='home';document.querySelector('#adminNav').classList.toggle('hidden',!admin);document.querySelector('#authBtn').textContent=admin?'Αποσύνδεση Admin':'Είσοδος Admin';let html=route==='settings'?themeSettings():route==='home'?home():route==='members'?publicMembers():route==='upcoming'?upcoming():route==='history'?history():route==='new'?newRide():route==='historyAdd'?historicalRide():route==='editDone'&&window.currentRide&&admin?editCompletedRide(window.currentRide):route==='riders'?riders():route==='stats'?analytics():route==='auth'?auth():route==='signup'&&window.currentRide?signup(window.currentRide):route==='finish'&&window.currentRide&&admin?finish(window.currentRide):home();app.innerHTML=renderNotice()+html;message='';syncBottomNav()}
+function render(){if(!admin&&['new','riders','stats','finish','historyAdd','editDone','routeAdd','routes'].includes(route))route='home';document.querySelector('#adminNav').classList.toggle('hidden',!admin);document.querySelector('#authBtn').textContent=admin?'Αποσύνδεση Admin':'Είσοδος Admin';let html=route==='settings'?themeSettings():route==='home'?home():route==='members'?publicMembers():route==='upcoming'?upcoming():route==='history'?history():route==='new'?newRide():route==='routeAdd'?addRoutePage():route==='routes'?savedRoutesPage():route==='historyAdd'?historicalRide():route==='editDone'&&window.currentRide&&admin?editCompletedRide(window.currentRide):route==='riders'?riders():route==='stats'?analytics():route==='auth'?auth():route==='signup'&&window.currentRide?signup(window.currentRide):route==='finish'&&window.currentRide&&admin?finish(window.currentRide):home();app.innerHTML=renderNotice()+html;message='';syncBottomNav()}
 const bottomNav=document.querySelector('#bottomNav');
 function syncBottomNav(){bottomNav.querySelectorAll('button').forEach(b=>{const selected=b.dataset.bottomRoute===(nav.classList.contains('hidden')?(['home','members','history'].includes(route)?route:'menu'):'menu');b.classList.toggle('active',selected)});}
 bottomNav.addEventListener('click',async e=>{
@@ -172,6 +172,7 @@ nav.addEventListener('click',async e=>{let b=e.target.closest('button');if(!b)re
 app.addEventListener('click',async e=>{
  let b=e.target.closest('button');if(!b)return;
  if(b.dataset.theme){setTheme(b.dataset.theme);render();return}
+ if(b.dataset.placePick){const field=document.querySelector('#meetingPlaceInput'),box=document.querySelector('#meetingPlaceSuggestions');if(field){field.value=b.dataset.placePick;field.setAttribute('aria-expanded','false');if(box)box.hidden=true;field.dispatchEvent(new Event('input',{bubbles:true}))}return}
  if(b.dataset.go){navigate(b.dataset.go);return}
  if(!b.dataset.do)return;
  let r=db.rides.find(x=>x.id===b.dataset.id);
@@ -184,6 +185,7 @@ app.addEventListener('click',async e=>{
  case 'moreHistory':historyLimit+=5;render();break;
  case 'cancelSignup':if(!r||!signupTokens[r.id])return;if(confirm('Να ακυρωθεί η συμμετοχή σου;')){b.disabled=true;try{await api('cancelSignup',{id:r.id,cancelToken:signupTokens[r.id]});delete signupTokens[r.id];saveSignupTokens();await refresh()}catch(err){b.disabled=false;toast(err.message)}}break;
  case 'removeAvatar':if(admin&&confirm('Να αφαιρεθεί η φωτογραφία;'))await perform('setAvatar',{id:b.dataset.id,avatar:null},'Η φωτογραφία αφαιρέθηκε.');break;
+ case 'useSavedRoute':if(admin){const t=db.routeTemplates.find(x=>x.id===b.dataset.id);if(t){navigate('new');const select=document.querySelector('#rideTemplateSelect');if(select){select.value=t.id;syncRouteChoice()}}}break;
  case 'finish':if(!admin)return;window.currentRide=r;navigate('finish');break;
  case 'editDone':if(!admin||!r?.done)return;window.currentRide=r;navigate('editDone');break;
  case 'delete':if(admin&&r&&confirm('Να διαγραφεί η βόλτα;')){await perform('delete',{id:r.id},'Η βόλτα διαγράφηκε.')}break;
@@ -191,7 +193,8 @@ app.addEventListener('click',async e=>{
  case 'toggleMember':if(admin){await perform('toggleMember',{id:b.dataset.id},'Ο τύπος μέλους ενημερώθηκε.')}break;
  }
 });
-app.addEventListener('input',e=>{if(e.target.closest('#createRide'))updateNewRideForecast()});
+app.addEventListener('focusin',e=>{if(e.target.id==='meetingPlaceInput')updateMeetingPlaceOptions()});
+app.addEventListener('input',e=>{if(e.target.id==='meetingPlaceInput')updateMeetingPlaceOptions();if(e.target.closest('#createRide'))updateNewRideForecast()});
 app.addEventListener('change',e=>{if(e.target.id==='rideTemplateSelect')syncRouteChoice();else if(e.target.id==='historicalTemplateSelect')syncHistoricalRoute();else if(e.target.id==='editRouteTemplateSelect')syncEditRouteChoice();else if(e.target.closest('#createRide'))updateNewRideForecast()});
 function updateNewRideForecast(){
  const f=document.querySelector('#createRide'),out=document.querySelector('#newRideForecast');if(!f||!out)return;
@@ -219,7 +222,7 @@ app.addEventListener('submit',async e=>{
   catch(err){pin='';adminToken='';writeLocal('voltesAdminToken','');toast(err.message);const input=app.querySelector('#login input[name="pin"]');if(input){input.value='';input.form.dataset.submitting='0';input.focus()}}
  }else if(f.id==='saveRouteForm'&&admin){
   const points=String(values.points||'').split(',').map(x=>x.trim()).filter(Boolean);
-  if(await perform('saveRoute',{name:values.name,points,routeType:values.routeType,estimate:values.estimate},'Η διαδρομή αποθηκεύτηκε.'))navigate('new');
+  if(await perform('saveRoute',{name:values.name,points,routeType:values.routeType,estimate:values.estimate},'Η διαδρομή αποθηκεύτηκε.'))navigate('routes');
  }else if(f.id==='createRide'&&admin){
   if(await perform('create',values,'Η βόλτα δημοσιεύτηκε.'))navigate('upcoming');
  }else if(f.id==='addRider'&&admin){
