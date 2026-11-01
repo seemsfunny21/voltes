@@ -172,7 +172,7 @@ nav.addEventListener('click',async e=>{let b=e.target.closest('button');if(!b)re
 app.addEventListener('click',async e=>{
  let b=e.target.closest('button');if(!b)return;
  if(b.dataset.theme){setTheme(b.dataset.theme);render();return}
- if(b.dataset.placePick){const field=document.querySelector('#meetingPlaceInput'),box=document.querySelector('#meetingPlaceSuggestions');if(field){field.value=b.dataset.placePick;field.setAttribute('aria-expanded','false');if(box)box.hidden=true;field.dispatchEvent(new Event('input',{bubbles:true}))}return}
+ if(b.dataset.placePick){const field=document.querySelector('#meetingPlaceInput'),box=document.querySelector('#meetingPlaceSuggestions');if(field){field.value=b.dataset.placePick;field.setAttribute('aria-expanded','false');if(box)box.hidden=true}return}
  if(b.dataset.go){navigate(b.dataset.go);return}
  if(!b.dataset.do)return;
  let r=db.rides.find(x=>x.id===b.dataset.id);
