@@ -77,7 +77,7 @@ function finish(r){let names=[...new Set([...(r.signups||[]).map(x=>x.name),...d
 function historicalRide(){
  const base=finish({title:'Παλιά βόλτα',signups:[]});
  const extras=`<label>Ημερομηνία βόλτας <input type="date" name="date" required min="2000-01-01" max="${today()}"></label><label>Ώρα εκκίνησης (προαιρετικά) <input type="time" name="time" value="09:00"></label><label>Αποθηκευμένη διαδρομή <select name="routeTemplateId" id="historicalTemplateSelect">${routeChoices()}</select></label><p id="historicalRoutePreview" class="note"></p><label>Τίτλος (προαιρετικά) <input name="title" maxlength="100" placeholder="π.χ. Γύρος Λίμνης"></label><p class="note">Τα σημεία της διαδρομής είναι ενδεικτικά· οι παρακάμψεις και τα επιπλέον χιλιόμετρα επιτρέπονται.</p>`;
- return base.replace('<h1>Ολοκλήρωση βόλτας</h1>','<h1>+ Προσθήκη παλιάς βόλτας</h1>').replace('<h2>Παλιά βόλτα</h2>','<p class="note">Μόνο Admin · Καταχώριση διαδρομής χωρίς προηγούμενο προγραμματισμό.</p>').replace('id="finishForm" data-id="undefined"','id="historicalForm"').replace('<div class="ocr-box">',extras+'<div class="ocr-box">');
+ return base.replace('<h1>Ολοκλήρωση βόλτας</h1>','<h1>+ Προσθήκη παλιάς βόλτας</h1>').replace('<h2>Παλιά βόλτα</h2>','<p class="note">Μόνο Admin · Καταχώριση διαδρομής χωρίς προηγούμενο προγραμματισμό.</p>').replace('id="finishForm" data-id="undefined"','id="historicalForm"').replace('</div><label>Πραγματική απόσταση', '</div>'+extras+'<label>Πραγματική απόσταση');
 }
 function syncHistoricalRoute(){
  const f=document.querySelector('#historicalForm');if(!f)return;
