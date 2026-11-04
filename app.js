@@ -314,7 +314,7 @@ app.addEventListener('submit',async e=>{
   const departure=String(values.departureTime||q.time||'');
   const place=q.placeMode==='mavili'?'Πλατεία Μαβίλη':String(values.customPlace||'').trim();
   if(!date||date<greekDay()||!chosen||!['morning','noon','afternoon'].includes(q.period)||!place){toast('Συμπλήρωσε ημέρα, μέρος ημέρας, διαδρομή και σημείο συνάντησης.');return}
-  if(departure&&!/^([01]\\d|2[0-3]):[0-5]\\d$/.test(departure)){toast('Μη έγκυρη ώρα.');return}
+  if(departure&&!/^([01]\d|2[0-3]):[0-5]\d$/.test(departure)){toast('Μη έγκυρη ώρα.');return}
   const duplicate=db.rides.some(r=>!r.done&&r.date===date&&r.routeTemplateId===chosen.id);
   if(duplicate&&!confirm('Υπάρχει ήδη προγραμματισμένη βόλτα με αυτή τη διαδρομή την ίδια ημέρα. Να δημοσιευτεί άλλη;'))return;
   const button=f.querySelector('button[type="submit"]');button.disabled=true;
