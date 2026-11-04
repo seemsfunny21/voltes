@@ -275,7 +275,7 @@ app.addEventListener('click',async e=>{
  case 'cancelSignup':if(!r||!signupTokens[r.id])return;if(confirm('Να ακυρωθεί η συμμετοχή σου;')){b.disabled=true;try{await api('cancelSignup',{id:r.id,cancelToken:signupTokens[r.id]});delete signupTokens[r.id];saveSignupTokens();await refresh()}catch(err){b.disabled=false;toast(err.message)}}break;
  case 'removeAvatar':if(admin&&confirm('Να αφαιρεθεί η φωτογραφία;'))await perform('setAvatar',{id:b.dataset.id,avatar:null},'Η φωτογραφία αφαιρέθηκε.');break;
  case 'editRoute':if(admin){window.currentRouteId=b.dataset.id;navigate('routeEdit')}break;
- case 'useSavedRoute':if(admin){const t=db.routeTemplates.find(x=>x.id===b.dataset.id);if(t){navigate('new');const select=document.querySelector('#rideTemplateSelect');if(select){select.value=t.id;syncRouteChoice()}}}break;
+ case 'useSavedRoute':if(admin){const t=db.routeTemplates.find(x=>x.id===b.dataset.id);if(t){navigate('newDetailed');const select=document.querySelector('#rideTemplateSelect');if(select){select.value=t.id;syncRouteChoice()}}}break;
  case 'finish':if(!admin)return;window.currentRide=r;navigate('finish');break;
  case 'editDone':if(!admin||!r?.done)return;window.currentRide=r;navigate('editDone');break;
  case 'delete':if(admin&&r&&confirm('Να διαγραφεί η βόλτα;')){await perform('delete',{id:r.id},'Η βόλτα διαγράφηκε.')}break;
