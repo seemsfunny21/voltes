@@ -36,7 +36,7 @@ async function start(){
 }
 const datefmt=d=>new Date(d+'T12:00:00').toLocaleDateString('el-GR',{day:'2-digit',month:'2-digit',year:'numeric'});
 function toast(v){message=v;render()}
-function navigate(v){if(v==='new')quickRideState={day:'',date:'',period:'',time:'',routeId:'',placeMode:'mavili'};route=v;if(v==='history')historyLimit=5;nav.classList.add('hidden');document.querySelector('[data-bottom-route="menu"]')?.setAttribute('aria-expanded','false');render();if(v==='auth')document.querySelector('#login input[name="pin"]')?.focus({preventScroll:true});document.querySelector(".shell").scrollTo(0,0)}
+function navigate(v){if(v==='new')quickRideState={day:'',date:'',period:'',time:'',showTimePicker:false,routeId:'',placeMode:'mavili',customPlace:'',step:1};route=v;if(v==='history')historyLimit=5;nav.classList.add('hidden');document.querySelector('[data-bottom-route="menu"]')?.setAttribute('aria-expanded','false');render();if(v==='auth')document.querySelector('#login input[name="pin"]')?.focus({preventScroll:true});document.querySelector(".shell").scrollTo(0,0)}
 function renderNotice(){return message?`<p class="alert" role="status">${safe(message)}</p>`:''}
 function stats(){let completed=db.rides.filter(x=>x.done);return `<section class="metrics"><div class="metric"><b>${completed.length}</b><small>Βόλτες</small></div><div class="metric"><b>${Math.round(completed.reduce((a,x)=>a+Number(x.km||0),0))}</b><small>Χιλιόμετρα</small></div><div class="metric"><b>${(admin?db.riders.filter(x=>x.member).length:db.members)}</b><small>Μέλη</small></div></section>`}
 function expiredRide(r){return !r.done&&Date.now()-new Date(String(r.date)+'T'+String(r.time||'10:00')+':00').getTime()>86400000}
@@ -63,7 +63,7 @@ function history(){const rides=completed();return `${rides.length?rides.slice(0,
 function routeChoices(){return '<option value="">Χωρίς αποθηκευμένη διαδρομή</option>'+db.routeTemplates.map(r=>'<option value="'+safe(r.id)+'">'+safe(r.name)+'</option>').join('')}
 
 /* Four-step quick ride creation, with the date always resolved in Europe/Athens. */
-let quickRideState={day:'',date:'',period:'',time:'',routeId:'',placeMode:'mavili',customPlace:'',step:1};
+let quickRideState={day:'',date:'',period:'',time:'',showTimePicker:false,routeId:'',placeMode:'mavili',customPlace:'',step:1};
 function greekDay(offset=0){
  const p=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Athens',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()).map(x=>[x.type,x.value]));
  return new Date(Date.UTC(Number(p.year),Number(p.month)-1,Number(p.day)+offset)).toISOString().slice(0,10);
@@ -93,7 +93,7 @@ function newRide(){
  }else if(step===2&&when){
   body+='<section class="card quick-step"><h2>2. Πότε θα ξεκινήσετε;</h2><div class="quick-options">'+
   quickOption('Πρωί','period','morning',q.period==='morning')+quickOption('Μεσημέρι','period','noon',q.period==='noon')+quickOption('Απόγευμα','period','afternoon',q.period==='afternoon')+'</div>'+
-  (period?'<label>Ακριβής ώρα (προαιρετικά)<input type="time" id="quickTime" name="departureTime" value="'+safe(q.time)+'"></label><p class="note">Αν δεν ξέρετε ακόμη την ώρα, άφησέ την κενή.</p><button type="button" class="btn secondary quick-next" data-do="quickNext">Συνέχεια στην επιλογή διαδρομής</button>':'')+'</section>';
+  (period?'<button type="button" class="btn secondary quick-set-time" data-do="quickToggleTime">'+(q.showTimePicker?'Χωρίς ακριβή ώρα':'🕒 Ορισμός ακριβούς ώρας')+'</button>'+(q.showTimePicker?'<label>Ακριβής ώρα αναχώρησης<input type="time" id="quickTime" name="departureTime" value="'+safe(q.time)+'"></label>':'<p class="note">Η ακριβής ώρα μένει υπό συνεννόηση.</p>')+'<button type="button" class="btn quick-next" data-do="quickNext">Επόμενο</button>':'')+'</section>';
  }else if(step===3&&when&&period){
   body+='<section class="card quick-step"><h2>3. Επιλογή διαδρομής</h2><p class="note">Πρώτες εμφανίζονται οι συχνότερες.</p><div class="quick-route-list">'+routes.map(t=>quickOption(t.name+(t.estimate?' · '+t.estimate+' χλμ.':''),'routeId',t.id,q.routeId===t.id)).join('')+'</div></section>';
  }else if(step===4&&when&&period&&chosen){
@@ -264,18 +264,20 @@ app.addEventListener('click',async e=>{
  let b=e.target.closest('button');if(!b)return;
  if(b.dataset.do==='quickEdit'){
   const step=Number(b.dataset.step);
-  if(step>=1&&step<=3&&quickRideState.step>step){quickRideState.step=step;render()}return;
+  if(step>=1&&step<=3&&quickRideState.step>step){quickRideState.step=step;if(step===2)quickRideState.showTimePicker=!!quickRideState.time;render()}return;
+ }
+ if(b.dataset.do==='quickToggleTime'){
+  if(quickRideState.step===2&&quickRideState.period){if(quickRideState.showTimePicker)quickRideState.time='';quickRideState.showTimePicker=!quickRideState.showTimePicker;render()}return;
  }
  if(b.dataset.do==='quickNext'){
-  if(quickRideState.step===2&&quickRideState.period){quickRideState.time=document.querySelector('#quickTime')?.value||'';quickRideState.step=3;render()}return;
+  if(quickRideState.step===2&&quickRideState.period){quickRideState.time=quickRideState.showTimePicker?(document.querySelector('#quickTime')?.value||''):'';quickRideState.step=3;render()}return;
  }
  if(b.dataset.do==='quickPick'){
   const f=b.dataset.field,value=b.dataset.value;
   if(!['day','period','routeId','placeMode'].includes(f))return;
-  const hadPeriod=!!quickRideState.period;
   quickRideState[f]=value;
-  if(f==='day'){quickRideState.date='';quickRideState.period='';quickRideState.time='';quickRideState.routeId='';quickRideState.placeMode='mavili';quickRideState.customPlace='';quickRideState.step=value==='other'?1:2}
-  if(f==='period'){quickRideState.time='';quickRideState.step=hadPeriod?2:3}
+  if(f==='day'){quickRideState.date='';quickRideState.period='';quickRideState.time='';quickRideState.showTimePicker=false;quickRideState.routeId='';quickRideState.placeMode='mavili';quickRideState.customPlace='';quickRideState.step=value==='other'?1:2}
+  if(f==='period'){quickRideState.time='';quickRideState.showTimePicker=false;quickRideState.step=2}
   if(f==='routeId'){quickRideState.placeMode='mavili';quickRideState.customPlace='';quickRideState.step=4}
   if(f==='placeMode'){quickRideState.customPlace=''}
   render();return;
@@ -305,7 +307,7 @@ app.addEventListener('click',async e=>{
  }
 });
 app.addEventListener('change',e=>{
- if(e.target.id==='quickCustomDate'){quickRideState.date=e.target.value;quickRideState.period='';quickRideState.time='';quickRideState.routeId='';quickRideState.step=quickRideState.date?2:1;render()}
+ if(e.target.id==='quickCustomDate'){quickRideState.date=e.target.value;quickRideState.period='';quickRideState.time='';quickRideState.routeId='';quickRideState.showTimePicker=false;quickRideState.step=quickRideState.date?2:1;render()}
  if(e.target.id==='quickTime')quickRideState.time=e.target.value;
 });
 app.addEventListener('input',e=>{if(e.target.name==='customPlace'&&e.target.closest('#quickRideForm'))quickRideState.customPlace=e.target.value});
