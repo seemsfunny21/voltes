@@ -63,7 +63,7 @@ function history(){const rides=completed();return `${rides.length?rides.slice(0,
 function routeChoices(){return '<option value="">Χωρίς αποθηκευμένη διαδρομή</option>'+db.routeTemplates.map(r=>'<option value="'+safe(r.id)+'">'+safe(r.name)+'</option>').join('')}
 
 /* Four-step quick ride creation, with the date always resolved in Europe/Athens. */
-let quickRideState={day:'',date:'',period:'',time:'',routeId:'',placeMode:'mavili'};
+let quickRideState={day:'',date:'',period:'',time:'',routeId:'',placeMode:'mavili',customPlace:'',step:1};
 function greekDay(offset=0){
  const p=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Athens',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()).map(x=>[x.type,x.value]));
  return new Date(Date.UTC(Number(p.year),Number(p.month)-1,Number(p.day)+offset)).toISOString().slice(0,10);
@@ -73,25 +73,36 @@ function rideDeparture(r){return r.time||({morning:'Πρωί',noon:'Μεσημέ
 function quickOption(label,field,value,active){
  return '<button type="button" class="quick-option'+(active?' selected':'')+'" data-do="quickPick" data-field="'+field+'" data-value="'+safe(value)+'" aria-pressed="'+(active?'true':'false')+'">'+safe(label)+(active?' ✓':'')+'</button>';
 }
+function quickCompletedStep(number,heading,answer){
+ return '<div class="quick-completed"><span class="quick-completed-label"><b>'+number+'. '+safe(heading)+'</b><span>'+safe(answer)+'</span></span><button type="button" class="btn secondary quick-change" data-do="quickEdit" data-step="'+number+'">Αλλαγή</button></div>';
+}
 function newRide(){
  const q=quickRideState,date=quickDate(),routes=[...db.routeTemplates].sort((a,b)=>(Number(b.usageCount)||0)-(Number(a.usageCount)||0)||a.name.localeCompare(b.name,'el'));
  const chosen=routes.find(t=>t.id===q.routeId);
  const timeLabel={morning:'Πρωί',noon:'Μεσημέρι',afternoon:'Απόγευμα'};
  const when=!!date,period=!!q.period;
- return '<h1>🚴 Γρήγορη νέα βόλτα</h1><form id="quickRideForm">'+
- '<section class="card quick-step"><h2>1. Πότε θα πάτε βόλτα;</h2><div class="quick-options">'+
- quickOption('Σήμερα','day','today',q.day==='today')+quickOption('Αύριο','day','tomorrow',q.day==='tomorrow')+quickOption('Γράψε ημέρα','day','other',q.day==='other')+
- '</div>'+(q.day==='other'?'<label>Ημερομηνία <input type="date" name="customDate" id="quickCustomDate" required min="'+greekDay()+'" value="'+safe(q.date)+'"></label>':'')+
- (when?'<p class="note">📅 '+datefmt(date)+'</p>':'')+'</section>'+
- (when?'<section class="card quick-step"><h2>2. Πότε θα ξεκινήσετε;</h2><div class="quick-options">'+
- quickOption('Πρωί','period','morning',q.period==='morning')+quickOption('Μεσημέρι','period','noon',q.period==='noon')+quickOption('Απόγευμα','period','afternoon',q.period==='afternoon')+
- '</div>'+(period?'<label>Ακριβής ώρα (προαιρετικά) <input type="time" id="quickTime" name="departureTime" value="'+safe(q.time)+'"></label><p class="note">'+(q.time?'Ώρα '+safe(q.time):'Η ώρα θα παραμείνει υπό συνεννόηση.')+'</p>':'')+'</section>':'')+
- (when&&period?'<section class="card quick-step"><h2>3. Επιλογή διαδρομής</h2><p class="note">Πρώτες εμφανίζονται όσες επιλέγονται συχνότερα.</p><div class="quick-route-list">'+routes.map(t=>quickOption(t.name+(t.estimate?' · '+t.estimate+' χλμ.':''),'routeId',t.id,q.routeId===t.id)).join('')+'</div></section>':'')+
- (when&&period&&chosen?'<section class="card quick-step"><h2>4. Σημείο συνάντησης</h2><div class="quick-options">'+
- quickOption('Πλατεία Μαβίλη','placeMode','mavili',q.placeMode==='mavili')+quickOption('Γράψε σημείο','placeMode','other',q.placeMode==='other')+'</div>'+
- (q.placeMode==='other'?'<label>Σημείο συνάντησης <input required maxlength="120" name="customPlace" placeholder="Γράψε το σημείο συνάντησης"></label>':'<p class="note">📍 Πλατεία Μαβίλη</p>')+
- '<div class="quick-review"><strong>Έτοιμη για δημοσίευση</strong><p>📅 '+datefmt(date)+' · '+(q.time?safe(q.time):timeLabel[q.period]+' (ώρα υπό συνεννόηση)')+'</p><p>🚴 '+safe(chosen.name)+'</p></div><button class="btn" type="submit">Δημοσίευση βόλτας</button></section>':'')+
- '</form><div class="actions"><button type="button" class="btn secondary" data-go="newDetailed">Περισσότερες ρυθμίσεις</button></div>';
+ const step=Math.min(Math.max(1,Number(q.step)||1),4);
+ let body='';
+ if(step>1&&when)body+=quickCompletedStep(1,'Ημέρα',datefmt(date));
+ if(step>2&&period)body+=quickCompletedStep(2,'Αναχώρηση',(timeLabel[q.period]||'')+(q.time?' · '+q.time:' · ώρα υπό συνεννόηση'));
+ if(step>3&&chosen)body+=quickCompletedStep(3,'Διαδρομή',chosen.name+(chosen.estimate?' · '+chosen.estimate+' χλμ.':''));
+ if(step===1){
+  body+='<section class="card quick-step"><h2>1. Πότε θα πάτε βόλτα;</h2><div class="quick-options">'+
+  quickOption('Σήμερα','day','today',q.day==='today')+quickOption('Αύριο','day','tomorrow',q.day==='tomorrow')+quickOption('Γράψε ημέρα','day','other',q.day==='other')+'</div>'+
+  (q.day==='other'?'<label>Ημερομηνία <input type="date" name="customDate" id="quickCustomDate" required min="'+greekDay()+'" value="'+safe(q.date)+'"></label>':'')+'</section>';
+ }else if(step===2&&when){
+  body+='<section class="card quick-step"><h2>2. Πότε θα ξεκινήσετε;</h2><div class="quick-options">'+
+  quickOption('Πρωί','period','morning',q.period==='morning')+quickOption('Μεσημέρι','period','noon',q.period==='noon')+quickOption('Απόγευμα','period','afternoon',q.period==='afternoon')+'</div>'+
+  (period?'<label>Ακριβής ώρα (προαιρετικά)<input type="time" id="quickTime" name="departureTime" value="'+safe(q.time)+'"></label><p class="note">Αν δεν ξέρετε ακόμη την ώρα, άφησέ την κενή.</p><button type="button" class="btn secondary quick-next" data-do="quickNext">Συνέχεια στην επιλογή διαδρομής</button>':'')+'</section>';
+ }else if(step===3&&when&&period){
+  body+='<section class="card quick-step"><h2>3. Επιλογή διαδρομής</h2><p class="note">Πρώτες εμφανίζονται οι συχνότερες.</p><div class="quick-route-list">'+routes.map(t=>quickOption(t.name+(t.estimate?' · '+t.estimate+' χλμ.':''),'routeId',t.id,q.routeId===t.id)).join('')+'</div></section>';
+ }else if(step===4&&when&&period&&chosen){
+  body+='<section class="card quick-step"><h2>4. Σημείο συνάντησης</h2><div class="quick-options">'+
+  quickOption('Πλατεία Μαβίλη','placeMode','mavili',q.placeMode==='mavili')+quickOption('Γράψε σημείο','placeMode','other',q.placeMode==='other')+'</div>'+
+  (q.placeMode==='other'?'<label>Σημείο συνάντησης<input required maxlength="120" name="customPlace" placeholder="Γράψε το σημείο" value="'+safe(q.customPlace)+'"></label>':'<p class="note">📍 Πλατεία Μαβίλη</p>')+
+  '<div class="quick-review"><strong>Έτοιμη για δημοσίευση</strong><p>📅 '+datefmt(date)+' · '+(q.time?safe(q.time):timeLabel[q.period]+' (ώρα υπό συνεννόηση)')+'</p><p>🚴 '+safe(chosen.name)+'</p></div><button class="btn" type="submit">Δημοσίευση βόλτας</button></section>';
+ }
+ return '<h1>🚴 Γρήγορη νέα βόλτα</h1><form id="quickRideForm">'+body+'</form><div class="actions"><button type="button" class="btn secondary" data-go="newDetailed">Περισσότερες ρυθμίσεις</button></div>';
 }
 
 function detailedRide(){return `<h1>+ Νέα βόλτα</h1><div class="card"><form id="createRide"><label>Αποθηκευμένη διαδρομή <select name="routeTemplateId" id="rideTemplateSelect">${routeChoices()}</select></label><div id="selectedRoutePoints" class="note"></div><label>Ημερομηνία <input required type="date" name="date" min="2020-01-01" value="${today()}"></label><label>Ώρα <input required type="time" name="time" value="09:00"></label><label>Σημείο συνάντησης <input id="meetingPlaceInput" required maxlength="120" name="place" placeholder="π.χ. Πλατεία Μαβίλη" autocomplete="off" aria-controls="meetingPlaceSuggestions" aria-expanded="false"></label><div id="meetingPlaceSuggestions" class="meeting-place-options" role="group" aria-label="Προηγούμενα σημεία συνάντησης" hidden></div><label>Τίτλος (προαιρετικά) <input maxlength="100" name="title" placeholder="π.χ. Γύρος λίμνης"></label><label>Τύπος διαδρομής <select name="routeType"><option value="flat">Επίπεδη — 20 km/h</option><option value="mixed">Μικτή — 12 km/h</option><option value="mountain">Ορεινή — 9 km/h</option></select></label><label>Εκτιμώμενα χιλιόμετρα (προαιρετικά) <input type="number" min="1" max="1000" step="0.1" name="estimate"></label><div id="newRideForecast" class="note" role="status"></div><button class="btn">Δημοσίευση βόλτας</button></form></div>`}
@@ -251,12 +262,21 @@ swipeShell.addEventListener('touchcancel',()=>{swipeStart=null},{passive:true});
 nav.addEventListener('click',async e=>{let b=e.target.closest('button');if(!b)return;if(b.dataset.route)navigate(b.dataset.route);else if(b.id==='authBtn'){if(admin){try{await api('logout')}catch{toast('Η σύνδεση αφαιρέθηκε από αυτή τη συσκευή. Η υπηρεσία δεν ήταν διαθέσιμη.')}finally{admin=false;pin='';adminToken='';writeLocal('voltesAdminToken','');try{await refresh()}catch{db.riders=[];db.rides=[]}navigate('home')}}else navigate('auth')}});
 app.addEventListener('click',async e=>{
  let b=e.target.closest('button');if(!b)return;
+ if(b.dataset.do==='quickEdit'){
+  const step=Number(b.dataset.step);
+  if(step>=1&&step<=3&&quickRideState.step>step){quickRideState.step=step;render()}return;
+ }
+ if(b.dataset.do==='quickNext'){
+  if(quickRideState.step===2&&quickRideState.period){quickRideState.time=document.querySelector('#quickTime')?.value||'';quickRideState.step=3;render()}return;
+ }
  if(b.dataset.do==='quickPick'){
   const f=b.dataset.field,value=b.dataset.value;
   if(!['day','period','routeId','placeMode'].includes(f))return;
   quickRideState[f]=value;
-  if(f==='day'){quickRideState.date='';quickRideState.period='';quickRideState.time='';quickRideState.routeId='';quickRideState.placeMode='mavili'}
-  if(f==='period'){quickRideState.time='';quickRideState.routeId='';quickRideState.placeMode='mavili'}
+  if(f==='day'){quickRideState.date='';quickRideState.period='';quickRideState.time='';quickRideState.routeId='';quickRideState.placeMode='mavili';quickRideState.customPlace='';quickRideState.step=value==='other'?1:2}
+  if(f==='period'){quickRideState.time='';quickRideState.step=3}
+  if(f==='routeId'){quickRideState.placeMode='mavili';quickRideState.customPlace='';quickRideState.step=4}
+  if(f==='placeMode'){quickRideState.customPlace=''}
   render();return;
  }
 
@@ -284,9 +304,10 @@ app.addEventListener('click',async e=>{
  }
 });
 app.addEventListener('change',e=>{
- if(e.target.id==='quickCustomDate'){quickRideState.date=e.target.value;quickRideState.period='';quickRideState.routeId='';render()}
+ if(e.target.id==='quickCustomDate'){quickRideState.date=e.target.value;quickRideState.period='';quickRideState.time='';quickRideState.routeId='';quickRideState.step=quickRideState.date?2:1;render()}
  if(e.target.id==='quickTime')quickRideState.time=e.target.value;
 });
+app.addEventListener('input',e=>{if(e.target.name==='customPlace'&&e.target.closest('#quickRideForm'))quickRideState.customPlace=e.target.value});
 app.addEventListener('focusin',e=>{if(e.target.id==='meetingPlaceInput')updateMeetingPlaceOptions()});
 app.addEventListener('input',e=>{if(e.target.id==='meetingPlaceInput')updateMeetingPlaceOptions();if(e.target.closest('#createRide'))updateNewRideForecast()});
 app.addEventListener('change',e=>{if(e.target.id==='rideTemplateSelect')syncRouteChoice();else if(e.target.id==='historicalTemplateSelect')syncHistoricalRoute();else if(e.target.id==='editRouteTemplateSelect')syncEditRouteChoice();else if(e.target.closest('#createRide'))updateNewRideForecast()});
@@ -312,7 +333,7 @@ app.addEventListener('submit',async e=>{
  if(f.id==='quickRideForm'&&admin){
   const q=quickRideState,date=quickDate(),chosen=db.routeTemplates.find(x=>x.id===q.routeId);
   const departure=String(values.departureTime||q.time||'');
-  const place=q.placeMode==='mavili'?'Πλατεία Μαβίλη':String(values.customPlace||'').trim();
+  const place=q.placeMode==='mavili'?'Πλατεία Μαβίλη':String(values.customPlace||q.customPlace||'').trim();
   if(!date||date<greekDay()||!chosen||!['morning','noon','afternoon'].includes(q.period)||!place){toast('Συμπλήρωσε ημέρα, μέρος ημέρας, διαδρομή και σημείο συνάντησης.');return}
   if(departure&&!/^([01]\d|2[0-3]):[0-5]\d$/.test(departure)){toast('Μη έγκυρη ώρα.');return}
   const duplicate=db.rides.some(r=>!r.done&&r.date===date&&r.routeTemplateId===chosen.id);
