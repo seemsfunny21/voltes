@@ -200,3 +200,21 @@ html[data-theme] .shell::-webkit-scrollbar{width:8px}
 html[data-theme] .shell::-webkit-scrollbar-track{background:var(--nav);border-radius:12px}
 html[data-theme] .shell::-webkit-scrollbar-thumb{background:var(--accent);border:1px solid var(--edge);border-radius:12px}
 html[data-theme] .shell::-webkit-scrollbar-thumb:hover{background:var(--accent-edge)}
+
+
+/* Progressive quick ride wizard: uses existing user-selected theme. */
+.quick-step{margin:14px 0;padding:18px 15px;animation:quickStepIn .18s ease-out}
+.quick-step h2{margin:0 0 14px;text-align:center;font-size:17px}
+.quick-options{display:grid;grid-template-columns:repeat(auto-fit,minmax(95px,1fr));gap:9px}
+.quick-route-list{display:grid;gap:8px;max-height:340px;overflow-y:auto;padding:2px;scrollbar-color:var(--accent) var(--nav);scrollbar-width:thin}
+.quick-option{display:flex;justify-content:center;align-items:center;min-height:50px;padding:10px;border:1px solid var(--edge);border-radius:11px;background:var(--field);color:var(--fg);font:inherit;font-size:13px;font-weight:600;cursor:pointer;text-align:center;line-height:1.35;overflow-wrap:anywhere}
+.quick-option.selected{background:var(--active);border:2px solid var(--accent-edge);color:var(--fg)}
+.quick-route-list .quick-option{justify-content:flex-start;text-align:left;padding:12px}
+.quick-step label{margin:12px 0 4px}
+.quick-step .note{font-size:13px;margin:10px 0 0;text-align:center}
+.quick-step>button[type=submit]{width:100%;margin-top:12px}
+.quick-review{margin:16px 0 4px;padding:12px;border:1px solid var(--edge);background:var(--nav);border-radius:12px;text-align:left}
+.quick-review strong{display:block;text-align:center;margin-bottom:8px}
+.quick-review p{margin:5px 0;font-size:13px}
+@keyframes quickStepIn{from{opacity:.55;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:380px){.quick-options{grid-template-columns:repeat(2,minmax(0,1fr))}.quick-step{padding:14px 10px}}
