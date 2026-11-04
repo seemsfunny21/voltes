@@ -226,3 +226,6 @@ html[data-theme] .shell::-webkit-scrollbar-thumb:hover{background:var(--accent-e
 .quick-completed-label span{font-size:14px;font-weight:650;overflow-wrap:anywhere}
 .quick-completed .quick-change{width:auto;max-width:none;flex:0 0 auto;margin:0;padding:9px 11px;font-size:12px}
 .quick-step .quick-next{width:100%;margin-top:11px}
+
+/* Explicit optional hour button in the compact departure step. */
+.quick-step .quick-set-time{width:100%;margin-top:13px}
