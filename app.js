@@ -272,9 +272,10 @@ app.addEventListener('click',async e=>{
  if(b.dataset.do==='quickPick'){
   const f=b.dataset.field,value=b.dataset.value;
   if(!['day','period','routeId','placeMode'].includes(f))return;
+  const hadPeriod=!!quickRideState.period;
   quickRideState[f]=value;
   if(f==='day'){quickRideState.date='';quickRideState.period='';quickRideState.time='';quickRideState.routeId='';quickRideState.placeMode='mavili';quickRideState.customPlace='';quickRideState.step=value==='other'?1:2}
-  if(f==='period'){quickRideState.time='';quickRideState.step=3}
+  if(f==='period'){quickRideState.time='';quickRideState.step=hadPeriod?2:3}
   if(f==='routeId'){quickRideState.placeMode='mavili';quickRideState.customPlace='';quickRideState.step=4}
   if(f==='placeMode'){quickRideState.customPlace=''}
   render();return;
