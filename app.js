@@ -80,7 +80,7 @@ function bikeServicePage(){
    (bikes.length?'<div class="quick-route-list">'+bikes.map(b=>bikeWizardSelection(b+(b===defaultBike()?' ★':''),'bike',b,q.bike===b&&!q.newBike)).join('')+'</div>':'')+
    '<button type="button" class="btn secondary bike-new-action" data-do="bikeWizardNew">+ Προσθήκη ποδηλάτου</button>'+
    (q.newBike?'<label>Όνομα ποδηλάτου<input id="bikeWizardNewName" maxlength="90" placeholder="π.χ. Cube Agree C62 Pro" autocomplete="off"></label><button type="button" class="btn" data-do="bikeWizardSaveBike">Αποθήκευση ποδηλάτου</button>':'')+
-   (q.bike&&!q.newBike&&q.bike!==defaultBike()?'<button type="button" class="btn secondary bike-default-action" data-do="bikeWizardDefault">Ορισμός ως προεπιλογή</button>':'')+
+   (q.bike&&!q.newBike?'<button type="button" class="btn bike-wizard-next" data-do="bikeWizardNext">Επόμενο</button>'+(q.bike!==defaultBike()?'<button type="button" class="btn secondary bike-default-action" data-do="bikeWizardDefault">Ορισμός ως προεπιλογή</button>':''):'')+
    '</section>';
  }else if(q.step===2){
   blocks+='<section class="card quick-step"><h2>2. Πότε έγινε το σέρβις;</h2><div class="quick-options">'+
@@ -376,7 +376,7 @@ app.addEventListener('click',async e=>{
  }
  if(b.dataset.do==='bikeWizardPick'){
   const field=b.dataset.field,val=b.dataset.value;
-  if(field==='bike'&&registeredBikes().includes(val)){bikeWizard.bike=val;bikeWizard.newBike=false;bikeWizard.step=2;render();return}
+  if(field==='bike'){const found=registeredBikes().find(name=>name.toLocaleLowerCase('el-GR')===String(val||'').trim().toLocaleLowerCase('el-GR'));if(found){bikeWizard.bike=found;bikeWizard.newBike=false;bikeWizard.step=2;render()}else toast('Το ποδήλατο δεν βρέθηκε. Δοκίμασε ξανά.');return}
   if(field==='date'){
    if(val==='other'){bikeWizard.date='';render();return}
    if(val===greekDay()){bikeWizard.date=val;render();return}
