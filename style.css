@@ -246,3 +246,9 @@ html[data-theme] .shell::-webkit-scrollbar-thumb:hover{background:var(--accent-e
 .bike-default-inline{text-align:right;margin:4px 0 10px}
 .bike-default-inline .btn{font-size:12px;padding:8px 12px;max-width:100%}
 #bikeWizardNewName{margin-top:5px}
+
+/* Compact maintenance form: archive stays closed until requested. */
+.bike-history-fold{margin:12px 0;border:1px solid var(--edge);border-radius:12px;padding:10px 12px}
+.bike-history-fold summary{cursor:pointer;font-weight:650;padding:5px 0;list-style-position:inside}
+.bike-history-fold[open] summary{margin-bottom:12px}
+.bike-history-fold .bike-service-history{margin:0}
