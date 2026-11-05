@@ -72,7 +72,7 @@ function bikeServiceSummary(){
 function bikeServicePage(){
  const q=bikeWizard,items=bikeServiceEntries().sort((a,b)=>b.date.localeCompare(a.date)),bikes=registeredBikes();
  let blocks='';
- if(q.step>1&&q.bike)blocks+=serviceWizardCompleted(1,'Ποδήλατο',q.bike+(defaultBike()===q.bike?' · Προεπιλογή':''));
+ if(q.step>1&&q.bike){blocks+=serviceWizardCompleted(1,'Ποδήλατο',q.bike+(defaultBike()===q.bike?' · Προεπιλογή':''));if(q.bike!==defaultBike())blocks+='<div class="bike-default-inline"><button type="button" class="btn secondary" data-do="bikeWizardDefault">Ορισμός αυτού ως προεπιλογή</button></div>'}
  if(q.step>2&&q.date)blocks+=serviceWizardCompleted(2,'Ημερομηνία',datefmt(q.date));
  if(q.step>3&&q.work)blocks+=serviceWizardCompleted(3,'Εργασία',q.work);
  if(q.step===1){
@@ -365,7 +365,7 @@ app.addEventListener('click',async e=>{
   if(name.length<2||name.length>90){toast('Γράψε όνομα ποδηλάτου (2–90 χαρακτήρες).');return}
   const result=storeBike(name,false);
   if(!result.ok){toast('Δεν ήταν δυνατή η αποθήκευση του ποδηλάτου σε αυτή τη συσκευή.');return}
-  bikeWizard.bike=result.name;bikeWizard.newBike=false;render();return;
+  bikeWizard.bike=result.name;bikeWizard.newBike=false;bikeWizard.step=2;render();return;
  }
  if(b.dataset.do==='bikeWizardDefault'){
   if(bikeWizard.bike&&!bikeWizard.newBike){
