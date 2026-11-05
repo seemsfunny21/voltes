@@ -229,3 +229,14 @@ html[data-theme] .shell::-webkit-scrollbar-thumb:hover{background:var(--accent-e
 
 /* Explicit optional hour button in the compact departure step. */
 .quick-step .quick-set-time{width:100%;margin-top:13px}
+
+/* Private local bike maintenance journal */
+.bike-service-card{text-align:center}
+.bike-service-card .btn{margin:8px auto}
+.bike-service-disclaimer{font-size:12px;line-height:1.5;color:var(--sub,#b3bbb6);margin:12px 0 0}
+.bike-service-history{display:grid;gap:10px}
+.bike-service-entry{text-align:left;margin:0}
+.bike-service-entry .row{gap:10px;align-items:center;flex-wrap:wrap}
+.bike-service-entry .row strong{overflow-wrap:anywhere;flex:1;min-width:120px}
+.bike-service-entry .row .btn{font-size:12px;padding:8px 12px}
+.bike-service-entry p{margin:8px 0 0}
