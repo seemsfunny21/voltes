@@ -28,31 +28,82 @@ function saveBikeService(entries){
  try{localStorage.setItem(bikeServiceStorageKey,JSON.stringify(entries));return true}
  catch{return false}
 }
+
+/* Separate saved-bike registry; legacy maintenance records remain untouched. */
+const bikeRegistryKey='voltesSavedBikesV2';
+const bikeDefaultKey='voltesDefaultBikeV2';
+function registeredBikes(){
+ let stored=[];try{const v=JSON.parse(localStorage.getItem(bikeRegistryKey)||'[]');if(Array.isArray(v))stored=v.filter(n=>typeof n==='string').map(n=>n.trim()).filter(n=>n.length>=2&&n.length<=90)}catch{}
+ const old=bikeServiceEntries().map(x=>x.bike.trim()).filter(Boolean);
+ return [...new Map([...stored,...old].map(n=>[n.toLocaleLowerCase('el-GR'),n])).values()];
+}
+function defaultBike(){
+ const choices=registeredBikes(),preferred=readLocal(bikeDefaultKey);
+ return choices.find(n=>n.toLocaleLowerCase('el-GR')===preferred.toLocaleLowerCase('el-GR'))||choices[0]||'';
+}
+function storeBike(bike,makeDefault){
+ const cleaned=String(bike||'').trim(),known=registeredBikes();
+ if(cleaned.length<2||cleaned.length>90)return {ok:false,name:''};
+ const existing=known.find(n=>n.toLocaleLowerCase('el-GR')===cleaned.toLocaleLowerCase('el-GR'));
+ const value=existing||cleaned;
+ try{
+  if(!existing)localStorage.setItem(bikeRegistryKey,JSON.stringify([...known,value]));
+  if(makeDefault||!defaultBike())localStorage.setItem(bikeDefaultKey,value);
+  return {ok:true,name:value}
+ }catch{return {ok:false,name:''}}
+}
+let bikeWizard={step:1,bike:'',newBike:false,date:'',work:'',km:'',notes:''};
+const serviceWorks=['Γενικό σέρβις','Αλυσίδα','Φρένα','Λάστιχα','Μετάδοση / ταχύτητες','Άλλη εργασία'];
+function resetBikeWizard(){bikeWizard={step:1,bike:defaultBike(),newBike:!registeredBikes().length,date:greekDay(),work:'',km:'',notes:''}}
+function bikeWizardSelection(label,field,value,selected){
+ return '<button type="button" class="quick-option'+(selected?' selected':'')+'" data-do="bikeWizardPick" data-field="'+field+'" data-value="'+safe(value)+'" aria-pressed="'+(selected?'true':'false')+'">'+safe(label)+(selected?' ✓':'')+'</button>';
+}
+function serviceWizardCompleted(step,title,detail){
+ return '<div class="quick-completed"><span class="quick-completed-label"><b>'+step+'. '+safe(title)+'</b><span>'+safe(detail)+'</span></span><button type="button" class="btn secondary quick-change" data-do="bikeWizardEdit" data-step="'+step+'">Αλλαγή</button></div>';
+}
 function bikeServiceSummary(){
- const items=bikeServiceEntries();
- const bikes=[...new Set(items.map(x=>x.bike))];
+ const items=bikeServiceEntries(),bikes=registeredBikes();
  return '<div class="card bike-service-card"><h2>🔧 Σέρβις ποδηλάτου</h2>'+
  '<p class="muted">Το προσωπικό ιστορικό συντήρησης των ποδηλάτων σου.</p>'+
- (items.length?'<p class="note">'+bikes.map(safe).join(' · ')+' · '+items.length+' καταχωρίσεις</p>':'<p class="note">Δεν έχεις καταχωρίσει ακόμη κάποιο σέρβις.</p>')+
+ (bikes.length?'<p class="note">'+bikes.map(safe).join(' · ')+(items.length?' · '+items.length+' καταχωρίσεις':'')+'</p>':'<p class="note">Δεν έχεις καταχωρίσει ακόμη ποδήλατο.</p>')+
  '<button type="button" class="btn" data-go="bikeService">Προβολή & καταχώριση σέρβις</button>'+
- '<p class="bike-service-disclaimer">Ιδιωτικά σε αυτή τη συσκευή · Δεν συγχρονίζονται με άλλη συσκευή ή το Supabase.</p></div>';
+ '<p class="bike-service-disclaimer">Αποθηκεύονται μόνο σε αυτή τη συσκευή, όχι στο Supabase.</p></div>';
 }
 function bikeServicePage(){
- const items=bikeServiceEntries().sort((a,b)=>b.date.localeCompare(a.date));
- const bikes=[...new Set(items.map(x=>x.bike))].sort((a,b)=>a.localeCompare(b,'el'));
- return '<h1>🔧 Σέρβις ποδηλάτου</h1><div class="card"><p class="muted">Καταχώρισε συντήρηση για κάθε ποδήλατο ξεχωριστά.</p>'+
- '<form id="bikeServiceForm"><label>Ποδήλατο <input name="bike" list="bikeServiceBikeNames" maxlength="90" required placeholder="π.χ. Cube Agree C62 Pro"></label>'+
- '<datalist id="bikeServiceBikeNames">'+bikes.map(name=>'<option value="'+safe(name)+'"></option>').join('')+'</datalist>'+
- '<label>Ημερομηνία σέρβις <input type="date" name="date" required max="'+greekDay()+'" value="'+greekDay()+'"></label>'+
- '<label>Χιλιόμετρα ποδηλάτου (προαιρετικά) <input type="number" name="km" min="0" max="1000000" step="1" placeholder="π.χ. 4500"></label>'+
- '<label>Εργασία συντήρησης <select name="work" required><option value="Γενικό σέρβις">Γενικό σέρβις</option><option value="Αλυσίδα">Αλυσίδα</option><option value="Φρένα">Φρένα</option><option value="Λάστιχα">Λάστιχα</option><option value="Μετάδοση / ταχύτητες">Μετάδοση / ταχύτητες</option><option value="Άλλη εργασία">Άλλη εργασία</option></select></label>'+
- '<label>Παρατηρήσεις (προαιρετικά) <textarea name="notes" maxlength="600" rows="3" placeholder="Τι έγινε στο σέρβις;"></textarea></label>'+
- '<button class="btn" type="submit">Αποθήκευση σέρβις</button></form></div>'+
+ const q=bikeWizard,items=bikeServiceEntries().sort((a,b)=>b.date.localeCompare(a.date)),bikes=registeredBikes();
+ let blocks='';
+ if(q.step>1&&q.bike)blocks+=serviceWizardCompleted(1,'Ποδήλατο',q.bike+(defaultBike()===q.bike?' · Προεπιλογή':''));
+ if(q.step>2&&q.date)blocks+=serviceWizardCompleted(2,'Ημερομηνία',datefmt(q.date));
+ if(q.step>3&&q.work)blocks+=serviceWizardCompleted(3,'Εργασία',q.work);
+ if(q.step===1){
+  blocks+='<section class="card quick-step"><h2>1. Ποιο ποδήλατο;</h2>'+
+   (bikes.length?'<div class="quick-route-list">'+bikes.map(b=>bikeWizardSelection(b+(b===defaultBike()?' · Προεπιλογή':''),'bike',b,q.bike===b&&!q.newBike)).join('')+'</div>':'')+
+   '<button type="button" class="btn secondary bike-new-action" data-do="bikeWizardNew">+ Προσθήκη ποδηλάτου</button>'+
+   (q.newBike?'<label>Όνομα ποδηλάτου<input id="bikeWizardNewName" maxlength="90" placeholder="π.χ. Cube Agree C62 Pro" autocomplete="off"></label><button type="button" class="btn" data-do="bikeWizardSaveBike">Αποθήκευση ποδηλάτου</button>':'')+
+   (q.bike&&!q.newBike?'<p class="note">Επιλεγμένο: '+safe(q.bike)+'</p><button type="button" class="btn secondary bike-default-action" data-do="bikeWizardDefault"'+(q.bike===defaultBike()?' disabled':'')+'>'+(q.bike===defaultBike()?'✓ Προεπιλεγμένο ποδήλατο':'Ορισμός ως προεπιλογή')+'</button><button type="button" class="btn bike-wizard-next" data-do="bikeWizardNext">Επόμενο</button>':'')+
+   '</section>';
+ }else if(q.step===2){
+  blocks+='<section class="card quick-step"><h2>2. Πότε έγινε το σέρβις;</h2><div class="quick-options">'+
+   bikeWizardSelection('Σήμερα','date',greekDay(),q.date===greekDay())+
+   bikeWizardSelection('Άλλη ημερομηνία','date','other',q.date!==greekDay())+'</div>'+
+   (q.date!==greekDay()?'<label>Ημερομηνία<input type="date" id="bikeWizardDate" max="'+greekDay()+'" value="'+safe(q.date)+'"></label>':'<p class="note">📅 '+datefmt(greekDay())+'</p>')+
+   '<button type="button" class="btn bike-wizard-next" data-do="bikeWizardNext">Επόμενο</button></section>';
+ }else if(q.step===3){
+  blocks+='<section class="card quick-step"><h2>3. Τι σέρβις έγινε;</h2><div class="quick-route-list">'+
+   serviceWorks.map(work=>bikeWizardSelection(work,'work',work,q.work===work)).join('')+'</div></section>';
+ }else if(q.step===4){
+  blocks+='<section class="card quick-step"><h2>4. Χιλιόμετρα & παρατηρήσεις</h2><p class="note">Και τα δύο είναι προαιρετικά.</p>'+
+   '<form id="bikeServiceForm"><label>Χιλιόμετρα ποδηλάτου<input type="number" name="km" min="0" max="1000000" step="1" value="'+safe(q.km)+'" placeholder="π.χ. 4500"></label>'+
+   '<label>Παρατηρήσεις<textarea name="notes" rows="3" maxlength="600" placeholder="Τι έγινε στο σέρβις;">'+safe(q.notes)+'</textarea></label>'+
+   '<div class="quick-review"><strong>Έτοιμο για αποθήκευση</strong><p>🚴 '+safe(q.bike)+'</p><p>📅 '+datefmt(q.date)+' · 🔧 '+safe(q.work)+'</p></div>'+
+   '<button class="btn" type="submit">Αποθήκευση σέρβις</button></form></section>';
+ }
+ return '<h1>🔧 Σέρβις ποδηλάτου</h1><p class="muted">Ένα κουτάκι κάθε φορά. Τα ποδήλατά σου παραμένουν αποθηκευμένα.</p>'+blocks+
  '<h2>Ιστορικό συντήρησης</h2>'+
  (items.length?'<div class="bike-service-history">'+items.map(item=>'<article class="card bike-service-entry"><div class="row"><strong>'+safe(item.bike)+'</strong><button type="button" class="btn danger" data-do="deleteBikeService" data-id="'+safe(item.id)+'">Διαγραφή</button></div>'+
  '<p>🔧 '+safe(item.work)+'</p><p class="muted">📅 '+safe(datefmt(item.date))+(item.km!==''?' · '+safe(item.km)+' χλμ.':'')+'</p>'+
  (item.notes?'<p class="note">'+safe(item.notes)+'</p>':'')+'</article>').join('')+'</div>':'<p class="empty">Δεν υπάρχουν καταχωρισμένα σέρβις.</p>')+
- '<p class="bike-service-disclaimer">Τα δεδομένα αποθηκεύονται μόνο στο συγκεκριμένο πρόγραμμα περιήγησης. Αν καθαρίσεις τα δεδομένα του ιστότοπου ή αλλάξεις συσκευή, μπορεί να χαθούν. Σε κοινόχρηστη συσκευή δεν υπάρχει ξεχωριστό κλείδωμα χρηστών.</p>'+
+ '<p class="bike-service-disclaimer">Οι καταχωρίσεις μένουν μόνο στο πρόγραμμα περιήγησης αυτής της συσκευής. Μπορεί να χαθούν αν καθαριστούν τα δεδομένα του ιστότοπου και είναι ορατές σε άλλους που χρησιμοποιούν την ίδια συσκευή.</p>'+
  '<div class="actions"><button type="button" class="btn secondary" data-go="settings">Επιστροφή στις Ρυθμίσεις</button></div>';
 }
 
@@ -79,7 +130,7 @@ async function start(){
 }
 const datefmt=d=>new Date(d+'T12:00:00').toLocaleDateString('el-GR',{day:'2-digit',month:'2-digit',year:'numeric'});
 function toast(v){message=v;render()}
-function navigate(v){if(v==='new')quickRideState={day:'',date:'',period:'',time:'',showTimePicker:false,routeId:'',placeMode:'mavili',customPlace:'',step:1};route=v;if(v==='history')historyLimit=5;nav.classList.add('hidden');document.querySelector('[data-bottom-route="menu"]')?.setAttribute('aria-expanded','false');render();if(v==='auth')document.querySelector('#login input[name="pin"]')?.focus({preventScroll:true});document.querySelector(".shell").scrollTo(0,0)}
+function navigate(v){if(v==='bikeService')resetBikeWizard();if(v==='new')quickRideState={day:'',date:'',period:'',time:'',showTimePicker:false,routeId:'',placeMode:'mavili',customPlace:'',step:1};route=v;if(v==='history')historyLimit=5;nav.classList.add('hidden');document.querySelector('[data-bottom-route="menu"]')?.setAttribute('aria-expanded','false');render();if(v==='auth')document.querySelector('#login input[name="pin"]')?.focus({preventScroll:true});document.querySelector(".shell").scrollTo(0,0)}
 function renderNotice(){return message?`<p class="alert" role="status">${safe(message)}</p>`:''}
 function stats(){let completed=db.rides.filter(x=>x.done);return `<section class="metrics"><div class="metric"><b>${completed.length}</b><small>Βόλτες</small></div><div class="metric"><b>${Math.round(completed.reduce((a,x)=>a+Number(x.km||0),0))}</b><small>Χιλιόμετρα</small></div><div class="metric"><b>${(admin?db.riders.filter(x=>x.member).length:db.members)}</b><small>Μέλη</small></div></section>`}
 function expiredRide(r){return !r.done&&Date.now()-new Date(String(r.date)+'T'+String(r.time||'10:00')+':00').getTime()>86400000}
@@ -305,6 +356,43 @@ swipeShell.addEventListener('touchcancel',()=>{swipeStart=null},{passive:true});
 nav.addEventListener('click',async e=>{let b=e.target.closest('button');if(!b)return;if(b.dataset.route)navigate(b.dataset.route);else if(b.id==='authBtn'){if(admin){try{await api('logout')}catch{toast('Η σύνδεση αφαιρέθηκε από αυτή τη συσκευή. Η υπηρεσία δεν ήταν διαθέσιμη.')}finally{admin=false;pin='';adminToken='';writeLocal('voltesAdminToken','');try{await refresh()}catch{db.riders=[];db.rides=[]}navigate('home')}}else navigate('auth')}});
 app.addEventListener('click',async e=>{
  let b=e.target.closest('button');if(!b)return;
+ if(b.dataset.do==='bikeWizardEdit'){
+  const step=Number(b.dataset.step);if(step>=1&&step<=3&&step<bikeWizard.step){bikeWizard.step=step;render()}return;
+ }
+ if(b.dataset.do==='bikeWizardNew'){bikeWizard.newBike=true;render();document.querySelector('#bikeWizardNewName')?.focus();return}
+ if(b.dataset.do==='bikeWizardSaveBike'){
+  const name=document.querySelector('#bikeWizardNewName')?.value?.trim()||'';
+  if(name.length<2||name.length>90){toast('Γράψε όνομα ποδηλάτου (2–90 χαρακτήρες).');return}
+  const result=storeBike(name,false);
+  if(!result.ok){toast('Δεν ήταν δυνατή η αποθήκευση του ποδηλάτου σε αυτή τη συσκευή.');return}
+  bikeWizard.bike=result.name;bikeWizard.newBike=false;render();return;
+ }
+ if(b.dataset.do==='bikeWizardDefault'){
+  if(bikeWizard.bike&&!bikeWizard.newBike){
+   const selected=storeBike(bikeWizard.bike,true);
+   if(selected.ok)render();else toast('Δεν αποθηκεύτηκε η προεπιλογή.');
+  }
+  return;
+ }
+ if(b.dataset.do==='bikeWizardPick'){
+  const field=b.dataset.field,val=b.dataset.value;
+  if(field==='bike'&&registeredBikes().includes(val)){bikeWizard.bike=val;bikeWizard.newBike=false;render();return}
+  if(field==='date'){
+   if(val==='other'){bikeWizard.date='';render();return}
+   if(val===greekDay()){bikeWizard.date=val;render();return}
+  }
+  if(field==='work'&&serviceWorks.includes(val)){bikeWizard.work=val;bikeWizard.step=4;render();return}
+  return;
+ }
+ if(b.dataset.do==='bikeWizardNext'){
+  const q=bikeWizard;
+  if(q.step===1&&q.bike&&!q.newBike&&registeredBikes().includes(q.bike)){q.step=2;render();return}
+  if(q.step===2){
+   if(!/^\d{4}-\d{2}-\d{2}$/.test(q.date)||q.date>greekDay()||!Number.isFinite(Date.parse(q.date+'T12:00:00Z'))){toast('Επίλεξε έγκυρη ημερομηνία σέρβις.');return}
+   q.step=3;render();return;
+  }
+  return;
+ }
  if(b.dataset.do==='deleteBikeService'){
   const existing=bikeServiceEntries();
   const entry=existing.find(x=>x.id===b.dataset.id);
@@ -358,6 +446,7 @@ app.addEventListener('click',async e=>{
  }
 });
 app.addEventListener('change',e=>{
+ if(e.target.id==='bikeWizardDate'){bikeWizard.date=e.target.value;return}
  if(e.target.id==='quickCustomDate'){quickRideState.date=e.target.value;quickRideState.period='';quickRideState.time='';quickRideState.routeId='';quickRideState.showTimePicker=false;quickRideState.step=quickRideState.date?2:1;render()}
  if(e.target.id==='quickTime')quickRideState.time=e.target.value;
 });
@@ -385,15 +474,14 @@ app.addEventListener('submit',async e=>{
  e.preventDefault();let f=e.target,d=new FormData(f);
  const values=Object.fromEntries(d.entries());
  if(f.id==='bikeServiceForm'){
-  const bike=String(values.bike||'').trim(),date=String(values.date||''),work=String(values.work||''),notes=String(values.notes||'').trim(),km=String(values.km||'').trim();
-  const permitted=['Γενικό σέρβις','Αλυσίδα','Φρένα','Λάστιχα','Μετάδοση / ταχύτητες','Άλλη εργασία'];
+  const q=bikeWizard,bike=q.bike,date=q.date,work=q.work,notes=String(values.notes||'').trim(),km=String(values.km||'').trim();
   const dateValue=new Date(date+'T12:00:00Z');
-  if(bike.length<2||bike.length>90||notes.length>600||!permitted.includes(work)||!/^\d{4}-\d{2}-\d{2}$/.test(date)||!Number.isFinite(dateValue.getTime())||dateValue.toISOString().slice(0,10)!==date||date>greekDay()||(km!==''&&(!/^\d+$/.test(km)||Number(km)>1000000))){toast('Έλεγξε τα στοιχεία του σέρβις.');return}
+  if(q.step!==4||!registeredBikes().includes(bike)||notes.length>600||!serviceWorks.includes(work)||!/^\d{4}-\d{2}-\d{2}$/.test(date)||!Number.isFinite(dateValue.getTime())||dateValue.toISOString().slice(0,10)!==date||date>greekDay()||(km!==''&&(!/^\d+$/.test(km)||Number(km)>1000000))){toast('Έλεγξε τα στοιχεία του σέρβις.');return}
   const entries=bikeServiceEntries();
   if(entries.length>=200){toast('Το όριο είναι 200 καταχωρίσεις σε αυτή τη συσκευή.');return}
   entries.push({id:crypto.randomUUID(),bike,date,work,notes,km});
   if(!saveBikeService(entries)){toast('Δεν ήταν δυνατή η αποθήκευση στη συσκευή.');return}
-  render();return;
+  resetBikeWizard();render();return;
  }
  if(f.id==='quickRideForm'&&admin){
   const q=quickRideState,date=quickDate(),chosen=db.routeTemplates.find(x=>x.id===q.routeId);
