@@ -240,3 +240,9 @@ html[data-theme] .shell::-webkit-scrollbar-thumb:hover{background:var(--accent-e
 .bike-service-entry .row strong{overflow-wrap:anywhere;flex:1;min-width:120px}
 .bike-service-entry .row .btn{font-size:12px;padding:8px 12px}
 .bike-service-entry p{margin:8px 0 0}
+
+/* Bicycle maintenance wizard: one active card, saved-bike choices, optional default. */
+.bike-new-action,.bike-default-action,.bike-wizard-next{width:100%;margin-top:12px}
+.bike-default-inline{text-align:right;margin:4px 0 10px}
+.bike-default-inline .btn{font-size:12px;padding:8px 12px;max-width:100%}
+#bikeWizardNewName{margin-top:5px}
