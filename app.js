@@ -376,7 +376,7 @@ app.addEventListener('click',async e=>{
  }
  if(b.dataset.do==='bikeWizardPick'){
   const field=b.dataset.field,val=b.dataset.value;
-  if(field==='bike'&&registeredBikes().includes(val)){bikeWizard.bike=val;bikeWizard.newBike=false;render();return}
+  if(field==='bike'&&registeredBikes().includes(val)){bikeWizard.bike=val;bikeWizard.newBike=false;bikeWizard.step=2;render();return}
   if(field==='date'){
    if(val==='other'){bikeWizard.date='';render();return}
    if(val===greekDay()){bikeWizard.date=val;render();return}
