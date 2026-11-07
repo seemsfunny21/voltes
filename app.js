@@ -89,9 +89,10 @@ function bikeServicePage(){
   (item.notes?'<p class="note">'+safe(item.notes)+'</p>':'')+
   (own?'<div class="actions"><button type="button" class="btn secondary" data-do="editBikeService" data-id="'+safe(item.id)+'">Διόρθωση</button><button type="button" class="btn danger" data-do="deleteBikeService" data-id="'+safe(item.id)+'">Διαγραφή</button></div>':'')+'</article>'
  }).join(''):'<p class="empty">Δεν υπάρχουν καταχωρισμένα σέρβις.</p>')+'</div>';
+ const membersBikes='<div class="card"><h2>'+(bikeView==='mine'?'Τα ποδήλατά μου':'Ποδήλατα της ομάδας')+'</h2>'+(shownBikes.length?shownBikes.map(b=>'<p><b>'+safe(b.name)+'</b> · '+safe(b.member_name)+(b.is_default?' ★':'')+'</p>').join(''):'<p class="empty">Δεν υπάρχουν καταχωρισμένα ποδήλατα.</p>')+'</div>';
  const legacy=bikeServiceEntries().length?'<p class="note">Υπάρχουν '+bikeServiceEntries().length+' παλιές τοπικές καταχωρίσεις σε αυτή τη συσκευή. Δεν έχουν διαγραφεί και δεν έχουν μεταφερθεί αυτόματα.</p>':'';
  return '<h1>🔧 Σέρβις ποδηλάτων</h1>'+blocks+
- '<div class="card"><h2>Ιστορικό συντήρησης</h2><div class="quick-options"><button type="button" class="quick-option'+(bikeView==='mine'?' selected':'')+'" data-do="bikeView" data-value="mine">Τα δικά μου</button><button type="button" class="quick-option'+(bikeView==='all'?' selected':'')+'" data-do="bikeView" data-value="all">Όλα τα μέλη</button></div>'+history+'</div>'+legacy+
+ '<div class="card"><h2>Ιστορικό συντήρησης</h2><div class="quick-options"><button type="button" class="quick-option'+(bikeView==='mine'?' selected':'')+'" data-do="bikeView" data-value="mine">Τα δικά μου</button><button type="button" class="quick-option'+(bikeView==='all'?' selected':'')+'" data-do="bikeView" data-value="all">Όλα τα μέλη</button></div>'+history+'</div>'+membersBikes+legacy+
  '<div class="actions"><button type="button" class="btn secondary" data-go="settings">Επιστροφή στις Ρυθμίσεις</button></div>';
 }
 function themeSettings(){return `<div class="card"><h2>Χρώμα εφαρμογής</h2><p>Το χρώμα αποθηκεύεται μόνο στη συσκευή σου.</p><div class="theme-options">${Object.entries(themes).map(([k,v])=>`<button type="button" class="theme-option theme-${k}" data-theme="${k}" aria-pressed="${k===chosenTheme}">${v}${k===chosenTheme?' ✓':''}</button>`).join('')}</div></div>${bikeServiceSummary()}<div class="card"><h2>Διαχείριση Admin</h2>${admin?`<div class="admin-settings"><button class="btn" data-go="new">+ Νέα βόλτα</button><button class="btn secondary" data-go="historyAdd">+ Προσθήκη παλιάς βόλτας</button><button class="btn secondary" data-go="routeAdd">+ Προσθήκη διαδρομής</button><button class="btn secondary" data-go="routes">Διαδρομές</button><button class="btn secondary" data-go="riders">Ποδηλάτες & επισκέπτες</button><button class="btn secondary" data-go="stats">Στατιστικά</button><button class="btn secondary" data-do="adminLogout">Αποσύνδεση</button></div>`:`<button class="btn" data-go="auth">Είσοδος Admin</button>`}</div>${admin&&db.rides.some(expiredRide)?`<div class="card"><h2>Παλιές προγραμματισμένες βόλτες</h2><p class="muted">Αποσύρθηκαν από την Αρχική. Μπορείς να τις ολοκληρώσεις ή να τις διαγράψεις.</p>${db.rides.filter(expiredRide).map(rideCard).join('')}</div>`:''}`}
@@ -113,7 +114,7 @@ async function refresh(){const result=await api('state');db={rides:result.rides|
 async function perform(action,fields,success){try{await api(action,fields);await refresh();return true}catch(e){toast(e.message);return false}}
 async function start(){
  if(!API_URL){app.innerHTML='<p class="alert">Η εφαρμογή χρειάζεται ρύθμιση του Supabase. Συμπλήρωσε το API_URL στο config.js σύμφωνα με το README.</p>';return}
- try{await refresh();await loadBikeCloud()}catch(e){app.innerHTML=`<p class="alert">${safe(e.message)}</p>`}
+ try{await refresh();loadBikeCloud().catch(()=>{})}catch(e){app.innerHTML=`<p class="alert">${safe(e.message)}</p>`}
 }
 const datefmt=d=>new Date(d+'T12:00:00').toLocaleDateString('el-GR',{day:'2-digit',month:'2-digit',year:'numeric'});
 function toast(v){message=v;render()}
