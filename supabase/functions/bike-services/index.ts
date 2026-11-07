@@ -13,10 +13,17 @@ Deno.serve(async req=>{
  try{
   const action=p.action;
   if(action==='state'){
-   const [a,b,m]=await Promise.all([db.from('voltes_bikes').select('id,member_id,name,is_default,created_at').order('created_at'),db.from('voltes_bike_services').select('id,bike_id,service_date,work,km,notes').order('service_date',{ascending:false}),db.from('voltes_riders').select('id,name').eq('member',true)]);
-   if(a.error||b.error||m.error)throw a.error||b.error||m.error;
-   const names=new Map((m.data||[]).map((x:any)=>[x.id,x.name]));
-   return reply({bikes:(a.data||[]).map((x:any)=>({...x,member_name:names.get(x.member_id)||''})),services:b.data});
+   // Only return the chosen member's records, minimizing transfer on free-tier hosting.
+   const name=plain(p.memberName,70);
+   if(!name)return reply({bikes:[],services:[]});
+   const {data:member,error:me}=await db.from('voltes_riders').select('id').eq('name',name).eq('member',true).maybeSingle();
+   if(me)throw me;if(!member)return reply({bikes:[],services:[]});
+   const {data:bikes,error:be}=await db.from('voltes_bikes').select('id,member_id,name,is_default').eq('member_id',member.id);
+   if(be)throw be;
+   if(!bikes?.length)return reply({bikes:[],services:[]});
+   const {data:services,error:se}=await db.from('voltes_bike_services').select('id,bike_id,service_date,work,km,notes').in('bike_id',bikes.map((b:any)=>b.id)).order('service_date',{ascending:false});
+   if(se)throw se;
+   return reply({bikes:bikes.map((bike:any)=>({...bike,member_name:name})),services:services||[]});
   }
   if(!['createBike','setDefault','addService','updateService','deleteService','importService'].includes(action))return bad('Άγνωστη ενέργεια',404);
   const memberName=plain(p.memberName,70);if(memberName.length<2)return bad('Επίλεξε μέλος από τις Ρυθμίσεις.');
