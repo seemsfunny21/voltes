@@ -24,3 +24,5 @@ jobs:
           node --check tests/regression.cjs
       - name: Run lightweight offline regression suite
         run: node tests/regression.cjs
+      - name: Run ride completion and member interaction suites
+        run: npm test
