@@ -18,7 +18,7 @@ Deno.serve(async req=>{
    const names=new Map((m.data||[]).map((x:any)=>[x.id,x.name]));
    return reply({bikes:(a.data||[]).map((x:any)=>({...x,member_name:names.get(x.member_id)||''})),services:b.data});
   }
-  if(!['createBike','setDefault','addService','updateService','deleteService'].includes(action))return bad('Άγνωστη ενέργεια',404);
+  if(!['createBike','setDefault','addService','updateService','deleteService','importService'].includes(action))return bad('Άγνωστη ενέργεια',404);
   const memberName=plain(p.memberName,70);if(memberName.length<2)return bad('Επίλεξε μέλος από τις Ρυθμίσεις.');
   const {data:member,error:me}=await db.from('voltes_riders').select('id').eq('name',memberName).eq('member',true).maybeSingle();
   if(me)throw me;if(!member)return bad('Το μέλος δεν βρέθηκε.',404);
@@ -39,6 +39,22 @@ Deno.serve(async req=>{
    const {error:e1}=await db.from('voltes_bikes').update({is_default:false}).eq('member_id',member.id).eq('is_default',true);if(e1)throw e1;
    const {error:e2}=await db.from('voltes_bikes').update({is_default:true}).eq('id',p.bikeId);if(e2)throw e2;
    return reply({ok:true});
+  }
+  if(action==='importService'){
+   // Import old, device-local records once, without replacing an existing shared record.
+   const date=plain(p.date,10),work=plain(p.work,100),notes=plain(p.notes??'',600);
+   const d=new Date(date+'T12:00:00Z'),now=new Date().toLocaleDateString('en-CA',{timeZone:'Europe/Athens'});
+   const km=p.km===''||p.km==null?null:Number(p.km);
+   if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!Number.isFinite(d.getTime())||d.toISOString().slice(0,10)!==date||date>now||work.length<2||work.length>100||notes.length>600||km!==null&&(!Number.isInteger(km)||km<0||km>1000000))return bad('Μη έγκυρο παλιό σέρβις.');
+   const original=JSON.stringify([date,work,km,notes]);
+   const fingerprint=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(original))),v=>v.toString(16).padStart(2,'0')).join('');
+   const {data:existing,error:se}=await db.from('voltes_bike_services').select('id,service_date,work,km,notes').eq('bike_id',p.bikeId);
+   if(se)throw se;
+   if((existing||[]).some((x:any)=>x.service_date===date&&x.work===work&&x.km===km&&x.notes===notes))return reply({ok:true,imported:false});
+   const {error}=await db.from('voltes_bike_services').insert({bike_id:p.bikeId,service_date:date,work,km,notes,import_fingerprint:fingerprint});
+   // Concurrent imports are deduplicated by the database unique index.
+   if(error){if(error.code==='23505')return reply({ok:true,imported:false});throw error}
+   return reply({ok:true,imported:true});
   }
   if(action==='addService'||action==='updateService'){
    const date=plain(p.date,10),work=plain(p.work,100),notes=plain(p.notes??'',600);
