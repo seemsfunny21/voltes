@@ -133,14 +133,20 @@ Deno.serve(async req=>{
   const recentCompleted=(a.data||[]).filter((r:any)=>r.done===true);
   const activityTotal=recentCompleted.length;
   const activityCounts=new Map<string,number>();
+  const activityDistances=new Map<string,number>();
   const normalizeRider=(name:unknown)=>String(name??'').trim().toLocaleLowerCase('el-GR');
   for(const ride of recentCompleted){
    const attendees=new Set((Array.isArray(ride.attendees)?ride.attendees:[]).map(normalizeRider).filter(Boolean));
-   for(const name of attendees)activityCounts.set(name,(activityCounts.get(name)||0)+1);
+   const km=Number(ride.km);
+   for(const name of attendees){
+    activityCounts.set(name,(activityCounts.get(name)||0)+1);
+    if(Number.isFinite(km)&&km>0)activityDistances.set(name,(activityDistances.get(name)||0)+km);
+   }
   }
   const publicMembers=(b.data||[]).filter((x:any)=>x.member).map((x:any)=>({
    name:x.name,member:true,avatar_data_url:x.avatar_data_url,
-   activityCount:activityCounts.get(normalizeRider(x.name))||0,activityTotal
+   activityCount:activityCounts.get(normalizeRider(x.name))||0,activityTotal,
+   activityKm:Math.round((activityDistances.get(normalizeRider(x.name))||0)*100)/100
   }));
   const members=publicMembers.length;
   return reply({rides,routeTemplates:admin?(templatesResult.data||[]).map((t:any)=>({...t,usageCount:(a.data||[]).filter((ride:any)=>ride.route_template_id===t.id).length})):[],riders:admin?(b.data||[]):[],publicMembers,members,admin,capabilities:{rideCompletionV2:true,memberExperienceV2:true}});
