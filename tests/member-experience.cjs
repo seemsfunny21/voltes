@@ -24,11 +24,12 @@ r=await request({action:'state',signupTokens:{[id]:otherToken}});check('another 
 await request({action:'cancelSignup',id,cancelToken:otherToken});check('wrong cancellation key cannot remove signup',()=>assert.equal(rows.voltes_signups.length,1));
 await request({action:'cancelSignup',id,cancelToken});check('correct key cancels only own signup',()=>assert.equal(rows.voltes_signups.length,0));
 r=await request({action:'cancelSignup',id,cancelToken:'bad'});check('malformed key rejected',()=>assert.equal(r.status,400));
+const relogin=await request({action:'login',pin:'1234'});const activeToken=relogin.body.adminToken;
 const avatar='data:image/jpeg;base64,/9j/2Q==';r=await request({action:'setAvatar',id:riderId,avatar});check('anonymous avatar write forbidden',()=>assert.equal(r.status,403));
-r=await request({action:'setAvatar',adminToken:token,id:riderId,avatar:'data:image/svg+xml;base64,PHN2Zz4='});check('SVG avatar rejected',()=>assert.equal(r.status,400));
-r=await request({action:'setAvatar',adminToken:token,id:riderId,avatar});check('admin can save JPEG avatar',()=>{assert.equal(r.status,200);assert.equal(rows.voltes_riders[0].avatar_data_url,avatar)});
+r=await request({action:'setAvatar',adminToken:activeToken,id:riderId,avatar:'data:image/svg+xml;base64,PHN2Zz4='});check('SVG avatar rejected',()=>assert.equal(r.status,400));
+r=await request({action:'setAvatar',adminToken:activeToken,id:riderId,avatar});check('admin can save JPEG avatar',()=>{assert.equal(r.status,200);assert.equal(rows.voltes_riders[0].avatar_data_url,avatar)});
 r=await request({action:'state'});check('public member avatar visible but private riders hidden',()=>{assert.equal(r.body.riders.length,0);assert.equal(r.body.publicMembers[0].avatar_data_url,avatar)});
-r=await request({action:'setAvatar',adminToken:token,id:riderId,avatar:null});check('admin can remove avatar',()=>assert.equal(rows.voltes_riders[0].avatar_data_url,null));
+r=await request({action:'setAvatar',adminToken:activeToken,id:riderId,avatar:null});check('admin can remove avatar',()=>assert.equal(rows.voltes_riders[0].avatar_data_url,null));
 const elements={},listeners={};for(const selector of ['#app','#nav','#menuBtn','#adminNav','#authBtn','#bottomNav','.shell'])elements[selector]={innerHTML:'',textContent:'',classList:{add(){},toggle(){},contains(){return false}},setAttribute(){},querySelectorAll(){return []},querySelector(){return null},scrollTo(){},addEventListener(name,fn){listeners[selector+name]=fn}};
 const storage=new Map([['voltesAdminToken','c'.repeat(64)]]),b={URL,console,crypto,sessionStorage:{removeItem(){}},localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)},window:{VOLTES_API_URL:'https://test.local',scrollTo(){},innerWidth:375},navigator:{},location:{protocol:'file:'},document:{documentElement:{dataset:{}},querySelector:s=>elements[s]},fetch:async()=>({ok:true,json:async()=>({admin:true,rides:[],riders:[],members:0,capabilities:{rideCompletionV2:true}})})};
 vm.createContext(b);vm.runInContext(read('completion.js'),b);vm.runInContext(read('app.js'),b);await new Promise(resolve=>setTimeout(resolve,0));
