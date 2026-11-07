@@ -25,7 +25,8 @@ async function bikeApi(action,fields={}){
  const response=await fetch(bikeApiUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...fields})});
  const data=await response.json();if(!response.ok)throw Error(data.error||'Σφάλμα επικοινωνίας');return data;
 }
-async function loadBikeCloud(){const data=await bikeApi('state');bikeCloud={bikes:data.bikes||[],services:data.services||[],loaded:true};if(route==='bikeService'||route==='bikeHistory'||route==='settings')render()}
+let bikeLastFetch=0;
+async function loadBikeCloud(){const data=await bikeApi('state',{memberName:memberName()});bikeCloud={bikes:data.bikes||[],services:data.services||[],loaded:true};bikeLastFetch=Date.now();if(route==='bikeService'||route==='bikeHistory'||route==='settings')render()}
 
 /* One-time automatic migration per device; Supabase remains the source of truth. */
 const bikeLegacyLedgerKey='voltesBikeLegacySyncV1';
@@ -69,6 +70,7 @@ async function syncLegacyBikes(){
 }
 function autoSyncBikeCloud(){
  if(bikeSyncPromise)return bikeSyncPromise;
+ if(bikeCloud.loaded&&Date.now()-bikeLastFetch<60000)return Promise.resolve();
  bikeSyncPromise=(async()=>{await loadBikeCloud();await syncLegacyBikes()})().finally(()=>{bikeSyncPromise=null});
  return bikeSyncPromise;
 }
@@ -149,7 +151,7 @@ function themeSettings(){return `<div class="card"><h2>Χρώμα εφαρμογ
 const memberKey='voltesChosenMember';
 const savedMember=()=>readLocal(memberKey);
 function memberName(){const name=savedMember();return db.publicMembers.some(x=>x.name===name)?name:''}
-function chooseMember(name){if(!db.publicMembers.some(x=>x.name===name))return;writeLocal(memberKey,name);writeLocal('voltesLastSignupName',name);resetBikeWizard();render();autoSyncBikeCloud().catch(()=>{})}
+function chooseMember(name){if(!db.publicMembers.some(x=>x.name===name))return;writeLocal(memberKey,name);writeLocal('voltesLastSignupName',name);bikeCloud.loaded=false;bikeLastFetch=0;resetBikeWizard();render();autoSyncBikeCloud().catch(()=>{})}
 let signupTokens;try{signupTokens=JSON.parse(readLocal('voltesSignupTokens','{}'));if(!signupTokens||typeof signupTokens!=='object'||Array.isArray(signupTokens))signupTokens={}}catch{signupTokens={}}
 sessionStorage.removeItem('voltesAdminPin');
 function newToken(){return Array.from(crypto.getRandomValues(new Uint8Array(32)),b=>b.toString(16).padStart(2,'0')).join('')}
