@@ -18,7 +18,7 @@ setTheme(chosenTheme);
 const bikeServiceStorageKey='voltesBikeServiceV1'; // Legacy device-only entries are never deleted.
 function bikeServiceEntries(){try{const a=JSON.parse(localStorage.getItem(bikeServiceStorageKey)||'[]');return Array.isArray(a)?a:[]}catch{return []}}
 function legacyBikeNames(){try{const v=JSON.parse(localStorage.getItem('voltesSavedBikesV2')||'[]');return [...new Set([...(Array.isArray(v)?v:[]),...bikeServiceEntries().map(x=>x.bike)].filter(n=>typeof n==='string'&&n.trim().length>=2&&n.trim().length<=90))]}catch{return [...new Set(bikeServiceEntries().map(x=>x.bike).filter(Boolean))]}}
-let bikeCloud={bikes:[],services:[],loaded:false},bikeView='mine';
+let bikeCloud={bikes:[],services:[],loaded:false};
 const bikeApiUrl=API_URL.replace(/\/rapid-responder\/?(?:\?.*)?$/,'/bike-services');
 async function bikeApi(action,fields={}){
  if(!bikeApiUrl||bikeApiUrl===API_URL)throw Error('Δεν έχει ρυθμιστεί η υπηρεσία σέρβις.');
@@ -46,12 +46,12 @@ function serviceWizardCompleted(step,title,detail){
 function bikeServiceSummary(){
  const bikes=ownBikes(),total=bikeCloud.services.filter(s=>bikes.some(b=>b.id===s.bike_id)).length;
  return '<div class="card bike-service-card"><h2>🔧 Σέρβις ποδηλάτων</h2>'+
- '<p class="muted">Τα ποδήλατα και τα σέρβις της παρέας, κοινά σε όλες τις συσκευές.</p>'+
+ '<p class="muted">Τα ποδήλατα και τα σέρβις του επιλεγμένου μέλους, διαθέσιμα σε κάθε συσκευή.</p>'+
  (memberName()?'<p class="note">Επιλεγμένο μέλος: <b>'+safe(memberName())+'</b> · '+bikes.length+' ποδήλατα · '+total+' σέρβις</p>':'<p class="note">Επίλεξε πρώτα το όνομά σου από την καρτέλα Μέλη.</p>')+
  '<button type="button" class="btn" data-go="bikeService">Προβολή & καταχώριση σέρβις</button></div>';
 }
 function bikeServicePage(){
- const name=memberName(),q=bikeWizard,bikes=registeredBikes(),shownBikes=bikeView==='mine'?ownBikes():bikeCloud.bikes;
+ const name=memberName(),q=bikeWizard,bikes=registeredBikes(),shownBikes=ownBikes();
  const items=bikeCloud.services.filter(s=>shownBikes.some(b=>b.id===s.bike_id)).sort((a,b)=>b.service_date.localeCompare(a.service_date));
  let blocks='';
  if(!name)blocks='<div class="card"><p>Για να προσθέσεις ποδήλατο ή σέρβις, επίλεξε πρώτα το όνομά σου από τα Μέλη.</p><button class="btn secondary" data-go="members">Επιλογή μέλους</button></div>';
@@ -90,11 +90,11 @@ function bikeServicePage(){
   (item.notes?'<p class="note">'+safe(item.notes)+'</p>':'')+
   (own?'<div class="actions"><button type="button" class="btn secondary" data-do="editBikeService" data-id="'+safe(item.id)+'">Διόρθωση</button><button type="button" class="btn danger" data-do="deleteBikeService" data-id="'+safe(item.id)+'">Διαγραφή</button></div>':'')+'</article>'
  }).join(''):'<p class="empty">Δεν υπάρχουν καταχωρισμένα σέρβις.</p>')+'</div>';
- const membersBikes='<div class="card"><h2>'+(bikeView==='mine'?'Τα ποδήλατά μου':'Ποδήλατα της ομάδας')+'</h2>'+(shownBikes.length?shownBikes.map(b=>'<p><b>'+safe(b.name)+'</b> · '+safe(b.member_name)+(b.is_default?' ★':'')+'</p>').join(''):'<p class="empty">Δεν υπάρχουν καταχωρισμένα ποδήλατα.</p>')+'</div>';
+ const membersBikes='<div class="card"><h2>Τα ποδήλατά μου</h2>'+(shownBikes.length?shownBikes.map(b=>'<p><b>'+safe(b.name)+'</b> · '+safe(b.member_name)+(b.is_default?' ★':'')+'</p>').join(''):'<p class="empty">Δεν υπάρχουν καταχωρισμένα ποδήλατα.</p>')+'</div>';
  const oldNames=legacyBikeNames();
  const legacy=oldNames.length&&name?'<div class="card"><h2>Παλιά στοιχεία αυτής της συσκευής</h2><p class="note">Βρέθηκαν '+oldNames.length+' παλιές καταχωρίσεις ποδηλάτων και '+bikeServiceEntries().length+' καταχωρίσεις σέρβις. Μπορείς να τις μεταφέρεις στο κοινό ιστορικό χωρίς να διαγραφούν από τη συσκευή.</p><button type="button" class="btn secondary" data-do="importBikeLegacy">Μεταφορά παλιών στοιχείων</button></div>':'';
  return '<h1>🔧 Σέρβις ποδηλάτων</h1>'+blocks+
- '<div class="card"><h2>Ιστορικό συντήρησης</h2><div class="quick-options"><button type="button" class="quick-option'+(bikeView==='mine'?' selected':'')+'" data-do="bikeView" data-value="mine">Τα δικά μου</button><button type="button" class="quick-option'+(bikeView==='all'?' selected':'')+'" data-do="bikeView" data-value="all">Όλα τα μέλη</button></div>'+history+'</div>'+membersBikes+legacy+
+ '<div class="card"><h2>Ιστορικό συντήρησης</h2>'+history+'</div>'+membersBikes+legacy+
  '<div class="actions"><button type="button" class="btn secondary" data-go="settings">Επιστροφή στις Ρυθμίσεις</button></div>';
 }
 function themeSettings(){return `<div class="card"><h2>Χρώμα εφαρμογής</h2><p>Το χρώμα αποθηκεύεται μόνο στη συσκευή σου.</p><div class="theme-options">${Object.entries(themes).map(([k,v])=>`<button type="button" class="theme-option theme-${k}" data-theme="${k}" aria-pressed="${k===chosenTheme}">${v}${k===chosenTheme?' ✓':''}</button>`).join('')}</div></div>${bikeServiceSummary()}<div class="card"><h2>Διαχείριση Admin</h2>${admin?`<div class="admin-settings"><button class="btn" data-go="new">+ Νέα βόλτα</button><button class="btn secondary" data-go="historyAdd">+ Προσθήκη παλιάς βόλτας</button><button class="btn secondary" data-go="routeAdd">+ Προσθήκη διαδρομής</button><button class="btn secondary" data-go="routes">Διαδρομές</button><button class="btn secondary" data-go="riders">Ποδηλάτες & επισκέπτες</button><button class="btn secondary" data-go="stats">Στατιστικά</button><button class="btn secondary" data-do="adminLogout">Αποσύνδεση</button></div>`:`<button class="btn" data-go="auth">Είσοδος Admin</button>`}</div>${admin&&db.rides.some(expiredRide)?`<div class="card"><h2>Παλιές προγραμματισμένες βόλτες</h2><p class="muted">Αποσύρθηκαν από την Αρχική. Μπορείς να τις ολοκληρώσεις ή να τις διαγράψεις.</p>${db.rides.filter(expiredRide).map(rideCard).join('')}</div>`:''}`}
@@ -350,7 +350,6 @@ app.addEventListener('click',async e=>{
   const step=Number(b.dataset.step);if(step>=1&&step<=3&&step<bikeWizard.step){bikeWizard.step=step;render()}return;
  }
  if(b.dataset.do==='bikeWizardNew'){bikeWizard.newBike=true;render();document.querySelector('#bikeWizardNewName')?.focus();return}
- if(b.dataset.do==='bikeView'){bikeView=b.dataset.value==='all'?'all':'mine';render();return}
  if(b.dataset.do==='importBikeLegacy'){
   if(!memberName()||!confirm('Να μεταφερθούν τα παλιά ποδήλατα και σέρβις στο επιλεγμένο μέλος '+memberName()+';'))return;
   b.disabled=true;
