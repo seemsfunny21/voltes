@@ -26,3 +26,7 @@ jobs:
         run: node tests/regression.cjs
       - name: Run ride completion and member interaction suites
         run: npm test
+      - name: Install pinned PostgreSQL test emulator
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Test SQL migrations and database access controls
+        run: npm run test:db
