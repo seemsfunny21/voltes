@@ -21,7 +21,7 @@ Deno.serve(async req=>{
    const {data:bikes,error:be}=await db.from('voltes_bikes').select('id,member_id,name,is_default').eq('member_id',member.id);
    if(be)throw be;
    if(!bikes?.length)return reply({bikes:[],services:[]});
-   const {data:services,error:se}=await db.from('voltes_bike_services').select('id,bike_id,service_date,work,km,notes').in('bike_id',bikes.map((b:any)=>b.id)).order('service_date',{ascending:false});
+   const {data:services,error:se}=await db.from('voltes_bike_services').select('id,bike_id,service_date,work,km,notes') .in('bike_id',bikes.map((b:any)=>b.id)).is('deleted_at',null).order('service_date',{ascending:false});
    if(se)throw se;
    return reply({bikes:bikes.map((bike:any)=>({...bike,member_name:name})),services:services||[]});
   }
@@ -55,7 +55,7 @@ Deno.serve(async req=>{
    if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!Number.isFinite(d.getTime())||d.toISOString().slice(0,10)!==date||date>now||work.length<2||work.length>100||notes.length>600||km!==null&&(!Number.isInteger(km)||km<0||km>1000000))return bad('Μη έγκυρο παλιό σέρβις.');
    const original=JSON.stringify([date,work,km,notes]);
    const fingerprint=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(original))),v=>v.toString(16).padStart(2,'0')).join('');
-   const {data:existing,error:se}=await db.from('voltes_bike_services').select('id,service_date,work,km,notes').eq('bike_id',p.bikeId);
+   const {data:existing,error:se}=await db.from('voltes_bike_services').select('id,service_date,work,km,notes,deleted_at').eq('bike_id',p.bikeId);
    if(se)throw se;
    if((existing||[]).some((x:any)=>x.service_date===date&&x.work===work&&x.km===km&&x.notes===notes))return reply({ok:true,imported:false});
    const {error}=await db.from('voltes_bike_services').insert({bike_id:p.bikeId,service_date:date,work,km,notes,import_fingerprint:fingerprint});
@@ -74,14 +74,14 @@ Deno.serve(async req=>{
    if(action==='addService'){const {error}=await db.from('voltes_bike_services').insert(values);if(error)throw error}
    else{
     if(!uuid(p.id))return bad('Μη έγκυρη καταχώριση.');
-    const {data,error}=await db.from('voltes_bike_services').update(values).eq('id',p.id).eq('bike_id',p.bikeId).select('id').maybeSingle();
+    const {data,error}=await db.from('voltes_bike_services').update(values).eq('id',p.id).eq('bike_id',p.bikeId).is('deleted_at',null).select('id').maybeSingle();
     if(error)throw error;if(!data)return bad('Η καταχώριση δεν βρέθηκε.',404);
    }
    return reply({ok:true});
   }
   if(action==='deleteService'){
    if(!uuid(p.id))return bad('Μη έγκυρη καταχώριση.');
-   const {data,error}=await db.from('voltes_bike_services').delete().eq('id',p.id).eq('bike_id',p.bikeId).select('id').maybeSingle();
+   const {data,error}=await db.from('voltes_bike_services').update({deleted_at:new Date().toISOString()}).eq('id',p.id).eq('bike_id',p.bikeId).is('deleted_at',null).select('id').maybeSingle();
    if(error)throw error;if(!data)return bad('Η καταχώριση δεν βρέθηκε.',404);
    return reply({ok:true});
   }
