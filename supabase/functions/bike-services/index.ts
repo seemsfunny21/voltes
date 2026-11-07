@@ -6,20 +6,62 @@ const bad=(msg:string,status=400)=>reply({error:msg},status);
 const uuid=(x:unknown)=>typeof x==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(x);
 const plain=(x:unknown,max:number)=>typeof x==='string'?x.trim().slice(0,max+1):'';
 
-/* One registered bike: count only completed rides attended by the selected member.
-   The baseline already includes older activities, preventing double-counting. */
-async function odometer(bike:any,name:string,onlyBike:boolean){
- if(bike.odometer_base_km==null)return null;
- const base=Number(bike.odometer_base_km);
- if(!onlyBike||!bike.odometer_base_date)return base;
- const result=await db.from('voltes_rides').select('date,km,attendees').eq('done',true).gt('date',bike.odometer_base_date).not('km','is',null);
- if(result.error)throw result.error;
- const normalized=name.trim().toLocaleLowerCase('el-GR');
- const distance=(result.data||[]).filter((ride:any)=>Array.isArray(ride.attendees)&&ride.attendees.some((n:unknown)=>String(n).trim().toLocaleLowerCase('el-GR')===normalized))
-   .reduce((sum:number,ride:any)=>sum+Math.max(0,Number(ride.km)||0),0);
- return Math.round((base+distance)*100)/100;
+/* One Strava screenshot supplies a ride distance to every recorded participant,
+   regardless of the member who uploaded it. */
+const normName=(s:unknown)=>String(s??'').trim().toLocaleLowerCase('el-GR');
+async function attendedRides(name:string){
+ const found:{date:string,km:number}[]=[];const match=normName(name),batch=500;
+ for(let start=0;start<200000;start+=batch){
+  const {data,error}=await db.from('voltes_rides').select('date,km,attendees').eq('done',true).not('km','is',null).order('date',{ascending:true}).range(start,start+batch-1);
+  if(error)throw error;
+  for(const ride of data||[]){
+   const km=Number(ride.km);
+   if(Number.isFinite(km)&&km>0&&Array.isArray(ride.attendees)&&ride.attendees.some((n:unknown)=>normName(n)===match))found.push({date:ride.date,km});
+  }
+  if(!data||data.length<batch)break;
+ }
+ return found;
 }
-const athensDay=()=>new Date().toLocaleDateString('en-CA',{timeZone:'Europe/Athens'});
+const sumKm=(rides:{date:string,km:number}[])=>Math.round(rides.reduce((sum,r)=>sum+r.km,0)*100)/100;
+function odometer(bike:any,rides:{date:string,km:number}[],singleBike:boolean){
+ const base=bike.odometer_base_km==null?null:Number(bike.odometer_base_km);
+ if(!singleBike)return base;
+ if(base===null)return sumKm(rides);
+ if(!bike.odometer_base_date)return base;
+ return Math.round((base+sumKm(rides.filter(r=>r.date>bike.odometer_base_date)))*100)/100;
+}
+const genericBikeName='Το ποδήλατό μου';
+const defaults=[
+ {label:'Λίπανση αλυσίδας',interval_km:200,interval_days:null,notes:'Αρχή μέτρησης: 0 χλμ. της εφαρμογής. Η προηγούμενη λίπανση δεν είναι γνωστή.'},
+ {label:'Έλεγχος φθοράς αλυσίδας',interval_km:500,interval_days:null,notes:'Αρχή μέτρησης: 0 χλμ. της εφαρμογής. Έλεγχος φθοράς, όχι αυτόματη αντικατάσταση.'},
+ {label:'Έλεγχος φρένων',interval_km:400,interval_days:null,notes:'Αρχή μέτρησης: 0 χλμ. της εφαρμογής. Έλεγχος λειτουργίας και φθοράς.'},
+ {label:'Γενικό σέρβις',interval_km:2000,interval_days:365,notes:'Αρχή μέτρησης: 0 χλμ. της εφαρμογής. Ημερομηνία επόμενου ελέγχου αρχίζει μετά την πρώτη πραγματική καταχώριση.'}
+];
+async function seedMaintenance(bikeId:string){
+ const {data:existing,error:ee}=await db.from('voltes_bike_maintenance').select('id').eq('bike_id',bikeId).limit(1);
+ if(ee)throw ee;if(existing?.length)return;
+ const rows=defaults.map(t=>({...t,bike_id:bikeId,last_km:0,last_date:null}));
+ const {error}=await db.from('voltes_bike_maintenance').upsert(rows,{onConflict:'bike_id,label',ignoreDuplicates:true});
+ if(error)throw error;
+}
+async function ensureMemberBike(memberId:string){
+ const query=()=>db.from('voltes_bikes').select('id,member_id,name,is_default,odometer_base_km,odometer_base_date').eq('member_id',memberId);
+ const {data:existing,error:ee}=await query();
+ if(ee)throw ee;let bikes=existing||[];
+ if(!bikes.length){
+  const {data:created,error}=await db.from('voltes_bikes').insert({member_id:memberId,name:genericBikeName,is_default:true})
+    .select('id,member_id,name,is_default,odometer_base_km,odometer_base_date').single();
+  if(error&&error.code!=='23505')throw error;
+  if(created)bikes=[created];
+  else{const retry=await query();if(retry.error)throw retry.error;bikes=retry.data||[];}
+ }
+ for(const bike of bikes)await seedMaintenance(bike.id);
+ return bikes;
+}
+const athensDay=()=>{
+ const parts=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Athens',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()).map(p=>[p.type,p.value]));
+ return parts.year+'-'+parts.month+'-'+parts.day;
+};
 const validDate=(s:unknown)=>typeof s==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(s)&&!Number.isNaN(Date.parse(s+'T12:00:00Z'))&&new Date(s+'T12:00:00Z').toISOString().slice(0,10)===s;
 Deno.serve(async req=>{
  if(req.method==='OPTIONS')return new Response(null,{status:204,headers});
@@ -34,15 +76,15 @@ Deno.serve(async req=>{
    if(!name)return reply({bikes:[],services:[]});
    const {data:member,error:me}=await db.from('voltes_riders').select('id').eq('name',name).eq('member',true).maybeSingle();
    if(me)throw me;if(!member)return reply({bikes:[],services:[]});
-   const {data:bikes,error:be}=await db.from('voltes_bikes').select('id,member_id,name,is_default,odometer_base_km,odometer_base_date').eq('member_id',member.id);
-   if(be)throw be;
-   if(!bikes?.length)return reply({bikes:[],services:[]});
-   const {data:services,error:se}=await db.from('voltes_bike_services').select('id,bike_id,service_date,work,km,notes') .in('bike_id',bikes.map((b:any)=>b.id)).is('deleted_at',null).order('service_date',{ascending:false});
+   const bikes=await ensureMemberBike(member.id);
+   if(!bikes.length)return reply({bikes:[],services:[],maintenance:[],memberKm:0});
+   const {data:services,error:se}=await db.from('voltes_bike_services').select('id,bike_id,service_date,work,km,notes').in('bike_id',bikes.map((b:any)=>b.id)).is('deleted_at',null).order('service_date',{ascending:false});
    if(se)throw se;
    const {data:maintenance,error:te}=await db.from('voltes_bike_maintenance').select('id,bike_id,label,interval_km,interval_days,last_km,last_date,notes').in('bike_id',bikes.map((b:any)=>b.id)).order('created_at');
    if(te)throw te;
-   const decorated=await Promise.all(bikes.map(async(bike:any)=>({...bike,member_name:name,odometer_km:await odometer(bike,name,bikes.length===1),auto_tracking:bikes.length===1})));
-   return reply({bikes:decorated,services:services||[],maintenance:maintenance||[]});
+   const rides=await attendedRides(name),memberKm=sumKm(rides);
+   const decorated=bikes.map((bike:any)=>({...bike,member_name:name,odometer_km:odometer(bike,rides,bikes.length===1),auto_tracking:bikes.length===1,member_km:memberKm}));
+   return reply({bikes:decorated,services:services||[],maintenance:maintenance||[],memberKm});
   }
   if(!['createBike','setDefault','addService','updateService','deleteService','importService','completeMaintenance','saveMaintenance','deleteMaintenance','setOdometer'].includes(action))return bad('Άγνωστη ενέργεια',404);
   const memberName=plain(p.memberName,70);if(memberName.length<2)return bad('Επίλεξε μέλος από τις Ρυθμίσεις.');
@@ -54,8 +96,12 @@ Deno.serve(async req=>{
    if(ee)throw ee;
    const found=existing?.find(b=>b.name.toLocaleLowerCase('el-GR')===name.toLocaleLowerCase('el-GR'));
    if(found)return reply({ok:true,bike:found});
+   if(existing?.length===1&&existing[0].name===genericBikeName){
+    const {data,error}=await db.from('voltes_bikes').update({name}).eq('id',existing[0].id).select('id,name').single();
+    if(error)throw error;return reply({ok:true,bike:data});
+   }
    const {data,error}=await db.from('voltes_bikes').insert({member_id:member.id,name,is_default:!existing?.length}).select('id,name').single();
-   if(error)throw error;return reply({ok:true,bike:data});
+   if(error)throw error;await seedMaintenance(data.id);return reply({ok:true,bike:data});
   }
   if(!uuid(p.bikeId))return bad('Μη έγκυρο ποδήλατο.');
   const {data:bike,error:be}=await db.from('voltes_bikes').select('id,member_id,odometer_base_km,odometer_base_date').eq('id',p.bikeId).eq('member_id',member.id).maybeSingle();
@@ -98,7 +144,8 @@ Deno.serve(async req=>{
    const {data:task,error:te}=await db.from('voltes_bike_maintenance').select('id,label,interval_km,interval_days,last_km,last_date').eq('id',p.id).eq('bike_id',p.bikeId).maybeSingle();
    if(te)throw te;if(!task)return bad('Η εργασία δεν βρέθηκε.',404);
    const {data:allBikes,error:be}=await db.from('voltes_bikes').select('id').eq('member_id',member.id);if(be)throw be;
-   const km=await odometer(bike,memberName,(allBikes||[]).length===1);
+   const rides=await attendedRides(memberName);
+   const km=odometer(bike,rides,(allBikes||[]).length===1);
    if(task.interval_km&&km===null)return bad('Πρώτα συμπλήρωσε τα συνολικά χιλιόμετρα του ποδηλάτου.');
    const today=athensDay();
    if(task.last_date===today&&(!task.interval_km||Number(task.last_km)===km))return reply({ok:true,unchanged:true});
