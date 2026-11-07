@@ -4,15 +4,24 @@ const {validateCompletion,formatMovingTime}=(globalThis as unknown as {VoltesCom
 const cors={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'POST, OPTIONS','Access-Control-Allow-Headers':'content-type'};
 const reply=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...cors,'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'}});
 const weatherCache=new Map<string,{value:any,at:number}>();
+let weatherHourlyCache:{data:any,at:number,pending:Promise<any>|null}={data:null,at:0,pending:null};
+async function getWeatherHourly(){
+ if(weatherHourlyCache.data&&Date.now()-weatherHourlyCache.at<3600000)return weatherHourlyCache.data;
+ if(weatherHourlyCache.pending)return weatherHourlyCache.pending;
+ const url='https://api.open-meteo.com/v1/forecast?latitude=39.667&longitude=20.850&hourly=temperature_2m,weather_code,precipitation_probability,wind_speed_10m,wind_direction_10m,wind_gusts_10m&timezone=Europe%2FAthens&forecast_days=7';
+ weatherHourlyCache.pending=(async()=>{const response=await fetch(url,{signal:AbortSignal.timeout(6500)});
+  if(!response.ok)throw Error('weather unavailable');
+  const hourly=(await response.json()).hourly;
+  weatherHourlyCache.data=hourly;weatherHourlyCache.at=Date.now();return hourly;
+ })().finally(()=>{weatherHourlyCache.pending=null});
+ return weatherHourlyCache.pending;
+}
 const weatherFor=async(r:any)=>{
  const key=String(r.id)+'|'+r.date+'|'+r.time;
  const cached=weatherCache.get(key);
  if(cached&&Date.now()-cached.at<3600000)return cached.value;
  try{
-  const u='https://api.open-meteo.com/v1/forecast?latitude=39.667&longitude=20.850&hourly=temperature_2m,weather_code,precipitation_probability,wind_speed_10m,wind_direction_10m,wind_gusts_10m&timezone=Europe%2FAthens&forecast_days=7';
-  const res=await fetch(u,{signal:AbortSignal.timeout(6500)});
-  if(!res.ok)throw Error('weather unavailable');
-  const h=(await res.json()).hourly;
+  const h=await getWeatherHourly();
   const idx=(h?.time||[]).indexOf(String(r.date)+'T'+String(r.time||'10:00').slice(0,2)+':00');
   if(idx<0)return cached?.value||null;
   const value={temperature:h.temperature_2m[idx],code:h.weather_code[idx],rain:h.precipitation_probability[idx],wind:h.wind_speed_10m[idx],direction:h.wind_direction_10m[idx],gust:h.wind_gusts_10m[idx],updatedAt:new Date().toISOString()};
@@ -37,13 +46,17 @@ Deno.serve(async req=>{
  if(!payload||typeof payload!=='object'||Array.isArray(payload))return bad();
  try{
  const action=norm(payload.action,40);
- let admin=validPin(payload.pin);
+ let admin=false; // PIN used only for rate-limited login, not on every API request.
  const sessionHash=tokenValid(payload.adminToken)?await digest(payload.adminToken):null;
  if(!admin&&sessionHash){const {data,error}=await db.from('voltes_admin_sessions').select('pin_version').eq('token_hash',sessionHash).maybeSingle();if(error)throw error;admin=!!data&&data.pin_version===await pinVersion()}
  if(!['state','signup','cancelSignup','login','logout'].includes(action)&&!admin)return bad('Απαιτείται PIN διαχειριστή',403);
  if(action==='logout'){if(sessionHash){const {error}=await db.from('voltes_admin_sessions').delete().eq('token_hash',sessionHash);if(error)throw error}return reply({ok:true})}
  if(action==='login'){
-  if(!validPin(payload.pin))return bad('Λάθος PIN',403);
+  const clientIp=String(req.headers.get('x-real-ip')||req.headers.get('cf-connecting-ip')||req.headers.get('x-forwarded-for')||'unknown').split(',')[0].trim().slice(0,120);
+  const loginKey=await digest('voltes-admin-login:'+clientIp+':'+(Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')||''));
+  const gate=await db.rpc('voltes_admin_login_gate',{p_key:loginKey,p_correct:validPin(payload.pin)});
+  if(gate.error)throw gate.error;
+  if(gate.data!==true)return bad('Λάθος PIN ή υπέρβαση προσπαθειών. Δοκίμασε αργότερα.',403);
   const token=Array.from(crypto.getRandomValues(new Uint8Array(32)),b=>b.toString(16).padStart(2,'0')).join('');
   const {error}=await db.from('voltes_admin_sessions').insert({token_hash:await digest(token),pin_version:await pinVersion()});if(error)throw error;
   return reply({ok:true,adminToken:token});
@@ -197,8 +210,11 @@ Deno.serve(async req=>{
  if(action==='deleteRider'){
   const id=norm(payload.id,40);
   if(!/^[0-9a-f-]{36}$/i.test(id))return bad('Μη έγκυρος ποδηλάτης.');
+  const bikes=await db.from('voltes_bikes').select('id').eq('member_id',id).limit(1);
+  if(bikes.error)throw bikes.error;
+  if(bikes.data?.length)return bad('Το μέλος έχει καταχωρισμένα ποδήλατα. Η διαγραφή εμποδίζεται για να μη χαθούν τα σέρβις.',409);
   const {data,error}=await db.from('voltes_riders').delete().eq('id',id).select('id').maybeSingle();
-  if(error)throw error;
+  if(error){if(error.code==='23503')return bad('Το μέλος έχει συνδεδεμένα δεδομένα και δεν διαγράφεται.',409);throw error}
   if(!data)return bad('Ο ποδηλάτης δεν βρέθηκε.',404);
   return reply({ok:true});
  }
