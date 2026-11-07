@@ -252,3 +252,10 @@ html[data-theme] .shell::-webkit-scrollbar-thumb:hover{background:var(--accent-e
 .bike-history-fold summary{cursor:pointer;font-weight:650;padding:5px 0;list-style-position:inside}
 .bike-history-fold[open] summary{margin-bottom:12px}
 .bike-history-fold .bike-service-history{margin:0}
+
+/* Settings: concise maintenance actions, consistent with selected theme. */
+.bike-service-card{padding:20px 18px;text-align:center}
+.bike-service-card h2{margin-bottom:16px}
+.bike-service-actions{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+.bike-service-actions .btn{display:block;width:100%;margin:0;min-height:48px;font-size:15px;border-radius:12px}
+.bike-service-actions .btn:focus-visible{outline:3px solid var(--accent-edge);outline-offset:3px}
