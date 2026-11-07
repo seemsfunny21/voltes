@@ -17,31 +17,50 @@ check('deduplicate participants',()=>assert.equal(validate({...input,attendees:[
 check('private notes limit',()=>assert.throws(()=>validate({...input,slowdownNotes:'x'.repeat(2001)})));
 check('Strava URL validation',()=>{assert.throws(()=>validate({...input,strava:'javascript:alert(1)'}));assert.throws(()=>validate({...input,strava:'https://strava.com.evil.test/'}));assert.equal(validate({...input,strava:'https://www.strava.com/activities/123'}).strava,'https://www.strava.com/activities/123')});
 check('shared browser and server validation match',()=>assert.equal(read('completion.js'),read('supabase/functions/_shared/completion.js')));
+const {createHash,webcrypto}=require('node:crypto');
+const hash=v=>createHash('sha256').update(v).digest('hex');
+const token='a'.repeat(64);
 const id='12345678-1234-1234-1234-123456789abc';
 const ride={id,date:'2026-10-31',time:'09:00',place:'Λίμνη',title:'Γύρος',done:true,km:35,speed:21,elevation_gain_m:120,moving_minutes:100,attendees:['Αλέξης'],slowed:['Αλέξης'],strava:''};
+const tables={
+ voltes_rides:[ride],voltes_riders:[{name:'Αλέξης',member:true,avatar_data_url:null}],
+ voltes_ride_admin_notes:[{ride_id:id,slowdown_notes:'PRIVATE_NOTE'}],
+ voltes_signups:[{ride_id:id,name:'Αλέξης',cancel_token_hash:null}],
+ voltes_route_templates:[],
+ voltes_admin_sessions:[{token_hash:hash(token),pin_version:hash('test:1234')}]
+};
 let calls=[],rpcError=null,handler;
-function query(table){calls.push(table);const q={select(){return q},order(){return q},eq(){return q},single(){return q},insert(){return q},update(){return q},delete(){return q},then(resolve,reject){return Promise.resolve({data:table==='voltes_rides'?[ride]:table==='voltes_riders'?[{name:'Αλέξης',member:true}]:table==='voltes_ride_admin_notes'?[{ride_id:id,slowdown_notes:'PRIVATE_NOTE'}]:[{ride_id:id,name:'Αλέξης'}],error:null}).then(resolve,reject)}};return q}
+function query(table){
+ calls.push(table);let filters=[],single=false;
+ const q={select(){return q},order(){return q},eq(k,v){filters.push([k,v]);return q},is(k,v){filters.push([k,v]);return q},limit(){return q},single(){single=true;return q},maybeSingle(){single=true;return q},insert(){return q},update(){return q},delete(){return q},then(resolve,reject){
+  const matched=(tables[table]||[]).filter(row=>filters.every(([k,v])=>row[k]===v));
+  return Promise.resolve({data:single?(matched[0]||null):matched,error:null}).then(resolve,reject);
+ }};return q;
+}
 const database={from:query,async rpc(name,args){calls.push({name,args});return {error:rpcError}}};
-const ctx={URL,Request,Response,console,Deno:{env:{get:key=>key==='ADMIN_PIN'?'1234':'test'},serve:fn=>handler=fn},createClient:()=>database};vm.createContext(ctx);vm.runInContext(read('completion.js'),ctx);
+const ctx={URL,Request,Response,console,crypto:webcrypto,TextEncoder,AbortSignal,Intl,Deno:{env:{get:key=>key==='ADMIN_PIN'?'1234':'test'},serve:fn=>handler=fn},createClient:()=>database};
+vm.createContext(ctx);vm.runInContext(read('completion.js'),ctx);
 let server=read('supabase/functions/rapid-responder/index.ts').replace(/^import .*;$/gm,'');
 server=require('node:module').stripTypeScriptTypes(server);
 vm.runInContext(server,ctx);
 async function request(body){return handler(new Request('https://test.local',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}))}
 calls=[];let response=await request({action:'state'}),publicState=await response.json();
 check('anonymous state hides identities and admin notes',()=>{assert.equal(response.status,200);assert.equal(publicState.admin,false);assert.equal(JSON.stringify(publicState).includes('PRIVATE_NOTE'),false);for(const key of ['attendees','slowed','slowdownNotes','signups','speed'])assert.equal(key in publicState.rides[0],false);assert.equal(calls.includes('voltes_ride_admin_notes'),false);assert.equal(publicState.rides[0].movingMinutes,100)});
-response=await request({action:'state',pin:'1234'});const privateState=await response.json();
-check('admin sees private notes and capability',()=>{assert.equal(privateState.rides[0].slowdownNotes,'PRIVATE_NOTE');assert.equal(privateState.capabilities.rideCompletionV2,true)});
+response=await request({action:'state',adminToken:token});const privateState=await response.json();
+check('admin token sees private notes and capability',()=>{assert.equal(privateState.rides[0].slowdownNotes,'PRIVATE_NOTE');assert.equal(privateState.capabilities.rideCompletionV2,true)});
 response=await request({action:'finish',id,...validate(input)});
-check('finish requires server authorized PIN',()=>assert.equal(response.status,403));
-calls=[];response=await request({action:'finish',pin:'1234',id,...validate(input),slowdownNotes:'Private'});
-check('finish uses single atomic RPC with all fields',()=>{assert.equal(response.status,200);assert.equal(calls.length,1);assert.equal(calls[0].name,'voltes_finish_ride');assert.equal(calls[0].args.p_details.moving_minutes,100);assert.equal(calls[0].args.p_details.elevation_gain_m,120);assert.equal(calls[0].args.p_details.slowdown_notes,'Private')});
-calls=[];response=await request({action:'finish',pin:'1234',id,...validate(input),movingMinutes:1.5});
-check('invalid completion never reaches database',()=>{assert.equal(response.status,400);assert.equal(calls.length,0)});
-rpcError={code:'P0002'};response=await request({action:'finish',pin:'1234',id,...validate(input)});
+check('finish requires saved Admin authorization',()=>assert.equal(response.status,403));
+response=await request({action:'finish',pin:'1234',id,...validate(input)});
+check('raw PIN cannot bypass Admin login',()=>assert.equal(response.status,403));
+calls=[];response=await request({action:'finish',adminToken:token,id,...validate(input),slowdownNotes:'Private'});
+check('finish uses single atomic RPC',()=>{assert.equal(response.status,200);const rpc=calls.filter(x=>typeof x==='object');assert.equal(rpc.length,1);assert.equal(rpc[0].name,'voltes_finish_ride');assert.equal(rpc[0].args.p_details.moving_minutes,100);assert.equal(rpc[0].args.p_details.elevation_gain_m,120);assert.equal(rpc[0].args.p_details.slowdown_notes,'Private')});
+calls=[];response=await request({action:'finish',adminToken:token,id,...validate(input),movingMinutes:1.5});
+check('invalid completion never reaches mutation RPC',()=>{assert.equal(response.status,400);assert.equal(calls.filter(x=>typeof x==='object').length,0)});
+rpcError={code:'P0002'};response=await request({action:'finish',adminToken:token,id,...validate(input)});
 check('repeat completion returns conflict',()=>assert.equal(response.status,409));
-let events={};const elements={};const el=()=>({innerHTML:'',textContent:'',classList:{add(){},toggle(){},contains(){return false}},setAttribute(){},addEventListener(event,fn){events[event]=fn}});
-for(const selector of ['#app','#nav','#menuBtn','#adminNav','#authBtn'])elements[selector]=el();
-const browser={URL,console,localStorage:{getItem(){return null},setItem(){},removeItem(){}},window:{VOLTES_API_URL:'https://test.local',scrollTo(){}},location:{protocol:'file:'},navigator:{},sessionStorage:{getItem(){return ''},setItem(){},removeItem(){}},document:{querySelector:s=>elements[s]},fetch:async()=>({ok:true,json:async()=>privateState})};
+let events={};const elements={};const el=()=>({innerHTML:'',textContent:'',classList:{add(){},toggle(){},contains(){return false}},setAttribute(){},querySelectorAll(){return []},querySelector(){return null},scrollTo(){},addEventListener(event,fn){events[event]=fn}});
+for(const selector of ['#app','#nav','#menuBtn','#adminNav','#authBtn','#bottomNav','.shell'])elements[selector]=el();
+const browser={URL,console,localStorage:{getItem(){return null},setItem(){},removeItem(){}},window:{VOLTES_API_URL:'https://test.local',scrollTo(){}},location:{protocol:'file:'},navigator:{},sessionStorage:{getItem(){return ''},setItem(){},removeItem(){}},document:{documentElement:{dataset:{}},querySelector:s=>elements[s]},fetch:async()=>({ok:true,json:async()=>privateState})};
 vm.createContext(browser);vm.runInContext(read('completion.js'),browser);vm.runInContext(read('app.js'),browser);await new Promise(resolve=>setTimeout(resolve,0));
 vm.runInContext('admin=true;completionV2=true;db='+JSON.stringify(privateState)+';',browser);
 const form=vm.runInContext('finish(db.rides[0])',browser);
