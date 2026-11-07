@@ -18,7 +18,7 @@ setTheme(chosenTheme);
 const bikeServiceStorageKey='voltesBikeServiceV1'; // Legacy device-only entries are never deleted.
 function bikeServiceEntries(){try{const a=JSON.parse(localStorage.getItem(bikeServiceStorageKey)||'[]');return Array.isArray(a)?a:[]}catch{return []}}
 function legacyBikeNames(){try{const v=JSON.parse(localStorage.getItem('voltesSavedBikesV2')||'[]');return [...new Set([...(Array.isArray(v)?v:[]),...bikeServiceEntries().map(x=>x.bike)].filter(n=>typeof n==='string'&&n.trim().length>=2&&n.trim().length<=90))]}catch{return [...new Set(bikeServiceEntries().map(x=>x.bike).filter(Boolean))]}}
-let bikeCloud={bikes:[],services:[],maintenance:[],loaded:false,member:''};
+let bikeCloud={bikes:[],services:[],maintenance:[],memberKm:0,loaded:false,member:''};
 const bikeApiUrl=API_URL.replace(/\/rapid-responder\/?(?:\?.*)?$/,'/bike-services');
 async function bikeApi(action,fields={}){
  if(!bikeApiUrl||bikeApiUrl===API_URL)throw Error('Δεν έχει ρυθμιστεί η υπηρεσία σέρβις.');
@@ -26,7 +26,7 @@ async function bikeApi(action,fields={}){
  const data=await response.json();if(!response.ok)throw Error(data.error||'Σφάλμα επικοινωνίας');return data;
 }
 let bikeLastFetch=0;
-async function loadBikeCloud(){const name=memberName();const data=await bikeApi('state',{memberName:name});if(name!==memberName())return;bikeCloud={bikes:data.bikes||[],services:data.services||[],maintenance:data.maintenance||[],loaded:true,member:name};bikeLastFetch=Date.now();if(route==='bikeService'||route==='bikeHistory'||route==='bikeMaintenance'||route==='settings')render()}
+async function loadBikeCloud(){const name=memberName();const data=await bikeApi('state',{memberName:name});if(name!==memberName())return;bikeCloud={bikes:data.bikes||[],services:data.services||[],maintenance:data.maintenance||[],memberKm:Number(data.memberKm||0),loaded:true,member:name};bikeLastFetch=Date.now();if(route==='bikeService'||route==='bikeHistory'||route==='bikeMaintenance'||route==='settings')render()}
 
 /* One-time automatic migration per device; Supabase remains the source of truth. */
 const bikeLegacyLedgerKey='voltesBikeLegacySyncV1';
@@ -177,7 +177,7 @@ function maintenanceCard(task,bike){
   '<p><strong>'+(remainingDays>0?'Απομένουν '+remainingDays+' ημέρες':'Έφτασε η ημερομηνία ελέγχου')+'</strong> · '+safe(datefmt(new Date(Date.parse(task.last_date+'T12:00:00Z')+Number(task.interval_days)*86400000).toISOString().slice(0,10)))+'</p>');
  return '<article class="card bike-service-entry"><div class="row"><strong>'+safe(task.label)+'</strong>'+(late?'<strong style="color:#e89f39">Έλεγχος τώρα</strong>':'')+'</div>'+
   kmLine+daysLine+(task.notes?'<p class="muted">'+safe(task.notes)+'</p>':'')+
-  '<div class="actions"><button type="button" class="btn" data-do="completeMaintenance" data-id="'+safe(task.id)+'" data-bike-id="'+safe(bike.id)+'">Έγινε ο έλεγχος</button>'+
+  '<div class="actions"><button type="button" class="btn" data-do="completeMaintenance" data-id="'+safe(task.id)+'" data-bike-id="'+safe(bike.id)+'">Έγινε · Μηδενισμός</button>'+
   '<button type="button" class="btn secondary" data-do="editMaintenance" data-id="'+safe(task.id)+'">Ρύθμιση</button>'+
   '<button type="button" class="btn danger" data-do="deleteMaintenance" data-id="'+safe(task.id)+'" data-bike-id="'+safe(bike.id)+'">Διαγραφή</button></div></article>';
 }
@@ -187,9 +187,15 @@ function bikeMaintenancePage(){
  const bikes=ownBikes();
  const cards=bikes.map(bike=>{
   const tasks=bikeCloud.maintenance.filter(t=>t.bike_id===bike.id);
-  const head='<div class="card"><h2>'+safe(bike.name)+'</h2><p><strong>Συνολικά: '+(bike.odometer_km==null?'Δεν έχει οριστεί':Number(bike.odometer_km).toLocaleString('el-GR',{maximumFractionDigits:2})+' χλμ.')+'</strong></p>'+
-   '<p class="muted">'+(bike.auto_tracking?'Τα χλμ. αυξάνονται από τις ολοκληρωμένες βόλτες στις οποίες συμμετέχεις.':'Σε περισσότερα από ένα ποδήλατα χρειάζεται ξεχωριστή καταχώριση χιλιομέτρων.')+'</p>'+
-   '<form id="bikeOdometerForm" data-bike-id="'+safe(bike.id)+'"><label>Διόρθωση συνολικών χιλιομέτρων<input type="number" name="km" required min="0" max="1000000" step="0.01" value="'+safe(bike.odometer_km??'')+'"></label><button class="btn secondary" type="submit">Αποθήκευση ένδειξης</button></form></div>';
+  const groupKm=Number(bikeCloud.memberKm||0).toLocaleString('el-GR',{maximumFractionDigits:2});
+  const realKm=bike.odometer_km==null?'Δεν έχει οριστεί':Number(bike.odometer_km).toLocaleString('el-GR',{maximumFractionDigits:2})+' χλμ.';
+  const rename=bike.name==='Το ποδήλατό μου'?'<form id="bikeRenameForm"><label>Όνομα ποδηλάτου<input name="name" maxlength="90" required minlength="2" placeholder="π.χ. Cube Agree C:62 Pro"></label><button class="btn secondary" type="submit">Αποθήκευση ονόματος</button></form>':'';
+  const head='<div class="card"><h2>'+safe(bike.name)+'</h2><p><strong>Χιλιόμετρα ποδηλάτου: '+realKm+'</strong></p>'+
+   '<p class="muted">Χιλιόμετρα από καταγεγραμμένες βόλτες ομάδας: '+safe(groupKm)+' χλμ.</p>'+
+   '<p class="muted">'+(bike.auto_tracking?'Κάθε ολοκληρωμένη βόλτα στην οποία συμμετέχεις προσθέτει τα χιλιόμετρά της αυτόματα.':'Έχεις περισσότερα ποδήλατα: τα χιλιόμετρα μέλους μετρώνται, αλλά η κατανομή ανά ποδήλατο γίνεται χειροκίνητα.')+'</p>'+
+   (bike.name==='Το ποδήλατό μου'?'<p class="muted">Προσωρινό όνομα: γράψε το πραγματικό μοντέλο σου. Οι αρχικοί μετρητές ξεκινούν από τα χιλιόμετρα της εφαρμογής, όχι από επιβεβαιωμένη προηγούμενη συντήρηση.</p>':'')+
+   rename+
+   '<form id="bikeOdometerForm" data-bike-id="'+safe(bike.id)+'"><label>Διόρθωση ένδειξης χιλιομέτρων<input type="number" name="km" required min="0" max="1000000" step="0.01" value="'+safe(bike.odometer_km??'')+'"></label><button class="btn secondary" type="submit">Αποθήκευση ένδειξης</button></form></div>';
   const entries=tasks.map(t=>maintenanceEditId===t.id?maintenanceForm(t,bike):maintenanceCard(t,bike)).join('');
   const adding=maintenanceEditId==='new:'+bike.id?maintenanceForm(null,bike):'<div class="actions"><button type="button" class="btn secondary" data-do="newMaintenance" data-bike-id="'+safe(bike.id)+'">+ Νέα εργασία</button></div>';
   return head+(entries||'<div class="card">Δεν υπάρχουν προγραμματισμένοι έλεγχοι.</div>')+adding;
@@ -238,8 +244,8 @@ function publicMembers(){
   const attended=Math.min(total,Math.max(0,Number(person.activityCount)||0));
   const pct=total?Math.round(attended/total*100):0;
   const level=total>=5?(pct>=70?'Υψηλή συμμετοχή':pct>=30?'Τακτική συμμετοχή':'Περιστασιακή συμμετοχή'):'';
-  const activity=total?`<div class="member-activity"><span>Συμμετοχές <b>${attended}/${total}</b> · <b>${pct}%</b></span><div class="member-activity-track" role="progressbar" aria-label="Ποσοστό συμμετοχής" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><span style="width:${pct}%"></span></div></div>`:'';
-  return `<article class="card member-card">${riderAvatar(person)}<div class="member-details"><strong class="rider-name">${safe(person.name)}</strong><div class="member-meta"><span class="rider-status is-member">Μέλος</span>${level?`<span class="member-activity-label">${level}</span>`:''}</div>${activity}</div><div class="member-select">${selected===person.name?'<span class="member-self">✓ Εσύ</span>':`<button type="button" class="btn secondary" data-do="chooseMember" data-name="${safe(person.name)}">Αυτός είμαι εγώ</button>`}</div></article>`;
+  const activity=total?`<div class="member-activity"><span>Συμμετοχές <b>${attended}/${total}</b> · <b>${pct}%</b> · Χλμ. ομάδας: <b>${Number(person.activityKm||0).toLocaleString('el-GR',{maximumFractionDigits:2})}</b></span><div class="member-activity-track" role="progressbar" aria-label="Ποσοστό συμμετοχής" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><span style="width:${pct}%"></span></div></div>`:'';
+  return `<article class="card member-card">${riderAvatar(person)}<div class="member-details"><strong class="rider-name">${safe(person.name)}</strong><div class="member-meta"><span class="rider-status is-member">Μέλος</span>${level?`<span class="member-activity-label">${level}</span>`:''}</div>${activity}</div><div class="member-select">${selected===person.name?'<span class="member-self">✓ Εσύ</span><button type="button" class="btn secondary" data-go="bikeMaintenance">Οι έλεγχοι μου</button>':`<button type="button" class="btn secondary" data-do="chooseMember" data-name="${safe(person.name)}">Αυτός είμαι εγώ</button>`}</div></article>`;
  }).join('');
  return `${intro}<div class="member-list">${cards||'<p class="empty">Δεν έχουν προστεθεί μέλη ακόμη.</p>'}</div>`;
 }
@@ -575,6 +581,11 @@ app.addEventListener('input',e=>{
 app.addEventListener('submit',async e=>{
  e.preventDefault();let f=e.target,d=new FormData(f);
  const values=Object.fromEntries(d.entries());
+ if(f.id==='bikeRenameForm'){
+  const name=String(values.name||'').trim();
+  if(name.length<2||name.length>90){toast('Γράψε το μοντέλο του ποδηλάτου σου.');return}
+  await bikeAction('createBike',{name},'Το ποδήλατο ονομάστηκε.');return;
+ }
  if(f.id==='bikeOdometerForm'){
   const km=Number(values.km);
   if(!Number.isFinite(km)||km<0||km>1000000){toast('Έλεγξε τα συνολικά χιλιόμετρα.');return}
