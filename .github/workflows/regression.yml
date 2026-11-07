@@ -32,3 +32,5 @@ jobs:
         run: npm run test:db
       - name: Test bicycle history and Admin lockout persistence
         run: node tests/longterm-db.cjs
+      - name: Test full disaster-recovery bootstrap from empty database
+        run: node tests/fresh-install-db.cjs
