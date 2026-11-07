@@ -18,7 +18,7 @@ setTheme(chosenTheme);
 const bikeServiceStorageKey='voltesBikeServiceV1'; // Legacy device-only entries are never deleted.
 function bikeServiceEntries(){try{const a=JSON.parse(localStorage.getItem(bikeServiceStorageKey)||'[]');return Array.isArray(a)?a:[]}catch{return []}}
 function legacyBikeNames(){try{const v=JSON.parse(localStorage.getItem('voltesSavedBikesV2')||'[]');return [...new Set([...(Array.isArray(v)?v:[]),...bikeServiceEntries().map(x=>x.bike)].filter(n=>typeof n==='string'&&n.trim().length>=2&&n.trim().length<=90))]}catch{return [...new Set(bikeServiceEntries().map(x=>x.bike).filter(Boolean))]}}
-let bikeCloud={bikes:[],services:[],loaded:false};
+let bikeCloud={bikes:[],services:[],loaded:false,member:''};
 const bikeApiUrl=API_URL.replace(/\/rapid-responder\/?(?:\?.*)?$/,'/bike-services');
 async function bikeApi(action,fields={}){
  if(!bikeApiUrl||bikeApiUrl===API_URL)throw Error('Δεν έχει ρυθμιστεί η υπηρεσία σέρβις.');
@@ -26,7 +26,7 @@ async function bikeApi(action,fields={}){
  const data=await response.json();if(!response.ok)throw Error(data.error||'Σφάλμα επικοινωνίας');return data;
 }
 let bikeLastFetch=0;
-async function loadBikeCloud(){const data=await bikeApi('state',{memberName:memberName()});bikeCloud={bikes:data.bikes||[],services:data.services||[],loaded:true};bikeLastFetch=Date.now();if(route==='bikeService'||route==='bikeHistory'||route==='settings')render()}
+async function loadBikeCloud(){const name=memberName();const data=await bikeApi('state',{memberName:name});if(name!==memberName())return;bikeCloud={bikes:data.bikes||[],services:data.services||[],loaded:true,member:name};bikeLastFetch=Date.now();if(route==='bikeService'||route==='bikeHistory'||route==='settings')render()}
 
 /* One-time automatic migration per device; Supabase remains the source of truth. */
 const bikeLegacyLedgerKey='voltesBikeLegacySyncV1';
@@ -70,7 +70,7 @@ async function syncLegacyBikes(){
 }
 function autoSyncBikeCloud(){
  if(bikeSyncPromise)return bikeSyncPromise;
- if(bikeCloud.loaded&&Date.now()-bikeLastFetch<60000)return Promise.resolve();
+ if(bikeCloud.loaded&&bikeCloud.member===memberName()&&Date.now()-bikeLastFetch<60000)return Promise.resolve();
  bikeSyncPromise=(async()=>{await loadBikeCloud();await syncLegacyBikes()})().finally(()=>{bikeSyncPromise=null});
  return bikeSyncPromise;
 }
@@ -166,7 +166,7 @@ async function refresh(){const result=await api('state');db={rides:result.rides|
 async function perform(action,fields,success){try{await api(action,fields);await refresh();return true}catch(e){toast(e.message);return false}}
 async function start(){
  if(!API_URL){app.innerHTML='<p class="alert">Η εφαρμογή χρειάζεται ρύθμιση του Supabase. Συμπλήρωσε το API_URL στο config.js σύμφωνα με το README.</p>';return}
- try{await refresh();autoSyncBikeCloud().catch(()=>{})}catch(e){app.innerHTML=`<p class="alert">${safe(e.message)}</p>`}
+ try{await refresh();await autoSyncBikeCloud()}catch(e){if(route==='bikeHistory'||route==='bikeService')toast(e.message);else if(!db.publicMembers.length)app.innerHTML=`<p class="alert">${safe(e.message)}</p>`}
 }
 const datefmt=d=>new Date(d+'T12:00:00').toLocaleDateString('el-GR',{day:'2-digit',month:'2-digit',year:'numeric'});
 function toast(v){message=v;render()}
