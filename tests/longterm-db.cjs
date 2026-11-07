@@ -21,7 +21,7 @@ async function main(){
   create function public.voltes_register_completed_ride_visitors() returns trigger language plpgsql security definer as $$ begin return new; end; $$;
   grant execute on function public.voltes_register_completed_ride_visitors() to public;
   insert into public.voltes_riders(id,name,member) values ('${member}','Member A',true);`);
- for(const name of ['202611070001_member_bike_services_shared.sql','202611070003_bike_service_soft_delete.sql','202611070004_harden_privileges_and_bike_retention.sql','202611070005_admin_pin_rate_limit.sql']){
+ for(const name of ['202611070001_member_bike_services_shared.sql','202611070002_idempotent_bike_import.sql','202611070003_bike_service_soft_delete.sql','202611070004_harden_privileges_and_bike_retention.sql','202611070005_admin_pin_rate_limit.sql']){
   await db.exec(await read(name));n++;console.log('PASS migration '+name);
  }
  await check('anonymous users cannot directly read bikes',async()=>{
