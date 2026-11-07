@@ -591,7 +591,7 @@ app.addEventListener('submit',async e=>{
  if(f.id==='bikeServiceForm'){
   const q=bikeWizard,bike=q.bike,date=q.date,work=q.work,notes=String(values.notes||'').trim(),km=String(values.km||'').trim();
   const dateValue=new Date(date+'T12:00:00Z');
-  if(q.step!==4||!registeredBikes().includes(bike)||notes.length>600||!serviceWorks.includes(work)||!/^\d{4}-\d{2}-\d{2}$/.test(date)||!Number.isFinite(dateValue.getTime())||dateValue.toISOString().slice(0,10)!==date||date>greekDay()||(km!==''&&(!/^\d+$/.test(km)||Number(km)>1000000))){toast('Έλεγξε τα στοιχεία του σέρβις.');return}
+  if(q.step!==4||!registeredBikes().includes(bike)||notes.length>600||(!serviceWorks.includes(work)&&!(q.editId&&bikeCloud.services.some(s=>s.id===q.editId&&s.work===work)))||!/^\d{4}-\d{2}-\d{2}$/.test(date)||!Number.isFinite(dateValue.getTime())||dateValue.toISOString().slice(0,10)!==date||date>greekDay()||(km!==''&&(!/^\d+$/.test(km)||Number(km)>1000000))){toast('Έλεγξε τα στοιχεία του σέρβις.');return}
   const selected=bikeByName(bike);if(!selected){toast('Το ποδήλατο δεν βρέθηκε.');return}
   const editId=q.editId;
   const okay=await bikeAction(editId?'updateService':'addService',{bikeId:selected.id,...(editId?{id:editId}:{}),date,work,notes,km},editId?'Το σέρβις διορθώθηκε.':'Το σέρβις αποθηκεύτηκε.');
