@@ -668,3 +668,329 @@ html[data-theme="blue"] .empty {
     transition:none!important;
   }
 }
+
+
+/* VOLTES PREMIUM ALL THEMES 2026
+   Palette-specific neon/glass styling for GREEN, WHITE and BLACK only.
+   BLUE retains the previously approved Neon Lake design.
+   CSS only; no modification to stored themes, app logic, DOM or Supabase.
+*/
+html[data-theme="green"] {
+  --bg:#07190f;--panel:#113e27;--edge:#438b63;
+  --fg:#fff;--sub:#d1f3df;--accent:#16a45c;
+  --accent-edge:#86f6b4;--nav:#0c3020;
+  --active:#176b42;--field:#0b2a1b;--secondary:#236846;--pill:#135d38;
+  --fx-start:#06170e;--fx-middle:#0c2a1b;--fx-end:#071b11;
+  --fx-spot:rgba(17,214,111,.15);
+  --fx-outline:#60d99b;--fx-bright:#6affbc;
+  --fx-glow:rgba(22,225,120,.49);
+  --fx-fog:rgba(29,186,99,.22);
+  --fx-card:#174e30;--fx-card2:#0b3020;
+  --fx-inner:#174d34;--fx-inner2:#0b2c1c;
+  --fx-text:#fff;--fx-soft:#d6f5e3;
+  --fx-on-button:#fff;
+  --fx-btn-top:#19ad63;--fx-btn-bottom:#0b7340;
+  --fx-nav-top:#113f29;--fx-nav-bottom:#071f14;
+  --fx-track:#071d14;--fx-headline-bg:#175c38;
+}
+html[data-theme="white"] {
+  --bg:#edf4fa;--panel:#fff;--edge:#b0c9e1;
+  --fg:#192a40;--sub:#3e5875;--accent:#1873bd;
+  --accent-edge:#69b7eb;--nav:#e3effa;
+  --active:#c5e2fa;--field:#fff;--secondary:#d9eaf7;--pill:#e4f3ff;
+  --fx-start:#f7fbff;--fx-middle:#eaf4ff;--fx-end:#e2effb;
+  --fx-spot:rgba(68,148,234,.14);
+  --fx-outline:#84b5de;--fx-bright:#238bd0;
+  --fx-glow:rgba(37,139,219,.25);
+  --fx-fog:rgba(81,165,239,.13);
+  --fx-card:#ffffff;--fx-card2:#ebf5ff;
+  --fx-inner:#f4faff;--fx-inner2:#e4f2fd;
+  --fx-text:#192a40;--fx-soft:#38536d;
+  --fx-on-button:#fff;
+  --fx-btn-top:#238bd5;--fx-btn-bottom:#1366af;
+  --fx-nav-top:#f1f8ff;--fx-nav-bottom:#dcebf9;
+  --fx-track:#cadff2;--fx-headline-bg:#e5f2ff;
+  color-scheme:light;
+}
+html[data-theme="black"] {
+  --bg:#05070b;--panel:#1b222d;--edge:#576679;
+  --fg:#fff;--sub:#d1dae7;--accent:#586d86;
+  --accent-edge:#b5c6db;--nav:#111923;
+  --active:#33465d;--field:#151e29;--secondary:#334253;--pill:#293b4e;
+  --fx-start:#030508;--fx-middle:#121821;--fx-end:#080d14;
+  --fx-spot:rgba(173,192,220,.10);
+  --fx-outline:#6d8298;--fx-bright:#cedef0;
+  --fx-glow:rgba(176,202,232,.29);
+  --fx-fog:rgba(163,183,209,.12);
+  --fx-card:#262e3b;--fx-card2:#131b26;
+  --fx-inner:#293648;--fx-inner2:#172333;
+  --fx-text:#fff;--fx-soft:#d1dbe8;
+  --fx-on-button:#fff;
+  --fx-btn-top:#536d88;--fx-btn-bottom:#30445e;
+  --fx-nav-top:#1b2633;--fx-nav-bottom:#0b111a;
+  --fx-track:#121d2a;--fx-headline-bg:#2a3849;
+}
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) body {
+  background:
+    radial-gradient(ellipse 90% 400px at 50% 0%,var(--fx-spot),transparent 80%),
+    linear-gradient(180deg,var(--fx-start),var(--fx-middle) 52%,var(--fx-end));
+}
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .shell {
+  background:radial-gradient(ellipse 85% 150px at 50% 0%,var(--fx-spot),transparent 95%);
+}
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) header {
+  position:relative;isolation:isolate;
+  min-height:129px;padding:17px 0 24px;
+  overflow:hidden;
+}
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) header::before {
+  content:"";position:absolute;pointer-events:none;z-index:-1;
+  inset:8px -25px 0;
+  opacity:.7;
+  background:
+    radial-gradient(ellipse 70% 24% at 50% 96%,var(--fx-fog),transparent 90%),
+    linear-gradient(180deg,transparent 30%,var(--fx-fog) 100%);
+  clip-path:polygon(0 100%,0 72%,12% 49%,21% 59%,31% 33%,42% 58%,53% 28%,65% 59%,76% 40%,87% 55%,100% 40%,100% 100%);
+}
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) header::after {
+  content:"";position:absolute;pointer-events:none;
+  left:12%;right:12%;bottom:9px;height:2px;border-radius:99px;
+  background:linear-gradient(90deg,transparent,var(--fx-outline),var(--fx-bright),var(--fx-outline),transparent);
+  box-shadow:0 0 9px var(--fx-glow),0 0 21px var(--fx-glow);
+}
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .brand {
+  position:relative;z-index:1;gap:9px;
+}
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .brand-icon {
+  width:65px;height:65px;border-radius:21px;
+  background:linear-gradient(160deg,var(--fx-inner),var(--fx-inner2));
+  color:var(--fx-bright);
+  border:1px solid var(--fx-outline);
+  box-shadow:inset 0 1px 0 #ffffff30,0 0 13px var(--fx-glow),0 0 25px var(--fx-fog);
+}
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .brand-icon svg {
+  width:39px;height:39px;
+  filter:drop-shadow(0 0 4px var(--fx-glow));
+}
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .brand strong {
+  font-size:clamp(17px,4.6vw,21px);font-weight:820;
+  color:var(--fx-text);text-shadow:0 0 10px var(--fx-fog);
+}
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .brand small {
+  color:var(--fx-soft);
+}
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) main>h2 {
+  display:block;width:fit-content;max-width:100%;
+  margin:20px auto 16px;padding:10px 18px;
+  background:linear-gradient(180deg,var(--fx-headline-bg),var(--fx-inner2));
+  color:var(--fx-text);border:1px solid var(--fx-outline);
+  border-radius:999px;
+  box-shadow:inset 0 1px 0 #ffffff26,0 0 0 3px var(--fx-fog),0 0 16px var(--fx-glow);
+  font-size:clamp(15px,4.1vw,19px);line-height:1.4;
+}
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .card,
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .metric {
+  background:linear-gradient(155deg,var(--fx-card),var(--fx-card2) 90%);
+  border:1px solid var(--fx-outline);
+  border-radius:18px;color:var(--fx-text);
+  box-shadow:inset 0 1px 0 #ffffff26,0 7px 22px #00000020,0 0 12px var(--fx-fog);
+}
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .metric {
+  min-width:0;padding:14px 3px;
+  box-shadow:inset 0 1px 0 #ffffff2f,0 0 13px var(--fx-glow),0 5px 18px #00000018;
+}
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .metric b,
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .metric small {
+  color:var(--fx-text);
+}
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .ride-card {
+  position:relative;overflow:hidden;
+  border:1px solid var(--fx-outline);
+  border-radius:22px;padding:18px 15px;
+  box-shadow:inset 0 1px 0 #ffffff30,0 0 0 1px var(--fx-fog),0 0 19px var(--fx-glow),0 12px 28px #0000001b;
+}
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .ride-card::before {
+  content:"";position:absolute;pointer-events:none;
+  inset:0 0 auto;height:3px;
+  background:linear-gradient(90deg,transparent,var(--fx-outline),var(--fx-bright),var(--fx-outline),transparent);
+  opacity:.85;
+}
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .ride-title {
+  font-weight:800;color:var(--fx-text);
+}
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .ride-date,
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .ride-meeting {
+  color:var(--fx-soft);
+}
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .ride-card .ride-metrics {
+  display:flex;justify-content:center;align-items:stretch;
+  gap:8px;flex-wrap:wrap;margin:13px 0 10px;
+}
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .ride-card .ride-metric {
+  display:flex;flex:1 1 118px;min-height:46px;max-width:210px;
+  align-items:center;justify-content:center;min-width:0;
+  border:1px solid var(--fx-outline);border-radius:12px;
+  background:linear-gradient(155deg,var(--fx-inner),var(--fx-inner2));
+  box-shadow:inset 0 1px 0 #ffffff22,0 3px 10px #0000001a;
+  padding:8px 5px;color:var(--fx-text);
+}
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .ride-card .ride-metric b {
+  font-size:17px;font-weight:800;color:var(--fx-text);
+}
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .ride-card .ride-metric small {
+  color:var(--fx-soft);font-size:11px;
+}
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .ride-card .ride-weather {
+  margin:13px 0;padding:12px 7px 9px;
+  border:1px solid var(--fx-outline);border-radius:13px;
+  background:linear-gradient(160deg,var(--fx-inner),var(--fx-inner2));
+  box-shadow:inset 0 1px 0 #ffffff18;
+}
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .ride-card .weather-grid {
+  gap:5px;
+}
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .ride-card .weather-grid b,
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .ride-card .weather-grid small,
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .ride-card .weather-updated {
+  color:var(--fx-soft);
+}
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .btn {
+  background:linear-gradient(180deg,var(--fx-btn-top),var(--fx-btn-bottom));
+  border:1px solid var(--fx-outline);border-radius:13px;
+  color:var(--fx-on-button);
+  box-shadow:inset 0 1px 0 #ffffff70,0 0 0 1px var(--fx-fog),0 0 12px var(--fx-glow),0 3px 11px #00000022;
+}
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .btn.secondary {
+  background:linear-gradient(180deg,var(--fx-inner),var(--fx-inner2));
+  border:1px solid var(--fx-outline);
+  color:var(--fx-text);
+  box-shadow:inset 0 1px 0 #ffffff20,0 3px 11px #0000001d;
+}
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .btn.danger {
+  background:linear-gradient(180deg,#a2475b,#743143);
+  border-color:#cf8a9c;color:#fff;
+  box-shadow:0 3px 10px #00000025;
+}
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .btn:disabled {
+  box-shadow:none;filter:none;
+}
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .pill,
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .rider-status.is-member {
+  background:var(--fx-inner);
+  border:1px solid var(--fx-outline);
+  color:var(--fx-text);
+}
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .member-card .rider-avatar {
+  border:2px solid var(--fx-outline);
+  box-shadow:0 0 0 3px var(--fx-fog),0 0 15px var(--fx-glow);
+}
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .member-activity-track,
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .statbar {
+  background:var(--fx-track);border-color:var(--fx-outline);
+}
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .member-activity-track>span,
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .statbar>div {
+  background:linear-gradient(90deg,var(--fx-btn-bottom),var(--fx-bright));
+  box-shadow:0 0 8px var(--fx-glow);
+}
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .bike-pressure-item,
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .bike-part-row,
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .quick-review,
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .quick-completed {
+  background:linear-gradient(160deg,var(--fx-inner),var(--fx-inner2));
+  border-color:var(--fx-outline);
+  color:var(--fx-text);
+  box-shadow:inset 0 1px 0 #ffffff1c;
+}
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .quick-option {
+  background:linear-gradient(160deg,var(--fx-inner),var(--fx-inner2));
+  border:1px solid var(--fx-outline);
+  color:var(--fx-text);
+}
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .quick-option.selected {
+  background:linear-gradient(180deg,var(--fx-btn-top),var(--fx-btn-bottom));
+  border:2px solid var(--fx-bright);
+  color:var(--fx-on-button);
+  box-shadow:0 0 12px var(--fx-glow);
+}
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) input,
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) select,
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) textarea {
+  background:var(--field);border-color:var(--fx-outline);color:var(--fx-text);
+}
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) input:focus,
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) select:focus,
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) textarea:focus {
+  outline:2px solid var(--fx-bright);
+}
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) nav#nav {
+  background:linear-gradient(155deg,var(--fx-inner),var(--fx-inner2));
+  border:1px solid var(--fx-outline);
+  box-shadow:0 0 14px var(--fx-fog);
+}
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) nav#nav button {
+  background:linear-gradient(180deg,var(--fx-inner),var(--fx-inner2));
+  border:1px solid var(--fx-outline);color:var(--fx-text);
+}
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .bottom-nav {
+  background:linear-gradient(180deg,var(--fx-nav-top),var(--fx-nav-bottom));
+  border-top:1px solid var(--fx-outline);
+  box-shadow:0 -5px 18px var(--fx-glow),0 -8px 29px #00000018;
+}
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .bottom-nav button {
+  color:var(--fx-text);
+}
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .bottom-nav button.active {
+  background:linear-gradient(155deg,var(--fx-btn-top),var(--fx-btn-bottom));
+  border:1px solid var(--fx-bright);
+  color:var(--fx-on-button);
+  box-shadow:inset 0 1px 0 #ffffff48,0 0 15px var(--fx-glow);
+}
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .empty {
+  background:linear-gradient(155deg,var(--fx-inner),var(--fx-inner2));
+  border:1px solid var(--fx-outline);color:var(--fx-soft);
+}
+html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .alert {
+  color:var(--fx-text);
+}
+@media(max-width:719px) {
+  html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .shell {
+    padding-left:12px;padding-right:12px;
+  }
+  html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) header {
+    min-height:127px;padding:15px 0 22px;
+  }
+  html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .brand-icon {
+    width:59px;height:59px;border-radius:19px;
+  }
+  html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .brand-icon svg {
+    width:36px;height:36px;
+  }
+  html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .metrics {
+    gap:8px;
+  }
+  html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .metric {
+    padding:13px 2px;
+  }
+  html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .metric b {
+    font-size:clamp(21px,6vw,27px);
+  }
+  html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .metric small {
+    font-size:11px;
+  }
+  html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .ride-card {
+    padding:16px 13px;margin:13px 0;
+  }
+  html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .ride-card .ride-metrics {
+    gap:7px;
+  }
+  html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .ride-card .ride-metric {
+    flex-basis:100px;padding:8px 4px;
+  }
+}
+@media(prefers-reduced-motion:reduce) {
+  html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .btn,
+  html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .bottom-nav button {
+    transition:none!important;
+  }
+}
