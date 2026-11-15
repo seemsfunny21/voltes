@@ -26,7 +26,7 @@ async function bikeApi(action,fields={}){
  const data=await response.json();if(!response.ok)throw Error(data.error||'Σφάλμα επικοινωνίας');return data;
 }
 let bikeLastFetch=0;
-async function loadBikeCloud(){const name=memberName();const data=await bikeApi('state',{memberName:name});if(name!==memberName())return;bikeCloud={bikes:data.bikes||[],services:data.services||[],maintenance:data.maintenance||[],memberKm:Number(data.memberKm||0),loaded:true,member:name};bikeLastFetch=Date.now();if(route==='bikeService'||route==='bikeHistory'||route==='bikeMaintenance'||route==='settings')render()}
+async function loadBikeCloud(){const name=memberName();const data=await bikeApi('state',{memberName:name});if(name!==memberName())return;bikeCloud={bikes:data.bikes||[],services:data.services||[],maintenance:data.maintenance||[],memberKm:Number(data.memberKm||0),loaded:true,member:name};bikeLastFetch=Date.now();if(route==='bikeService'||route==='bikeHistory'||route==='bikeMaintenance'||route==='bikeDetails'||route==='settings')render()}
 
 /* One-time automatic migration per device; Supabase remains the source of truth. */
 const bikeLegacyLedgerKey='voltesBikeLegacySyncV1';
@@ -96,7 +96,8 @@ function bikeServiceSummary(){
  '<div class="bike-service-actions">'+
  '<button type="button" class="btn" data-go="bikeService">+ Νέο σέρβις</button>'+
  '<button type="button" class="btn secondary" data-go="bikeHistory">Προβολή παλιών σέρβις</button>'+ 
- '<button type="button" class="btn secondary" data-go="bikeMaintenance">Προγραμματισμένοι έλεγχοι</button>'+
+ '<button type="button" class="btn secondary" data-go="bikeMaintenance">Προγραμματισμένοι έλεγχοι</button>'+ 
+ '<button type="button" class="btn secondary" data-go="bikeDetails">Πληροφορίες ποδηλάτου</button>'+
  '</div></div>';
 }
 function bikeServicePage(view='new'){
@@ -146,6 +147,51 @@ function bikeServicePage(view='new'){
  return '<h1>🔧 Παλιά σέρβις</h1>'+
  (name&&!bikeCloud.loaded?blocks:'')+
  (name&&bikeCloud.loaded?'<div class="card"><h2>Ιστορικό συντήρησης</h2>'+history+'</div>':!name?blocks:'')+
+ '<div class="actions"><button type="button" class="btn secondary" data-go="settings">Επιστροφή στις Ρυθμίσεις</button></div>';
+}
+
+
+/* Simple shared inventory: one editable equipment profile for each owned bicycle. */
+const bikeDetailFields=[
+ ['frame','Πλαίσιο / σκελετός'],['fork','Πιρούνι'],['wheelset','Τροχοί / ζάντες'],
+ ['tires','Ελαστικά'],['valves','Βαλβίδες'],['sealant','Υγρό tubeless'],
+ ['groupset','Σύστημα ταχυτήτων'],['crankset','Δισκοβραχίονας'],['cassette','Κασέτα'],
+ ['chain','Αλυσίδα'],['brakes','Φρένα'],['rotors','Δισκόπλακες'],
+ ['handlebar','Τιμόνι / λαιμός'],['saddle','Σέλα'],['seatpost','Παλουκόσελο'],
+ ['pedals','Πετάλια'],['other','Άλλα εξαρτήματα']
+];
+let bikeDetailsEditId='';
+function bikeDetailsPage(){
+ const name=memberName();
+ if(!name)return '<h1>🚴 Πληροφορίες ποδηλάτου</h1><div class="card"><p>Επίλεξε πρώτα το όνομά σου από τα Μέλη.</p><button class="btn secondary" data-go="members">Επιλογή μέλους</button></div>';
+ if(!bikeCloud.loaded)return '<h1>🚴 Πληροφορίες ποδηλάτου</h1><div class="card"><p>Φόρτωση πληροφοριών…</p></div>';
+ const output=ownBikes().map(bike=>{
+  const info=bike.bike_details&&typeof bike.bike_details==='object'&&!Array.isArray(bike.bike_details)?bike.bike_details:{};
+  const bar=key=>typeof info[key]==='number'&&Number.isFinite(info[key])?info[key].toLocaleString('el-GR',{maximumFractionDigits:1})+' bar':'—';
+  const psi=key=>typeof info[key]==='number'&&Number.isFinite(info[key])?'('+Math.round(info[key]*14.5038)+' PSI)':'Δεν έχει οριστεί';
+  const rows=bikeDetailFields.filter(([key])=>typeof info[key]==='string'&&info[key].trim()).map(([key,label])=>
+   '<div class="bike-part-row"><span>'+safe(label)+'</span><strong>'+safe(info[key])+'</strong></div>').join('');
+  const editing=bikeDetailsEditId===bike.id;
+  const form=editing?'<form id="bikeDetailsForm" class="bike-details-form" data-bike-id="'+safe(bike.id)+'">'+
+   '<h3>Ρύθμιση πιέσεων</h3><p class="muted">Οι πιέσεις είναι τιμές που καταχωρίζεις εσύ, όχι αυτόματο όριο ασφαλείας. Έλεγξε πάντα τα όρια ελαστικού και ζάντας.</p>'+
+   '<div class="bike-parts-editor">'+
+   '<label>Μπροστινό (bar)<input type="number" name="frontBar" min="0.5" max="10" step="0.1" inputmode="decimal" value="'+safe(info.frontBar??'')+'" placeholder="π.χ. 4.2"></label>'+
+   '<label>Πίσω (bar)<input type="number" name="rearBar" min="0.5" max="10" step="0.1" inputmode="decimal" value="'+safe(info.rearBar??'')+'" placeholder="π.χ. 4.6"></label></div>'+
+   '<h3>Εξαρτήματα</h3><div class="bike-parts-editor">'+
+   bikeDetailFields.map(([key,label])=>'<label>'+safe(label)+'<input type="text" name="'+safe(key)+'" maxlength="160" value="'+safe(info[key]||'')+'" placeholder="Προαιρετικό"></label>').join('')+
+   '</div><div class="actions"><button type="submit" class="btn">Αποθήκευση πληροφοριών</button>'+
+   '<button type="button" class="btn secondary" data-do="cancelBikeDetails">Ακύρωση</button></div></form>':'';
+  return '<section class="card bike-details-card"><h2>'+safe(bike.name)+'</h2>'+
+   '<h3>Πίεση ελαστικών</h3><div class="bike-pressure-grid">'+
+   '<div class="bike-pressure-item"><span>Μπροστινό</span><strong>'+bar('frontBar')+'</strong><small>'+psi('frontBar')+'</small></div>'+
+   '<div class="bike-pressure-item"><span>Πίσω</span><strong>'+bar('rearBar')+'</strong><small>'+psi('rearBar')+'</small></div></div>'+
+   '<p class="bike-service-disclaimer">Ενδεικτικές προσωπικές πιέσεις. Επαλήθευσε το μοντέλο, τη διάσταση ελαστικού και τα όρια ζάντας πριν τις χρησιμοποιήσεις.</p>'+
+   '<h3>Εξαρτήματα ποδηλάτου</h3>'+
+   (rows?'<div class="bike-parts-list">'+rows+'</div>':'<p class="muted">Δεν έχουν καταχωριστεί ακόμη εξαρτήματα.</p>')+
+   (editing?form:'<div class="actions"><button type="button" class="btn secondary" data-do="editBikeDetails" data-bike-id="'+safe(bike.id)+'">✎ Επεξεργασία πληροφοριών</button></div>')+
+   '</section>';
+ }).join('');
+ return '<h1>🚴 Πληροφορίες ποδηλάτου</h1>'+ (output||'<div class="card">Δεν βρέθηκε ποδήλατο. Πρόσθεσέ το πρώτα από το Νέο σέρβις.</div>')+
  '<div class="actions"><button type="button" class="btn secondary" data-go="settings">Επιστροφή στις Ρυθμίσεις</button></div>';
 }
 
@@ -208,7 +254,7 @@ function themeSettings(){return `<div class="card"><h2>Χρώμα εφαρμογ
 const memberKey='voltesChosenMember';
 const savedMember=()=>readLocal(memberKey);
 function memberName(){const name=savedMember();return db.publicMembers.some(x=>x.name===name)?name:''}
-function chooseMember(name){if(!db.publicMembers.some(x=>x.name===name))return;writeLocal(memberKey,name);writeLocal('voltesLastSignupName',name);bikeCloud.loaded=false;bikeLastFetch=0;resetBikeWizard();render();autoSyncBikeCloud().catch(()=>{})}
+function chooseMember(name){if(!db.publicMembers.some(x=>x.name===name))return;writeLocal(memberKey,name);writeLocal('voltesLastSignupName',name);bikeCloud.loaded=false;bikeLastFetch=0;bikeDetailsEditId='';resetBikeWizard();render();autoSyncBikeCloud().catch(()=>{})}
 let signupTokens;try{signupTokens=JSON.parse(readLocal('voltesSignupTokens','{}'));if(!signupTokens||typeof signupTokens!=='object'||Array.isArray(signupTokens))signupTokens={}}catch{signupTokens={}}
 sessionStorage.removeItem('voltesAdminPin');
 function newToken(){return Array.from(crypto.getRandomValues(new Uint8Array(32)),b=>b.toString(16).padStart(2,'0')).join('')}
@@ -223,11 +269,11 @@ async function refresh(){const result=await api('state');db={rides:result.rides|
 async function perform(action,fields,success){try{await api(action,fields);await refresh();return true}catch(e){toast(e.message);return false}}
 async function start(){
  if(!API_URL){app.innerHTML='<p class="alert">Η εφαρμογή χρειάζεται ρύθμιση του Supabase. Συμπλήρωσε το API_URL στο config.js σύμφωνα με το README.</p>';return}
- try{await refresh();await autoSyncBikeCloud()}catch(e){if(route==='bikeHistory'||route==='bikeService')toast(e.message);else if(!db.publicMembers.length)app.innerHTML=`<p class="alert">${safe(e.message)}</p>`}
+ try{await refresh();await autoSyncBikeCloud()}catch(e){if(route==='bikeHistory'||route==='bikeService'||route==='bikeDetails'||route==='bikeMaintenance')toast(e.message);else if(!db.publicMembers.length)app.innerHTML=`<p class="alert">${safe(e.message)}</p>`}
 }
 const datefmt=d=>new Date(d+'T12:00:00').toLocaleDateString('el-GR',{day:'2-digit',month:'2-digit',year:'numeric'});
 function toast(v){message=v;render()}
-function navigate(v){if(v==='bikeMaintenance'){bikeLastFetch=0;autoSyncBikeCloud().catch(e=>toast(e.message))}if(v==='bikeService'){resetBikeWizard();autoSyncBikeCloud().catch(e=>toast(e.message))}if(v==='bikeHistory'){autoSyncBikeCloud().catch(e=>toast(e.message))}if(v==='new')quickRideState={day:'',date:'',period:'',time:'',showTimePicker:false,routeId:'',placeMode:'mavili',customPlace:'',step:1};route=v;if(v==='history')historyLimit=5;nav.classList.add('hidden');document.querySelector('[data-bottom-route="menu"]')?.setAttribute('aria-expanded','false');render();if(v==='auth')document.querySelector('#login input[name="pin"]')?.focus({preventScroll:true});document.querySelector(".shell").scrollTo(0,0)}
+function navigate(v){if(v==='bikeDetails'){bikeDetailsEditId='';bikeLastFetch=0;autoSyncBikeCloud().catch(e=>toast(e.message))}if(v==='bikeMaintenance'){bikeLastFetch=0;autoSyncBikeCloud().catch(e=>toast(e.message))}if(v==='bikeService'){resetBikeWizard();autoSyncBikeCloud().catch(e=>toast(e.message))}if(v==='bikeHistory'){autoSyncBikeCloud().catch(e=>toast(e.message))}if(v==='new')quickRideState={day:'',date:'',period:'',time:'',showTimePicker:false,routeId:'',placeMode:'mavili',customPlace:'',step:1};route=v;if(v==='history')historyLimit=5;nav.classList.add('hidden');document.querySelector('[data-bottom-route="menu"]')?.setAttribute('aria-expanded','false');render();if(v==='auth')document.querySelector('#login input[name="pin"]')?.focus({preventScroll:true});document.querySelector(".shell").scrollTo(0,0)}
 function renderNotice(){return message?`<p class="alert" role="status">${safe(message)}</p>`:''}
 function stats(){let completed=db.rides.filter(x=>x.done);return `<section class="metrics"><div class="metric"><b>${completed.length}</b><small>Βόλτες</small></div><div class="metric"><b>${Math.round(completed.reduce((a,x)=>a+Number(x.km||0),0))}</b><small>Χιλιόμετρα</small></div><div class="metric"><b>${(admin?db.riders.filter(x=>x.member).length:db.members)}</b><small>Μέλη</small></div></section>`}
 function expiredRide(r){return !r.done&&Date.now()-new Date(String(r.date)+'T'+String(r.time||'10:00')+':00').getTime()>86400000}
@@ -406,7 +452,7 @@ app.addEventListener('change',async e=>{
 app.addEventListener('change',async e=>{const input=e.target;if(!input.dataset.avatarId||!admin||!input.files?.length)return;input.disabled=true;try{const avatar=await prepareAvatar(input.files[0]);await perform('setAvatar',{id:input.dataset.avatarId,avatar},'Η φωτογραφία αποθηκεύτηκε.')}catch(err){toast(err.message)}finally{input.disabled=false;input.value=''}});
 function analytics(){let list=db.riders.map(p=>{let rides=completed().filter(r=>(r.attendees||[]).includes(p.name));let total=rides.reduce((s,r)=>s+Number(r.km),0);return {name:p.name,count:rides.length,km:total,elevation:rides.some(r=>r.elevationGain!=null)?rides.reduce((s,r)=>s+Number(r.elevationGain||0),0):null,moving:rides.some(r=>r.movingMinutes!=null)?rides.reduce((s,r)=>s+Number(r.movingMinutes||0),0):null,mean:rides.length?rides.reduce((s,r)=>s+Number(r.speed),0)/rides.length:0}}).sort((a,b)=>b.km-a.km);return `<h1>Στατιστικά ποδηλατών</h1><p class="alert">Ο κοινός μέσος όρος των διαδρομών δεν αποτελεί μέτρηση ατομικής ταχύτητας. Δεν παράγεται ακόμη αυτόματη κατάταξη.</p>${list.length?list.map(p=>`<article class="card"><div class="row"><strong>${safe(p.name)}</strong><span>${p.count} βόλτες</span></div><p>${p.km.toFixed(1)} km · Μ.Ο. ομάδων ${p.count?p.mean.toFixed(1)+' km/h':'—'}</p><p class="muted">Καταγεγραμμένη ανάβαση: ${p.elevation==null?'—':safe(p.elevation)+' m'} · Χρόνος κίνησης: ${p.moving==null?'—':safe(formatMovingTime(p.moving))}</p></article>`).join(''):'<p class="empty">Πρόσθεσε μέλη και ολοκληρωμένες βόλτες για να εμφανιστούν στατιστικά.</p>'}`}
 function auth(){return `<h1>Είσοδος Admin</h1><div class="card"><form id="login"><label>PIN Admin <input type="password" name="pin" required inputmode="numeric" maxlength="4" minlength="4" pattern="[0-9]{4}" placeholder="••••"></label><button class="btn">Είσοδος</button></form></div>`}
-function render(){if(!admin&&['new','newDetailed','riders','stats','finish','historyAdd','editDone','routeAdd','routes','routeEdit'].includes(route))route='home';document.querySelector('#adminNav').classList.toggle('hidden',!admin);document.querySelector('#authBtn').textContent=admin?'Αποσύνδεση Admin':'Είσοδος Admin';let html=route==='settings'?themeSettings():route==='bikeService'?bikeServicePage():route==='bikeHistory'?bikeServicePage('history'):route==='bikeMaintenance'?bikeMaintenancePage():route==='home'?home():route==='members'?publicMembers():route==='upcoming'?upcoming():route==='history'?history():route==='new'?newRide():route==='newDetailed'?detailedRide():route==='routeAdd'?addRoutePage():route==='routes'?savedRoutesPage():route==='routeEdit'?editRoutePage():route==='historyAdd'?historicalRide():route==='editDone'&&window.currentRide&&admin?editCompletedRide(window.currentRide):route==='riders'?riders():route==='stats'?analytics():route==='auth'?auth():route==='signup'&&window.currentRide?signup(window.currentRide):route==='finish'&&window.currentRide&&admin?finish(window.currentRide):home();app.innerHTML=renderNotice()+html;message='';syncBottomNav()}
+function render(){if(!admin&&['new','newDetailed','riders','stats','finish','historyAdd','editDone','routeAdd','routes','routeEdit'].includes(route))route='home';document.querySelector('#adminNav').classList.toggle('hidden',!admin);document.querySelector('#authBtn').textContent=admin?'Αποσύνδεση Admin':'Είσοδος Admin';let html=route==='settings'?themeSettings():route==='bikeService'?bikeServicePage():route==='bikeHistory'?bikeServicePage('history'):route==='bikeMaintenance'?bikeMaintenancePage():route==='bikeDetails'?bikeDetailsPage():route==='home'?home():route==='members'?publicMembers():route==='upcoming'?upcoming():route==='history'?history():route==='new'?newRide():route==='newDetailed'?detailedRide():route==='routeAdd'?addRoutePage():route==='routes'?savedRoutesPage():route==='routeEdit'?editRoutePage():route==='historyAdd'?historicalRide():route==='editDone'&&window.currentRide&&admin?editCompletedRide(window.currentRide):route==='riders'?riders():route==='stats'?analytics():route==='auth'?auth():route==='signup'&&window.currentRide?signup(window.currentRide):route==='finish'&&window.currentRide&&admin?finish(window.currentRide):home();app.innerHTML=renderNotice()+html;message='';syncBottomNav()}
 const bottomNav=document.querySelector('#bottomNav');
 function syncBottomNav(){bottomNav.querySelectorAll('button').forEach(b=>{const selected=b.dataset.bottomRoute===(nav.classList.contains('hidden')?(['home','members','history'].includes(route)?route:'menu'):'menu');b.classList.toggle('active',selected)});}
 bottomNav.addEventListener('click',async e=>{
@@ -453,6 +499,12 @@ swipeShell.addEventListener('touchcancel',()=>{swipeStart=null},{passive:true});
 nav.addEventListener('click',async e=>{let b=e.target.closest('button');if(!b)return;if(b.dataset.route)navigate(b.dataset.route);else if(b.id==='authBtn'){if(admin){try{await api('logout')}catch{toast('Η σύνδεση αφαιρέθηκε από αυτή τη συσκευή. Η υπηρεσία δεν ήταν διαθέσιμη.')}finally{admin=false;pin='';adminToken='';writeLocal('voltesAdminToken','');try{await refresh()}catch{db.riders=[];db.rides=[]}navigate('home')}}else navigate('auth')}});
 app.addEventListener('click',async e=>{
  let b=e.target.closest('button');if(!b)return;
+ if(b.dataset.do==='cancelBikeDetails'){bikeDetailsEditId='';render();return}
+ if(b.dataset.do==='editBikeDetails'){
+  const bike=ownBikes().find(x=>x.id===b.dataset.bikeId);
+  if(bike){bikeDetailsEditId=bike.id;render()}
+  return;
+ }
  if(b.dataset.do==='cancelMaintenanceEdit'){maintenanceEditId='';render();return}
  if(b.dataset.do==='newMaintenance'){maintenanceEditId='new:'+b.dataset.bikeId;render();return}
  if(b.dataset.do==='editMaintenance'){maintenanceEditId=b.dataset.id;render();return}
@@ -581,6 +633,29 @@ app.addEventListener('input',e=>{
 app.addEventListener('submit',async e=>{
  e.preventDefault();let f=e.target,d=new FormData(f);
  const values=Object.fromEntries(d.entries());
+ if(f.id==='bikeDetailsForm'){
+  const bikeId=f.dataset.bikeId;
+  if(!ownBikes().some(x=>x.id===bikeId)){toast('Το ποδήλατο δεν βρέθηκε.');return}
+  const details={};
+  for(const [key] of bikeDetailFields){
+   const value=String(values[key]||'').trim();
+   if(value.length>160){toast('Ένα εξάρτημα έχει πάνω από 160 χαρακτήρες.');return}
+   if(value)details[key]=value;
+  }
+  for(const key of ['frontBar','rearBar']){
+   const raw=String(values[key]||'').trim().replace(',','.');
+   if(!raw)continue;
+   const value=Number(raw);
+   if(!Number.isFinite(value)||value<0.5||value>10||Math.abs(value*10-Math.round(value*10))>1e-8){
+    toast('Έλεγξε τις πιέσεις (0,5–10 bar, έως 1 δεκαδικό).');return;
+   }
+   details[key]=value;
+  }
+  const button=f.querySelector('button[type="submit"]');if(button)button.disabled=true;
+  const okay=await bikeAction('saveBikeDetails',{bikeId,details},'Οι πληροφορίες ποδηλάτου αποθηκεύτηκαν.');
+  if(okay){bikeDetailsEditId='';render()}else if(button)button.disabled=false;
+  return;
+ }
  if(f.id==='bikeRenameForm'){
   const name=String(values.name||'').trim();
   if(name.length<2||name.length>90){toast('Γράψε το μοντέλο του ποδηλάτου σου.');return}
