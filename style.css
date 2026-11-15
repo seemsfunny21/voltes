@@ -994,3 +994,254 @@ html:is([data-theme="green"],[data-theme="white"],[data-theme="black"]) .alert {
     transition:none!important;
   }
 }
+
+/* VOLTES HERO CYCLIST LAYOUT 2026: compact match for approved central mockup.
+   Image is local and tiny; all themes retain their chosen palette and full features. */
+html[data-theme] header {
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-start;
+  align-items:center;
+  gap:0;
+  min-height:0;
+  padding:0 0 14px;
+  overflow:visible;
+  text-align:center;
+}
+html[data-theme] header::before { display:none; }
+html[data-theme] header::after {
+  left:11%;right:11%;bottom:2px;
+  height:2px;pointer-events:none;
+}
+html[data-theme] header .hero-scene {
+  display:block;
+  width:min(100%,490px);
+  height:auto;
+  aspect-ratio:440/180;
+  object-fit:contain;
+  margin:0 auto -5px;
+  border:0;
+  pointer-events:none;
+  -webkit-mask-image:linear-gradient(to bottom,#000 0%,#000 76%,transparent 100%);
+  mask-image:linear-gradient(to bottom,#000 0%,#000 76%,transparent 100%);
+}
+html[data-theme="green"] header .hero-scene {filter:hue-rotate(-48deg) saturate(.96)}
+html[data-theme="white"] header .hero-scene {
+  filter:saturate(.78);
+  border-radius:15px;
+  -webkit-mask-image:linear-gradient(to bottom,#000 0%,#000 89%,transparent 100%);
+  mask-image:linear-gradient(to bottom,#000 0%,#000 89%,transparent 100%);
+}
+html[data-theme="black"] header .hero-scene {filter:grayscale(.88) brightness(.92)}
+html[data-theme] header .brand {
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+  margin:0 auto;
+  align-items:center;
+  justify-content:center;
+  width:100%;
+  text-align:center;
+  position:relative;
+  z-index:2;
+}
+html[data-theme] header .brand-icon {display:none}
+html[data-theme] header .brand strong {
+  display:block;
+  font-size:clamp(17px,4.8vw,22px);
+  font-weight:820;
+  letter-spacing:-.35px;
+  line-height:1.22;
+  text-align:center;
+  margin:0;
+}
+html[data-theme] header .brand small {
+  font-size:12px;
+  line-height:1.3;
+  margin-top:2px;
+  text-align:center;
+}
+html[data-theme] .metrics {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+  margin:11px 0 14px;
+}
+html[data-theme] .metric {
+  min-width:0;
+  border-radius:16px;
+  padding:10px 4px 12px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:3px;
+}
+html[data-theme] .metric::before {
+  content:"";
+  display:block;
+  flex:none;
+  width:25px;
+  height:25px;
+  background:var(--accent-edge);
+  -webkit-mask-size:contain;
+  mask-size:contain;
+  -webkit-mask-position:center;
+  mask-position:center;
+  -webkit-mask-repeat:no-repeat;
+  mask-repeat:no-repeat;
+  margin:0 0 3px;
+  filter:drop-shadow(0 0 7px var(--accent));
+}
+html[data-theme] .metric:nth-child(1)::before {
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Crect%20x%3D%223%22%20y%3D%225%22%20width%3D%2218%22%20height%3D%2216%22%20rx%3D%222%22%2F%3E%3Cpath%20d%3D%22M7%203v4M17%203v4M3%2010h18M8%2015h3m3%200h2%22%2F%3E%3C%2Fsvg%3E");
+  mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Crect%20x%3D%223%22%20y%3D%225%22%20width%3D%2218%22%20height%3D%2216%22%20rx%3D%222%22%2F%3E%3Cpath%20d%3D%22M7%203v4M17%203v4M3%2010h18M8%2015h3m3%200h2%22%2F%3E%3C%2Fsvg%3E");
+}
+html[data-theme] .metric:nth-child(2)::before {
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M6%2017C2%2017%203%206%2010%206c4%200%205%205%209%205%22%2F%3E%3Ccircle%20cx%3D%226%22%20cy%3D%2217%22%20r%3D%222.5%22%2F%3E%3Cpath%20d%3D%22M19%204c-4%200-4%206%200%208%204-2%204-8%200-8Z%22%2F%3E%3Ccircle%20cx%3D%2219%22%20cy%3D%227.5%22%20r%3D%22.4%22%20fill%3D%22black%22%2F%3E%3C%2Fsvg%3E");
+  mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M6%2017C2%2017%203%206%2010%206c4%200%205%205%209%205%22%2F%3E%3Ccircle%20cx%3D%226%22%20cy%3D%2217%22%20r%3D%222.5%22%2F%3E%3Cpath%20d%3D%22M19%204c-4%200-4%206%200%208%204-2%204-8%200-8Z%22%2F%3E%3Ccircle%20cx%3D%2219%22%20cy%3D%227.5%22%20r%3D%22.4%22%20fill%3D%22black%22%2F%3E%3C%2Fsvg%3E");
+}
+html[data-theme] .metric:nth-child(3)::before {
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%229%22%20cy%3D%228.5%22%20r%3D%223%22%2F%3E%3Cpath%20d%3D%22M3%2020v-2.2c0-2.8%202.6-4.8%206-4.8s6%202%206%204.8V20H3Zm12-14.3a3%203%200%200%201%200%205.6M17.5%2013c2.3.6%203.5%202.1%203.5%204.3V20h-3%22%2F%3E%3C%2Fsvg%3E");
+  mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%229%22%20cy%3D%228.5%22%20r%3D%223%22%2F%3E%3Cpath%20d%3D%22M3%2020v-2.2c0-2.8%202.6-4.8%206-4.8s6%202%206%204.8V20H3Zm12-14.3a3%203%200%200%201%200%205.6M17.5%2013c2.3.6%203.5%202.1%203.5%204.3V20h-3%22%2F%3E%3C%2Fsvg%3E");
+}
+html[data-theme] .metric b {
+  font-size:clamp(20px,6.5vw,29px);
+  line-height:1.12;
+  font-weight:820;
+}
+html[data-theme] .metric small {font-size:11px;line-height:1.25;text-align:center}
+html[data-theme] main>h2 {
+  margin:11px auto 14px;
+  padding:9px 18px;
+  max-width:100%;
+  font-size:clamp(15px,4vw,19px);
+}
+html[data-theme] .ride-card {
+  text-align:center;
+  border-radius:21px;
+  padding:15px 14px 16px;
+  margin:11px 0;
+}
+html[data-theme] .ride-card .ride-heading {
+  display:flex;
+  flex-direction:row;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  margin:0 0 7px;
+}
+html[data-theme] .ride-card .ride-title {
+  font-size:clamp(18px,4.9vw,22px);
+  font-weight:820;
+  line-height:1.25;
+}
+html[data-theme] .ride-card .ride-title::before {
+  content:"";
+  display:inline-block;
+  width:25px;
+  height:25px;
+  background:var(--accent-edge);
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.9%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%225.5%22%20cy%3D%2217.5%22%20r%3D%224%22%2F%3E%3Ccircle%20cx%3D%2218.5%22%20cy%3D%2217.5%22%20r%3D%224%22%2F%3E%3Cpath%20d%3D%22M5.5%2017.5%2010%208h5l3.5%209.5M5.5%2017.5h9L10%208M8%208h4M15%205h2l1%203%22%2F%3E%3C%2Fsvg%3E");
+  mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.9%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%225.5%22%20cy%3D%2217.5%22%20r%3D%224%22%2F%3E%3Ccircle%20cx%3D%2218.5%22%20cy%3D%2217.5%22%20r%3D%224%22%2F%3E%3Cpath%20d%3D%22M5.5%2017.5%2010%208h5l3.5%209.5M5.5%2017.5h9L10%208M8%208h4M15%205h2l1%203%22%2F%3E%3C%2Fsvg%3E");
+  -webkit-mask-size:contain;
+  mask-size:contain;
+  -webkit-mask-repeat:no-repeat;
+  mask-repeat:no-repeat;
+  -webkit-mask-position:center;
+  mask-position:center;
+  vertical-align:-5px;
+  margin-right:8px;
+}
+html[data-theme] .ride-card .ride-date,
+html[data-theme] .ride-card .ride-meeting {
+  margin:4px 0;
+  font-size:13px;
+  font-weight:650;
+  line-height:1.45;
+}
+html[data-theme] .ride-card .ride-metrics {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:9px;
+  margin:14px 0 11px;
+}
+html[data-theme] .ride-card .ride-metric {
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  align-items:center;
+  align-content:center;
+  gap:5px 7px;
+  max-width:none;
+  min-width:0;
+  min-height:60px;
+  margin:0;
+  padding:10px 7px;
+  border-radius:13px;
+  border:1px solid var(--edge);
+}
+html[data-theme] .ride-card .ride-metric b {
+  font-size:clamp(16px,4.5vw,21px);
+  line-height:1.2;
+  white-space:nowrap;
+}
+html[data-theme] .ride-card .ride-metric small {
+  font-size:11px;
+  font-weight:550;
+  line-height:1.2;
+  width:100%;
+}
+html[data-theme] .ride-card .ride-route {
+  margin:8px auto 10px;
+  max-width:100%;
+  font-size:12px;
+}
+html[data-theme] .ride-card .ride-route>p {
+  font-size:12px;
+  line-height:1.4;
+  overflow-wrap:anywhere;
+}
+html[data-theme] .ride-card .ride-weather {
+  padding:9px 6px 6px;
+  margin:11px 0;
+}
+html[data-theme] .ride-card .weather-grid>div {gap:3px}
+html[data-theme] .ride-card .weather-grid b {font-size:12px}
+html[data-theme] .ride-card .weather-grid small {font-size:10px}
+html[data-theme] .ride-card p.muted,
+html[data-theme] .ride-card p.note {
+  font-size:11px;
+  line-height:1.4;
+  margin:8px auto;
+  overflow-wrap:anywhere;
+}
+html[data-theme] .ride-card .actions {
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  justify-content:center;
+  align-items:stretch;
+  margin:14px auto 0;
+}
+html[data-theme] .ride-card .actions .btn {
+  flex:1 1 135px;
+  min-width:0;
+  min-height:47px;
+  margin:0;
+  padding:10px 8px;
+  font-size:clamp(12px,3.6vw,15px);
+  line-height:1.3;
+}
+html[data-theme] .ride-card .actions .btn.danger {
+  flex:0 1 170px;
+  min-height:43px;
+}
+html[data-theme] .bottom-nav button span {font-size:24px}
+@media(max-width:430px) {
+  html[data-theme] .shell {padding-left:11px;padding-right:11px}
+  html[data-theme] .ride-card {padding:14px 11px}
+  html[data-theme] .ride-card .ride-metric {padding:8px 5px}
+  html[data-theme] header .hero-scene {width:calc(100% + 12px);max-width:none}
+  html[data-theme] .metrics {margin-top:8px}
+}
