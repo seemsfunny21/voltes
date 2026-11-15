@@ -19,6 +19,10 @@ async function main(){
  test('main backend source has current routes',()=>{for(const name of ['addHistoricalRide','editCompletedRide','editRoute','saveRoute','deleteRider','voltes_admin_login_gate'])assert.ok(backend.includes(name))});
  test('service history has no old manual import panel',()=>assert.ok(!app.includes('importBikeLegacy')&&!app.includes('Μεταφορά παλιών στοιχείων')));
  test('user interface contains service actions',()=>assert.ok(app.includes('+ Νέο σέρβις')&&app.includes('Προβολή παλιών σέρβις')));
+ test('bike equipment API and screen are present',()=>{
+  const api=read('supabase/functions/bike-services/index.ts');
+  assert.ok(app.includes('data-go="bikeDetails"')&&app.includes('saveBikeDetails')&&api.includes("action==='saveBikeDetails'")&&api.includes('bike_details'));
+ });
  const used=new Set([...app.matchAll(/data-do=["']([\w-]+)["']/g)].map(x=>x[1]));
  const handlers=new Set([...app.matchAll(/case '([\w-]+)'/g),...app.matchAll(/b\.dataset\.do===['"]([\w-]+)['"]/g)].map(x=>x[1]));
  test('every rendered action has a handler',()=>{for(const action of used)assert.ok(handlers.has(action),'Missing handler '+action)});
@@ -55,7 +59,20 @@ async function main(){
  test('service edit and delete controls render',()=>{const v=renderHistory();assert.ok(v.includes('Διόρθωση')&&v.includes('Διαγραφή'))});
  vm.runInContext("bikeCloud.services[0].notes='<script>alert(1)</script>'",ctx);
  test('service text is HTML escaped',()=>assert.ok(!renderHistory().includes('<script>')&&renderHistory().includes('&lt;script&gt;')));
- test('settings have exactly two service actions',()=>{const v=vm.runInContext('themeSettings()',ctx);assert.equal((v.match(/data-go="bikeService"/g)||[]).length,1);assert.equal((v.match(/data-go="bikeHistory"/g)||[]).length,1)});
+ test('settings include each bicycle action once',()=>{const v=vm.runInContext('themeSettings()',ctx);
+  assert.equal((v.match(/data-go="bikeService"/g)||[]).length,1);
+  assert.equal((v.match(/data-go="bikeHistory"/g)||[]).length,1);
+  assert.equal((v.match(/data-go="bikeMaintenance"/g)||[]).length,1);
+  assert.equal((v.match(/data-go="bikeDetails"/g)||[]).length,1);
+ });
+ vm.runInContext("bikeCloud.bikes[0].bike_details={tires:'Schwalbe Pro One TLE',frontBar:4.2,rearBar:4.6,wheelset:'<img src=x onerror=alert(1)>'};bikeCloud.bikes[1].bike_details={tires:'PRIVATE_B'}",ctx);
+ const renderDetails=()=>vm.runInContext('bikeDetailsPage()',ctx);
+ test('bike profile shows saved pressure and own equipment',()=>{const v=renderDetails();assert.ok(v.includes('Schwalbe Pro One TLE')&&v.includes('4,2 bar')&&v.includes('4,6 bar'));assert.ok(!v.includes('PRIVATE_B'))});
+ test('bike profile escapes injected equipment HTML',()=>{const v=renderDetails();assert.ok(v.includes('&lt;img')&&!v.includes('<img src=x'))});
+ test('bike profile editing includes controls for both tyres and equipment',()=>{vm.runInContext("bikeDetailsEditId='a'",ctx);const v=renderDetails();assert.ok(v.includes('bikeDetailsForm')&&v.includes('name="frontBar"')&&v.includes('name="rearBar"')&&v.includes('name="tires"'));vm.runInContext("bikeDetailsEditId=''",ctx)});
+ storage.set('voltesChosenMember','Μέλος Β');
+ test('bike profile does not leak another member equipment',()=>{const v=renderDetails();assert.ok(v.includes('PRIVATE_B'));assert.ok(!v.includes('Schwalbe Pro One TLE'))});
+ storage.set('voltesChosenMember','Μέλος Α');
  await vm.runInContext('bikeLastFetch=0;autoSyncBikeCloud()',ctx);
  const before=requests.length;
  await vm.runInContext('autoSyncBikeCloud()',ctx);
