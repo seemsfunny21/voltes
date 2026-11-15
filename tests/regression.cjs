@@ -69,7 +69,28 @@ async function main(){
  const renderDetails=()=>vm.runInContext('bikeDetailsPage()',ctx);
  test('bike profile shows saved pressure and own equipment',()=>{const v=renderDetails();assert.ok(v.includes('Schwalbe Pro One TLE')&&v.includes('4,2 bar')&&v.includes('4,6 bar'));assert.ok(!v.includes('PRIVATE_B'))});
  test('bike profile escapes injected equipment HTML',()=>{const v=renderDetails();assert.ok(v.includes('&lt;img')&&!v.includes('<img src=x'))});
- test('bike profile editing includes controls for both tyres and equipment',()=>{vm.runInContext("bikeDetailsEditId='a'",ctx);const v=renderDetails();assert.ok(v.includes('bikeDetailsForm')&&v.includes('name="frontBar"')&&v.includes('name="rearBar"')&&v.includes('name="tires"'));vm.runInContext("bikeDetailsEditId=''",ctx)});
+ test('bike editor uses existing clickable tiles rather than a duplicate form',()=>{
+  vm.runInContext("bikeDetailsEditId='a';bikeDetailsFieldKey=''",ctx);
+  const v=renderDetails();
+  assert.ok(v.includes('data-do="pickBikeDetailsField"')&&v.includes('id="bikeDetailsAddSelect"'));
+  assert.ok(!v.includes('id="bikeDetailsForm"')&&!v.includes('id="bikeDetailsFieldForm"'));
+  assert.ok(!v.includes('name="frontBar"')&&!v.includes('name="tires"'));
+ });
+ test('selected pressure edits in place with exactly one input',()=>{
+  vm.runInContext("bikeDetailsFieldKey='frontBar'",ctx);
+  const v=renderDetails();
+  assert.ok(v.includes('id="bikeDetailsFieldForm"')&&v.includes('data-field="frontBar"'));
+  assert.ok(v.includes('name="value"')&&(v.match(/name="value"/g)||[]).length===1);
+  assert.ok(!v.includes('data-field="rearBar" name="value"'));
+ });
+ test('selected component edits in place, other components stay visible',()=>{
+  vm.runInContext("bikeDetailsFieldKey='tires'",ctx);
+  const v=renderDetails();
+  assert.ok(v.includes('data-field="tires"')&&v.includes('Schwalbe Pro One TLE'));
+  assert.ok(v.includes('&lt;img')&&v.includes('name="value"'));
+  assert.equal((v.match(/name="value"/g)||[]).length,1);
+  vm.runInContext("bikeDetailsEditId='';bikeDetailsFieldKey=''",ctx);
+ });
  storage.set('voltesChosenMember','Μέλος Β');
  test('bike profile does not leak another member equipment',()=>{const v=renderDetails();assert.ok(v.includes('PRIVATE_B'));assert.ok(!v.includes('Schwalbe Pro One TLE'))});
  storage.set('voltesChosenMember','Μέλος Α');
