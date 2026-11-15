@@ -259,3 +259,22 @@ html[data-theme] .shell::-webkit-scrollbar-thumb:hover{background:var(--accent-e
 .bike-service-actions{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
 .bike-service-actions .btn{display:block;width:100%;margin:0;min-height:48px;font-size:15px;border-radius:12px}
 .bike-service-actions .btn:focus-visible{outline:3px solid var(--accent-edge);outline-offset:3px}
+
+/* Equipment catalogue and user-saved tyre pressures per bicycle. */
+.bike-details-card{text-align:center;margin:14px 0}
+.bike-details-card h3{font-size:16px;margin:20px 0 12px}
+.bike-pressure-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0}
+.bike-pressure-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:110px;padding:12px 8px;background:var(--nav);border:1px solid var(--edge);border-radius:13px}
+.bike-pressure-item span{font-size:13px;color:var(--sub);font-weight:600}
+.bike-pressure-item strong{font-size:23px;line-height:1.1;color:var(--fg)}
+.bike-pressure-item small{font-size:12px;color:var(--sub)}
+.bike-parts-list{display:grid;gap:8px;margin:10px 0 16px;text-align:left}
+.bike-part-row{display:flex;align-items:start;justify-content:space-between;gap:12px;background:var(--nav);border:1px solid var(--edge);padding:12px;border-radius:10px}
+.bike-part-row span{min-width:105px;font-size:13px;color:var(--sub)}
+.bike-part-row strong{max-width:68%;text-align:right;font-size:14px;overflow-wrap:anywhere}
+.bike-details-form{border-top:1px solid var(--edge);margin-top:16px;padding-top:8px}
+.bike-details-form p.muted{font-size:12px}
+.bike-parts-editor{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 14px;text-align:left}
+.bike-parts-editor label{min-width:0;margin:6px 0;font-size:13px}
+.bike-parts-editor input{width:100%;min-width:0}
+@media(max-width:640px){.bike-parts-editor{grid-template-columns:minmax(0,1fr)}.bike-part-row{flex-direction:column;gap:3px}.bike-part-row strong{max-width:100%;text-align:left}}
