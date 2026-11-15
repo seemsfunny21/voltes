@@ -31,6 +31,9 @@ function odometer(bike:any,rides:{date:string,km:number}[],singleBike:boolean){
  return Math.round((base+sumKm(rides.filter(r=>r.date>bike.odometer_base_date)))*100)/100;
 }
 const genericBikeName='Το ποδήλατό μου';
+// Editable equipment labels are shared with the web app; pressures are user-saved targets, not manufacturer limits.
+const bikeDetailKeys=['frame','fork','wheelset','tires','valves','sealant','groupset','crankset','cassette','chain','brakes','rotors','handlebar','saddle','seatpost','pedals','other'];
+
 const defaults=[
  {label:'Λίπανση αλυσίδας',interval_km:200,interval_days:null,notes:'Αρχή μέτρησης: 0 χλμ. της εφαρμογής. Η προηγούμενη λίπανση δεν είναι γνωστή.'},
  {label:'Έλεγχος φθοράς αλυσίδας',interval_km:500,interval_days:null,notes:'Αρχή μέτρησης: 0 χλμ. της εφαρμογής. Έλεγχος φθοράς, όχι αυτόματη αντικατάσταση.'},
@@ -45,12 +48,12 @@ async function seedMaintenance(bikeId:string){
  if(error)throw error;
 }
 async function ensureMemberBike(memberId:string){
- const query=()=>db.from('voltes_bikes').select('id,member_id,name,is_default,odometer_base_km,odometer_base_date').eq('member_id',memberId);
+ const query=()=>db.from('voltes_bikes').select('id,member_id,name,is_default,odometer_base_km,odometer_base_date,bike_details').eq('member_id',memberId);
  const {data:existing,error:ee}=await query();
  if(ee)throw ee;let bikes=existing||[];
  if(!bikes.length){
   const {data:created,error}=await db.from('voltes_bikes').insert({member_id:memberId,name:genericBikeName,is_default:true})
-    .select('id,member_id,name,is_default,odometer_base_km,odometer_base_date').single();
+    .select('id,member_id,name,is_default,odometer_base_km,odometer_base_date,bike_details').single();
   if(error&&error.code!=='23505')throw error;
   if(created)bikes=[created];
   else{const retry=await query();if(retry.error)throw retry.error;bikes=retry.data||[];}
@@ -86,7 +89,7 @@ Deno.serve(async req=>{
    const decorated=bikes.map((bike:any)=>({...bike,member_name:name,odometer_km:odometer(bike,rides,bikes.length===1),auto_tracking:bikes.length===1,member_km:memberKm}));
    return reply({bikes:decorated,services:services||[],maintenance:maintenance||[],memberKm});
   }
-  if(!['createBike','setDefault','addService','updateService','deleteService','importService','completeMaintenance','saveMaintenance','deleteMaintenance','setOdometer'].includes(action))return bad('Άγνωστη ενέργεια',404);
+  if(!['createBike','setDefault','addService','updateService','deleteService','importService','completeMaintenance','saveMaintenance','deleteMaintenance','setOdometer','saveBikeDetails'].includes(action))return bad('Άγνωστη ενέργεια',404);
   const memberName=plain(p.memberName,70);if(memberName.length<2)return bad('Επίλεξε μέλος από τις Ρυθμίσεις.');
   const {data:member,error:me}=await db.from('voltes_riders').select('id').eq('name',memberName).eq('member',true).maybeSingle();
   if(me)throw me;if(!member)return bad('Το μέλος δεν βρέθηκε.',404);
@@ -107,6 +110,29 @@ Deno.serve(async req=>{
   const {data:bike,error:be}=await db.from('voltes_bikes').select('id,member_id,odometer_base_km,odometer_base_date').eq('id',p.bikeId).eq('member_id',member.id).maybeSingle();
   if(be)throw be;if(!bike)return bad('Το ποδήλατο δεν ανήκει στο επιλεγμένο μέλος.',404);
 
+  if(action==='saveBikeDetails'){
+   const incoming=p.details;
+   if(!incoming||typeof incoming!=='object'||Array.isArray(incoming))return bad('Μη έγκυρες πληροφορίες ποδηλάτου.');
+   const allowed=[...bikeDetailKeys,'frontBar','rearBar'];
+   if(Object.keys(incoming).some(key=>!allowed.includes(key)))return bad('Μη αναγνωρισμένο πεδίο ποδηλάτου.');
+   const details:Record<string,string|number>={};
+   for(const key of bikeDetailKeys){
+    const value=incoming[key];
+    if(value===undefined||value===null||value==='')continue;
+    if(typeof value!=='string'||value.trim().length>160)return bad('Κάθε εξάρτημα μπορεί να έχει έως 160 χαρακτήρες.');
+    if(value.trim())details[key]=value.trim();
+   }
+   for(const key of ['frontBar','rearBar']){
+    const value=incoming[key];
+    if(value===undefined||value===null||value==='')continue;
+    if(typeof value!=='number'||!Number.isFinite(value)||value<0.5||value>10||Math.round(value*10)/10!==value)
+     return bad('Η πίεση πρέπει να είναι από 0,5 έως 10 bar, με ένα δεκαδικό.');
+    details[key]=value;
+   }
+   const {data,error}=await db.from('voltes_bikes').update({bike_details:details}).eq('id',p.bikeId).eq('member_id',member.id).select('id').maybeSingle();
+   if(error)throw error;if(!data)return bad('Το ποδήλατο δεν βρέθηκε.',404);
+   return reply({ok:true});
+  }
   if(action==='setOdometer'){
    const value=Number(p.km);
    if(!Number.isFinite(value)||value<0||value>1000000)return bad('Μη έγκυρη ένδειξη χιλιομέτρων.');
