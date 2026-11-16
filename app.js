@@ -352,8 +352,8 @@ async function downloadFileBackup(button){
   const backup=response.backup;
   inspectBackup(backup);
   const json=JSON.stringify(backup);
-  if(json.length>5000000)throw Error('Το αντίγραφο υπερβαίνει τα 5 MB.');
   const blob=new Blob([json],{type:'application/json;charset=utf-8'});
+  if(blob.size>5000000)throw Error('Το αντίγραφο υπερβαίνει τα 5 MB.');
   const url=URL.createObjectURL(blob);
   try{
    const link=document.createElement('a');
