@@ -1,5 +1,5 @@
 /* Cycling PWA offline shell and new-ride Web Push receiver. */
-const CACHE="podilasia-ui-v75-manual-backup";
+const CACHE="podilasia-ui-v76-offline-first";
 const ASSETS=[
   "./",'./index.html','./style.css?v=69','./app.js?v=72',
   './voltes-push.js?v=2','./completion.js','./strava-ocr.js?v=40',
@@ -16,9 +16,43 @@ self.addEventListener("activate",event=>{
     self.clients.claim()
   ]));
 });
-self.addEventListener("fetch",event=>{
-  if(event.request.method!=="GET")return;
-  event.respondWith(fetch(event.request).catch(()=>caches.match(event.request)));
+/* Instant app shell: serve previously saved files and revalidate silently.
+   Never store API data; external Supabase requests always reach the network. */
+self.addEventListener("fetch", event => {
+  const req = event.request;
+  const url = new URL(req.url);
+  const scope = new URL(self.registration.scope);
+  if (req.method !== "GET" || url.origin !== scope.origin ||
+      !url.pathname.startsWith(scope.pathname)) return;
+  const staticRequest = req.mode === "navigate" ||
+    ["script", "style", "image", "font", "manifest"].includes(req.destination);
+  if (!staticRequest) return;
+
+  const network = fetch(req, {cache: "no-cache"}).then(async response => {
+    if (response.ok && response.type === "basic") {
+      try {
+        const cache = await caches.open(CACHE);
+        await cache.put(req, response.clone());
+      } catch (_) {}
+    }
+    return response;
+  });
+  event.waitUntil(network.then(() => {}, () => {}));
+
+  event.respondWith((async () => {
+    const cache = await caches.open(CACHE);
+    if (req.cache !== "reload" && req.cache !== "no-store") {
+      const cached = await cache.match(req, {ignoreSearch: req.mode === "navigate"}) ||
+        (req.mode === "navigate" ? await cache.match("./index.html") : null);
+      if (cached) return cached;
+    }
+    try { return await network; }
+    catch {
+      return await cache.match(req, {ignoreSearch: req.mode === "navigate"}) ||
+        (req.mode === "navigate" ? await cache.match("./index.html") : null) ||
+        Response.error();
+    }
+  })());
 });
 self.addEventListener("push",event=>{
   let payload={};
