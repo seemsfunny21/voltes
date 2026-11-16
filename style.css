@@ -1311,3 +1311,45 @@ html[data-theme] .voltes-push-actions .btn:not(.is-selected){background:var(--se
 html[data-theme] .voltes-push-actions .btn:disabled:not(.is-selected){opacity:.55}
 html[data-theme] .voltes-push-actions .btn.is-selected:disabled{cursor:default;opacity:1}
 html[data-theme] .voltes-push-actions .btn:not(:disabled):hover{filter:brightness(1.12)}
+
+
+/* Admin-only trash. The cards follow the selected cycling-app color theme. */
+html[data-theme] .trash-info{
+ text-align:center;
+ border:1px solid var(--edge,rgba(116,183,249,.35));
+}
+html[data-theme] .trash-info p{margin:2px 0;line-height:1.65}
+html[data-theme] .trash-entry{
+ border:1px solid var(--edge,rgba(116,183,249,.35));
+ background:var(--panel,rgba(19,45,82,.83));
+}
+html[data-theme] .trash-entry-head{
+ display:flex;align-items:center;justify-content:space-between;
+ gap:13px;
+}
+html[data-theme] .trash-entry-head>div{
+ min-width:0;flex:1;overflow-wrap:anywhere;
+}
+html[data-theme] .trash-entry-head h3{
+ text-align:center;margin:6px 0 6px;
+ font-size:15px;line-height:1.4;
+}
+html[data-theme] .trash-entry-head .muted{
+ margin:0;text-align:center;font-size:11px;
+}
+html[data-theme] .trash-type{
+ display:block;text-align:center;
+ font-size:11px;font-weight:750;
+ color:var(--accent,#7ec9ff);
+}
+html[data-theme] .trash-entry-head .btn{
+ flex:0 0 auto;min-height:39px;
+}
+@media(max-width:500px){
+ html[data-theme] .trash-entry-head{
+  flex-direction:column;align-items:stretch;
+ }
+ html[data-theme] .trash-entry-head .btn{
+  width:100%;max-width:250px;align-self:center;
+ }
+}
