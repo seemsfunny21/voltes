@@ -43,8 +43,8 @@
  function setMessage(message){lastMessage=message;updateUi()}
  function updateUi() {
    const state=$("voltesPushState");
-   const enable=$("voltesPushEnable"),test=$("voltesPushTest"),disable=$("voltesPushDisable");
-   if(!state||!enable||!test||!disable)return;
+   const enable=$("voltesPushEnable"),disable=$("voltesPushDisable");
+   if(!state||!enable||!disable)return;
    let message="";
    if(!supported())message="Η συσκευή ή ο browser δεν υποστηρίζει Web Push.";
    else if(Notification.permission==="denied")message="Οι ειδοποιήσεις είναι αποκλεισμένες. Επίτρεψέ τες από τις ρυθμίσεις της εφαρμογής.";
@@ -52,10 +52,14 @@
    else message="Ενεργοποίησε τις ειδοποιήσεις για να μαθαίνεις για κάθε νέα βόλτα, ακόμη και με κλειστή εφαρμογή.";
    state.textContent=lastMessage||message;
    state.classList.toggle("is-active",active);
-   enable.hidden=active || !supported();
-   enable.disabled=busy || (supported() && Notification.permission==="denied");
-   test.hidden=!active;disable.hidden=!active;
-   test.disabled=busy;disable.disabled=busy;
+   // Two permanent controls show the selected state without a test button.
+   enable.hidden=false;disable.hidden=false;
+   enable.classList.toggle("is-selected",active);
+   disable.classList.toggle("is-selected",!active);
+   enable.setAttribute("aria-pressed",String(active));
+   disable.setAttribute("aria-pressed",String(!active));
+   enable.disabled=busy || active || !supported() || Notification.permission==="denied";
+   disable.disabled=busy || !active;
  }
  async function worker(){
    return await navigator.serviceWorker.register("./sw.js",{scope:"./"});
@@ -84,17 +88,6 @@
      await request("register",{...credentials,subscription:subscription.toJSON()});
      active=true;setMessage("● Push ενεργό · Θα ενημερώνεσαι για κάθε νέα βόλτα.");
    }catch(error){active=false;setMessage(error?.message||"Η ενεργοποίηση Push απέτυχε.");}
-   finally{busy=false;updateUi()}
- }
- async function test(){
-   if(busy||!active)return;
-   const credentials=readCredentials();
-   if(!credentials)return setMessage("Χρειάζεται νέα ενεργοποίηση Push.");
-   busy=true;setMessage("Αποστολή δοκιμαστικής ειδοποίησης…");
-   try{
-     await request("test",credentials);
-     setMessage("Η δοκιμαστική ειδοποίηση στάλθηκε. Έλεγξε το κινητό σου.");
-   }catch(error){setMessage(error?.message||"Η δοκιμή απέτυχε.");}
    finally{busy=false;updateUi()}
  }
  async function disable(){
@@ -131,7 +124,6 @@
    const button=event.target.closest?.("button");
    if(!button)return;
    if(button.id==="voltesPushEnable"){event.preventDefault();enable();}
-   else if(button.id==="voltesPushTest"){event.preventDefault();test();}
    else if(button.id==="voltesPushDisable"){event.preventDefault();disable();}
  });
  window.VoltesPush={updateUi,init};
