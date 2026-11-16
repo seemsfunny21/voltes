@@ -1,9 +1,9 @@
 /* Cycling PWA offline shell and new-ride Web Push receiver. */
 const CACHE="podilasia-ui-v71-new-ride-push";
 const ASSETS=[
-  "./","./index.html","./style.css?v=66","./app.js?v=68",
-  "./voltes-push.js?v=1","./completion.js","./strava-ocr.js?v=40",
-  "./config.js","./icon.svg?v=2","./hero-cyclist.webp","./manifest.webmanifest"
+  "./",'./index.html','./style.css?v=66','./app.js?v=68',
+  './voltes-push.js?v=1','./completion.js','./strava-ocr.js?v=40',
+  './config.js','./icon.svg?v=2','./hero-cyclist.webp','./manifest.webmanifest'
 ];
 self.addEventListener("install",event=>{
   event.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting()));
