@@ -53,7 +53,7 @@
    state.textContent=lastMessage||message;
    state.classList.toggle("is-active",active);
    enable.hidden=active || !supported();
-   enable.disabled=busy||Notification.permission==="denied";
+   enable.disabled=busy || (supported() && Notification.permission==="denied");
    test.hidden=!active;disable.hidden=!active;
    test.disabled=busy;disable.disabled=busy;
  }
