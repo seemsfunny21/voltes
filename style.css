@@ -1245,3 +1245,60 @@ html[data-theme] .bottom-nav button span {font-size:24px}
   html[data-theme] header .hero-scene {width:calc(100% + 12px);max-width:none}
   html[data-theme] .metrics {margin-top:8px}
 }
+
+
+/* New-ride Web Push: compact consent controls, matching all four app themes. */
+html[data-theme] .voltes-push-card{
+  margin:12px 0;
+  padding:14px 15px;
+  border:1px solid var(--edge,#356295);
+  border-radius:16px;
+  background:linear-gradient(130deg,var(--panel,#102b4d),var(--nav,#0b2442));
+  box-shadow:inset 0 1px 0 rgba(166,217,255,.08);
+  text-align:center;
+}
+html[data-theme] .voltes-push-heading{
+  display:flex;gap:9px;align-items:center;justify-content:center;
+  margin:0 0 7px;
+}
+html[data-theme] .voltes-push-heading>span{
+  font-size:19px;
+  display:grid;place-items:center;
+  width:36px;height:36px;border-radius:11px;
+  background:var(--active,#115da3);
+}
+html[data-theme] .voltes-push-heading h2{
+  margin:0;font-size:15px;line-height:1.3;text-align:left;
+  color:var(--fg,#fff)
+}
+html[data-theme] #voltesPushState{
+  font-size:12px;line-height:1.48;
+  margin:7px auto 10px;
+  max-width:500px;
+  color:var(--sub,#d2e7fb);
+  overflow-wrap:anywhere
+}
+html[data-theme] #voltesPushState.is-active{
+  color:var(--fg,#fff);
+  font-weight:650
+}
+html[data-theme] .voltes-push-actions{
+  display:flex;gap:8px;justify-content:center;flex-wrap:wrap;
+}
+html[data-theme] .voltes-push-actions .btn{
+  flex:0 1 auto;min-height:40px;font-size:12px;
+  padding:9px 13px;border-radius:10px;
+  border:1px solid var(--accent-edge,#6addff);
+  background:var(--accent,#168dff);color:#fff;
+}
+html[data-theme] .voltes-push-actions .btn.secondary{
+  background:var(--secondary,#174c82);
+  border-color:var(--edge,#356295);
+  color:var(--fg,#fff);
+}
+html[data-theme] .voltes-push-actions .btn[hidden] {display:none!important}
+@media(max-width:420px){
+ html[data-theme] .voltes-push-card{padding:12px}
+ html[data-theme] .voltes-push-actions{gap:7px}
+ html[data-theme] .voltes-push-actions .btn{padding:9px 11px;font-size:11px}
+}
