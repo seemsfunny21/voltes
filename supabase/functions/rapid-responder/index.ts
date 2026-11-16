@@ -83,6 +83,28 @@ Deno.serve(async req=>{
   }
   return reply(data||{ok:true});
  }
+
+ // Manual backup is sensitive: these actions are admin-only by the common session guard.
+ if(action==='backupExport'){
+  const {data,error}=await db.rpc('voltes_backup_export');
+  if(error)throw error;
+  if(!data||data.format!=='voltes-manual-backup')return bad('Αποτυχία δημιουργίας αντιγράφου.',500);
+  return reply({ok:true,backup:data});
+ }
+ if(action==='backupRestore'){
+  const backup=payload.backup;
+  if(!backup||typeof backup!=='object'||Array.isArray(backup)
+     ||backup.format!=='voltes-manual-backup'||backup.version!==1)
+   return bad('Το αρχείο δεν είναι έγκυρο backup της Ποδηλασίας.');
+  if(JSON.stringify(backup).length>5000000)return bad('Το αρχείο υπερβαίνει το όριο των 5 MB.',413);
+  const {data,error}=await db.rpc('voltes_backup_restore',{p_backup:backup});
+  if(error){
+   if(['22023','22P02','23503','23505','23514','23502','P0001'].includes(error.code))
+    return bad('Η επαναφορά ακυρώθηκε: το αρχείο έχει ελλιπή, μη συμβατά ή συγκρουόμενα στοιχεία. Δεν έγινε μερική εισαγωγή.',409);
+   throw error;
+  }
+  return reply(data||{ok:true});
+ }
  if(action==='state'){
   const [a,b,c,d]=await Promise.all([
    db.from('voltes_rides').select('*').order('date',{ascending:false}),
