@@ -1,1 +1,22 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="106" fill="#0b0f0d"/><g fill="none" stroke="#4caf50" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"><circle cx="130" cy="345" r="79"/><circle cx="386" cy="345" r="79"/><path d="M130 345l95-145 75 145H130l90-145h85m81 145-67-165h-48"/></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#193e75"/>
+      <stop offset="1" stop-color="#081a35"/>
+    </linearGradient>
+    <linearGradient id="bike" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#a9e3ff"/>
+      <stop offset=".48" stop-color="#65b9ff"/>
+      <stop offset="1" stop-color="#317bff"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="106" fill="url(#bg)"/>
+  <rect x="12" y="12" width="488" height="488" rx="100" fill="none" stroke="#65aaff" stroke-opacity=".26" stroke-width="9"/>
+  <g fill="none" stroke="url(#bike)" stroke-width="28" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="130" cy="345" r="79"/>
+    <circle cx="386" cy="345" r="79"/>
+    <path d="M130 345l95-145 75 145H130l90-145h85m81 145-67-165h-48"/>
+  </g>
+  <circle cx="130" cy="345" r="13" fill="#d1efff"/>
+  <circle cx="386" cy="345" r="13" fill="#d1efff"/>
+</svg>
