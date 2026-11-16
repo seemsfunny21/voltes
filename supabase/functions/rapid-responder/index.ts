@@ -61,6 +61,28 @@ Deno.serve(async req=>{
   const {error}=await db.from('voltes_admin_sessions').insert({token_hash:await digest(token),pin_version:await pinVersion()});if(error)throw error;
   return reply({ok:true,adminToken:token});
  }
+ // Trash stays private: all routes below require a verified Admin session.
+ if(action==='trashList'){
+  const cutoff=new Date(Date.now()-30*24*60*60*1000).toISOString();
+  const {data,error}=await db.from('voltes_trash')
+   .select('id,kind,label,deleted_at')
+   .is('restored_at',null).gte('deleted_at',cutoff)
+   .order('deleted_at',{ascending:false}).limit(100);
+  if(error)throw error;
+  return reply({ok:true,items:data||[]});
+ }
+ if(action==='trashRestore'){
+  const id=norm(payload.id,40);
+  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))
+   return bad('Μη έγκυρη καταχώριση κάδου.');
+  const {data,error}=await db.rpc('voltes_restore_from_trash',{p_id:id});
+  if(error){
+   if(['P0002','23503','23505','23514'].includes(error.code))
+    return bad('Η εγγραφή δεν μπορεί να επαναφερθεί. Μπορεί να έχει λήξει ή να λείπουν συνδεδεμένα στοιχεία.',409);
+   throw error;
+  }
+  return reply(data||{ok:true});
+ }
  if(action==='state'){
   const [a,b,c,d]=await Promise.all([
    db.from('voltes_rides').select('*').order('date',{ascending:false}),
