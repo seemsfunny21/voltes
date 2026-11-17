@@ -1560,7 +1560,7 @@ html[data-theme] .shell > header{
   margin:12px auto 10px!important;
   overflow:hidden!important;
   isolation:isolate;
-  border-radius:12px!important;
+  border-radius:14px!important;
   border:0!important;
   outline:1px solid var(--edge,#4e90d2)!important;
   outline-offset:-1px!important;
@@ -1611,6 +1611,18 @@ html[data-theme] .shell > header::after{display:none!important}
 @media(max-width:760px){
   html[data-theme] .shell > header{
     --unified-banner-height:clamp(74px,12dvh,112px);
+    width:calc(100% + 8px)!important;
     max-width:none!important;
+    left:-4px!important;
   }
+}
+
+/* Cycling banner polish: preserve hero-cyclist.webp while matching the other
+   app headers. Restrict the extra blue halo to the blue theme. */
+html[data-theme="blue"] .shell > header{
+  box-shadow:
+    0 9px 26px rgba(0,6,23,.32),
+    0 0 0 1px rgba(105,190,255,.48),
+    0 0 14px rgba(27,155,255,.42),
+    0 0 27px rgba(21,111,244,.23)!important;
 }
