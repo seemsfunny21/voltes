@@ -1557,7 +1557,7 @@ html[data-theme] .shell > header{
   height:var(--unified-banner-height)!important;
   min-height:0!important;
   padding:0!important;
-  margin:12px auto 12px!important;
+  margin:12px auto 10px!important;
   overflow:hidden!important;
   isolation:isolate;
   border-radius:12px!important;
