@@ -1561,7 +1561,9 @@ html[data-theme] .shell > header{
   overflow:hidden!important;
   isolation:isolate;
   border-radius:12px!important;
-  border:1px solid var(--edge,#4e90d2)!important;
+  border:0!important;
+  outline:1px solid var(--edge,#4e90d2)!important;
+  outline-offset:-1px!important;
   background:var(--nav,#091f3d)!important;
   box-shadow:0 9px 26px rgba(0,6,23,.28)!important;
 }
