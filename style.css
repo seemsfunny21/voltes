@@ -1433,3 +1433,27 @@ html[data-theme] .backup-card .btn{min-height:43px}
  html[data-theme] .backup-counts{gap:6px}
  html[data-theme] #voltesBackupFile{padding:8px}
 }
+
+/* 2026 Premium consistency: retained personal blue/green/white/black palettes. */
+html[data-theme] .card{
+ border-radius:18px;
+ box-shadow:0 12px 30px rgba(0,8,22,.12),inset 0 1px rgba(255,255,255,.055);
+}
+html[data-theme] :is(.btn,.mini-btn,.bottom-nav button,.card button){
+ -webkit-tap-highlight-color:transparent;
+ touch-action:manipulation;
+ transition:background-color .16s ease,border-color .16s ease,box-shadow .16s ease,filter .16s ease;
+}
+html[data-theme] :is(button,input,select,textarea):focus-visible{
+ outline:2px solid var(--accent-edge,#87baff);
+ outline-offset:2px;
+}
+html[data-theme] .bottom-nav button.active{
+ box-shadow:inset 0 2px var(--accent-edge,#87baff),0 5px 16px rgba(0,8,22,.16);
+}
+@media(hover:hover){
+ html[data-theme] .btn:not(:disabled):hover{filter:brightness(1.11)}
+}
+@media(prefers-reduced-motion:reduce){
+ html[data-theme] :is(.btn,.mini-btn,.bottom-nav button,.card button){transition:none!important}
+}
