@@ -1457,3 +1457,28 @@ html[data-theme] .bottom-nav button.active{
 @media(prefers-reduced-motion:reduce){
  html[data-theme] :is(.btn,.mini-btn,.bottom-nav button,.card button){transition:none!important}
 }
+
+/* Compact 2026 cycling illustration: keep the original image and title.
+   Image height now matches the other app banners on mobile. */
+@media(max-width:760px){
+ html[data-theme] header .hero-scene{
+   display:block!important;
+   width:100%!important;
+   max-width:490px!important;
+   height:clamp(74px,12dvh,112px)!important;
+   aspect-ratio:auto!important;
+   object-fit:cover!important;
+   object-position:center 48%!important;
+   margin:0 auto 1px!important;
+ }
+ html[data-theme] header{padding-bottom:8px}
+}
+@media(min-width:761px){
+ html[data-theme] header .hero-scene{
+   height:150px!important;
+   width:min(100%,490px)!important;
+   aspect-ratio:auto!important;
+   object-fit:cover!important;
+   object-position:center 48%!important;
+ }
+}
