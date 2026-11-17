@@ -1482,3 +1482,67 @@ html[data-theme] .bottom-nav button.active{
    object-position:center 48%!important;
  }
 }
+
+/* Applications premium alignment v2: ONE banner box, not an image plus a title row. */
+@media(max-width:760px){
+ html[data-theme] .shell > header{
+  position:relative!important;
+  box-sizing:border-box!important;
+  width:100%!important;
+  height:clamp(74px,12dvh,112px)!important;
+  min-height:0!important;
+  margin:20px auto 12px!important;
+  padding:0!important;
+  overflow:hidden!important;
+  border:1px solid rgba(101,179,255,.32)!important;
+  border-radius:12px!important;
+  background:#071736!important;
+  box-shadow:0 10px 25px rgba(0,6,26,.3)!important;
+ }
+ html[data-theme] .shell > header::after,
+ html[data-theme] .shell > header::before{display:none!important}
+ html[data-theme] .shell > header .hero-scene{
+  position:absolute!important;
+  display:block!important;
+  inset:0!important;
+  width:100%!important;
+  max-width:none!important;
+  height:100%!important;
+  margin:0!important;
+  border:0!important;
+  aspect-ratio:auto!important;
+  object-fit:cover!important;
+  object-position:center 38%!important;
+  -webkit-mask-image:none!important;
+  mask-image:none!important;
+ }
+ html[data-theme] .shell > header .brand{
+  position:absolute!important;
+  inset:auto 0 0!important;
+  z-index:2!important;
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:flex-end!important;
+  gap:2px!important;
+  min-height:61px!important;
+  padding:18px 5px 6px!important;
+  margin:0!important;
+  background:linear-gradient(to bottom,transparent,rgba(2,12,32,.83) 45%,rgba(2,12,32,.96))!important;
+  pointer-events:none;
+ }
+ html[data-theme] .shell > header .brand strong{
+  font-size:clamp(15px,4.1vw,18px)!important;
+  line-height:1.2!important;
+  color:#fff!important;
+  text-shadow:0 2px 6px #00132d!important;
+ }
+ html[data-theme] .shell > header .brand small{
+  font-size:clamp(10px,2.8vw,12px)!important;
+  line-height:1.2!important;
+  margin:0!important;
+  color:#cde8ff!important;
+ }
+}
+@media(min-width:761px){
+ html[data-theme] .shell > header{margin-top:18px!important}
+}
