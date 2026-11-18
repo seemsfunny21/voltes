@@ -1,7 +1,7 @@
 /* Cycling PWA offline shell and new-ride Web Push receiver. */
-const CACHE="podilasia-ui-v86-restored-classic-layout";
+const CACHE="podilasia-ui-v87-member-accounts";
 const ASSETS=[
-  "./",'./index.html','./style.css?v=78','./app.js?v=74',
+  "./",'./index.html','./style.css?v=79','./app.js?v=75',
   './voltes-push.js?v=3','./completion.js','./strava-ocr.js?v=40',
   './config.js','./icon.svg?v=2','./hero-cyclist.webp','./manifest.webmanifest'
 ];
