@@ -11,6 +11,67 @@ const writeLocal=(key,value)=>{try{value?localStorage.setItem(key,value):localSt
 let admin=false,pin='',adminToken=readLocal('voltesAdminToken'),route='home',message='',historyLimit=5;
 let trashItems=[],trashLoading=false,trashError='';
 let backupDraft=null,backupFilename='',backupBusy=false;
+let keepaliveInfo={lastPressedAt:null,loaded:false,error:'',clockOffset:0};
+let keepaliveBusy=false;
+const KEEPALIVE_WINDOW_MS=5*24*60*60*1000;
+const keepaliveApiUrl=API_URL.replace(/\/rapid-responder\/?(?:\?.*)?$/,'/voltes-keepalive');
+
+async function keepaliveApi(action){
+ if(!admin||!adminToken)throw Error('Απαιτείται σύνδεση Admin.');
+ if(!keepaliveApiUrl||keepaliveApiUrl===API_URL)throw Error('Η υπηρεσία Keep Alive δεν έχει ρυθμιστεί.');
+ const response=await fetch(keepaliveApiUrl,{
+  method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',
+  body:JSON.stringify({action,adminToken})
+ });
+ const data=await response.json();
+ if(!response.ok||!data?.ok)throw Error(data?.error||'Αδυναμία επικοινωνίας με το Keep Alive.');
+ return data;
+}
+function updateKeepaliveInfo(data){
+ keepaliveInfo={lastPressedAt:data.lastPressedAt||null,loaded:true,error:'',
+  clockOffset:Number.isFinite(Date.parse(data.serverNow))?Date.parse(data.serverNow)-Date.now():0};
+}
+async function loadKeepaliveInfo(){
+ if(!admin)return;
+ try{updateKeepaliveInfo(await keepaliveApi('state'))}
+ catch(e){keepaliveInfo={...keepaliveInfo,loaded:true,error:e?.message||'Ο έλεγχος απέτυχε.'}}
+ if(route==='settings'&&admin)render();
+}
+function keepaliveTimingText(){
+ if(keepaliveInfo.error)return '⚠️ '+keepaliveInfo.error;
+ if(!keepaliveInfo.loaded)return 'Έλεγχος τελευταίας χρήσης...';
+ if(!keepaliveInfo.lastPressedAt)return 'Δεν έχει πατηθεί ακόμη. Η αντίστροφη μέτρηση ξεκινά με τον πρώτο έλεγχο.';
+ const start=new Date(keepaliveInfo.lastPressedAt).getTime();
+ if(!Number.isFinite(start))return 'Μη έγκυρη ημερομηνία τελευταίου ελέγχου.';
+ const elapsed=Math.max(0,Date.now()+keepaliveInfo.clockOffset-start);
+ const passedDays=Math.floor(elapsed/86400000),passedHours=Math.floor((elapsed%86400000)/3600000);
+ const remaining=Math.max(0,KEEPALIVE_WINDOW_MS-elapsed);
+ const leftDays=Math.floor(remaining/86400000);
+ const leftHours=Math.ceil((remaining%86400000)/3600000);
+ const since='Πέρασαν '+passedDays+' ημ. και '+passedHours+' ώρ.';
+ if(remaining<=0)return '⚠️ '+since+' · Το όριο των 5 ημερών έφτασε. Πάτησε Keep Alive.';
+ if(elapsed>=4*86400000)return '⏳ '+since+' · Τελευταία ημέρα! Απομένουν '+leftDays+' ημ. και '+leftHours+' ώρ.';
+ return '✅ '+since+' · Απομένουν '+leftDays+' ημ. και '+leftHours+' ώρ. έως τις 5 ημέρες.';
+}
+function keepaliveCard(){
+ const last=keepaliveInfo.lastPressedAt;
+ const time=last&&Number.isFinite(Date.parse(last))?new Date(last).toLocaleString('el-GR',{timeZone:'Europe/Athens',dateStyle:'short',timeStyle:'short'}):'—';
+ const subscribed=window.VoltesPush?.keepaliveAlertsActive?.()===true;
+ return `<section class="keepalive-monitor" aria-label="Χειροκίνητος έλεγχος βάσης">
+  <h3>Keep Alive βάσης Supabase</h3>
+  <p class="note">Τελευταίο χειροκίνητο πάτημα: <b id="keepaliveLastPressed">${safe(time)}</b></p>
+  <p class="keepalive-countdown" id="keepaliveCountdown" role="status" aria-live="polite">${safe(keepaliveTimingText())}</p>
+  <button class="btn secondary" type="button" data-do="checkDatabase" ${keepaliveBusy?'disabled':''}>↻ Keep Alive τώρα</button>
+  <button class="btn secondary" type="button" data-do="toggleKeepaliveAlerts">${subscribed?'🔔 Απενεργοποίηση υπενθύμισης':'🔔 Ενεργοποίηση push Keep Alive'}</button>
+  <p class="note">Μία υπενθύμιση push στην 4η ημέρα, μόνο σε συσκευές Admin που την έχουν ενεργοποιήσει. Ο αυτόματος ημερήσιος keep-alive συνεχίζεται ανεξάρτητα· το 5ήμερο μετρά μόνο τα πατήματα αυτού του κουμπιού.</p>
+ </section>`;
+}
+window.setInterval(()=>{
+ if(route==='settings'&&admin){
+  const target=document.getElementById('keepaliveCountdown');
+  if(target)target.textContent=keepaliveTimingText();
+ }
+},60000);
 const themes={blue:'Μπλε',green:'Πράσινο',white:'Λευκό',black:'Μαύρο'};
 let chosenTheme=readLocal('voltesTheme','blue');
 function setTheme(v){chosenTheme=Object.hasOwn(themes,v)?v:'blue';document.documentElement.dataset.theme=chosenTheme;writeLocal('voltesTheme',chosenTheme)}
@@ -370,7 +431,7 @@ async function downloadFileBackup(button){
  finally{button.disabled=false}
 }
 
-function themeSettings(){return `<div class="card"><h2>Χρώμα εφαρμογής</h2><div class="theme-options">${Object.entries(themes).map(([k,v])=>`<button type="button" class="theme-option theme-${k}" data-theme="${k}" aria-pressed="${k===chosenTheme}">${v}${k===chosenTheme?' ✓':''}</button>`).join('')}</div></div>${bikeServiceSummary()}<section class="card voltes-push-card" aria-labelledby="voltesPushHeading"><div class="voltes-push-heading"><span aria-hidden="true">🔔</span><h2 id="voltesPushHeading">Ειδοποιήσεις νέας βόλτας</h2></div><p id="voltesPushState" role="status" aria-live="polite">Ενεργοποίησε τις ειδοποιήσεις για τις επόμενες βόλτες της παρέας.</p><div class="voltes-push-actions" role="group" aria-label="Ειδοποιήσεις νέας βόλτας"><button type="button" class="btn" id="voltesPushEnable" aria-pressed="false">Ενεργοποίηση</button><button type="button" class="btn secondary" id="voltesPushDisable" aria-pressed="false">Απενεργοποίηση</button></div></section><div class="card"><h2>Διαχείριση Admin</h2>${admin?`<div class="admin-settings"><button class="btn" data-go="new">+ Νέα βόλτα</button><button class="btn secondary" data-go="historyAdd">+ Προσθήκη παλιάς βόλτας</button><button class="btn secondary" data-go="routeAdd">+ Προσθήκη διαδρομής</button><button class="btn secondary" data-go="routes">Διαδρομές</button><button class="btn secondary" data-go="riders">Ποδηλάτες & επισκέπτες</button><button class="btn secondary" data-go="stats">Στατιστικά</button><button class="btn secondary" data-go="trash">🗑️ Κάδος διαγραμμένων</button><button class="btn secondary" data-do="downloadBackup">⬇ Λήψη Backup</button><button class="btn secondary" data-go="backup">↩ Επαναφορά Backup</button><button class="btn secondary" data-do="checkDatabase" type="button">🟢 Έλεγχος βάσης Supabase</button><button class="btn secondary" data-do="adminLogout">Αποσύνδεση</button></div>`:`<button class="btn" data-go="auth">Είσοδος Admin</button>`}</div>${admin&&db.rides.some(expiredRide)?`<div class="card"><h2>Παλιές προγραμματισμένες βόλτες</h2><p class="muted">Αποσύρθηκαν από την Αρχική. Μπορείς να τις ολοκληρώσεις ή να τις διαγράψεις.</p>${db.rides.filter(expiredRide).map(rideCard).join('')}</div>`:''}`}
+function themeSettings(){return `<div class="card"><h2>Χρώμα εφαρμογής</h2><div class="theme-options">${Object.entries(themes).map(([k,v])=>`<button type="button" class="theme-option theme-${k}" data-theme="${k}" aria-pressed="${k===chosenTheme}">${v}${k===chosenTheme?' ✓':''}</button>`).join('')}</div></div>${bikeServiceSummary()}<section class="card voltes-push-card" aria-labelledby="voltesPushHeading"><div class="voltes-push-heading"><span aria-hidden="true">🔔</span><h2 id="voltesPushHeading">Ειδοποιήσεις νέας βόλτας</h2></div><p id="voltesPushState" role="status" aria-live="polite">Ενεργοποίησε τις ειδοποιήσεις για τις επόμενες βόλτες της παρέας.</p><div class="voltes-push-actions" role="group" aria-label="Ειδοποιήσεις νέας βόλτας"><button type="button" class="btn" id="voltesPushEnable" aria-pressed="false">Ενεργοποίηση</button><button type="button" class="btn secondary" id="voltesPushDisable" aria-pressed="false">Απενεργοποίηση</button></div></section><div class="card"><h2>Διαχείριση Admin</h2>${admin?`<div class="admin-settings"><button class="btn" data-go="new">+ Νέα βόλτα</button><button class="btn secondary" data-go="historyAdd">+ Προσθήκη παλιάς βόλτας</button><button class="btn secondary" data-go="routeAdd">+ Προσθήκη διαδρομής</button><button class="btn secondary" data-go="routes">Διαδρομές</button><button class="btn secondary" data-go="riders">Ποδηλάτες & επισκέπτες</button><button class="btn secondary" data-go="stats">Στατιστικά</button><button class="btn secondary" data-go="trash">🗑️ Κάδος διαγραμμένων</button><button class="btn secondary" data-do="downloadBackup">⬇ Λήψη Backup</button><button class="btn secondary" data-go="backup">↩ Επαναφορά Backup</button><button class="btn secondary" data-do="adminLogout">Αποσύνδεση</button></div>${keepaliveCard()}`:`<button class="btn" data-go="auth">Είσοδος Admin</button>`}</div>${admin&&db.rides.some(expiredRide)?`<div class="card"><h2>Παλιές προγραμματισμένες βόλτες</h2><p class="muted">Αποσύρθηκαν από την Αρχική. Μπορείς να τις ολοκληρώσεις ή να τις διαγράψεις.</p>${db.rides.filter(expiredRide).map(rideCard).join('')}</div>`:''}`}
 const memberKey='voltesChosenMember';
 const savedMember=()=>readLocal(memberKey);
 function memberName(){const name=savedMember();return db.publicMembers.some(x=>x.name===name)?name:''}
@@ -393,7 +454,7 @@ async function start(){
 }
 const datefmt=d=>new Date(d+'T12:00:00').toLocaleDateString('el-GR',{day:'2-digit',month:'2-digit',year:'numeric'});
 function toast(v){message=v;render()}
-function navigate(v){if(v==='bikeDetails'){bikeDetailsEditId='';bikeDetailsFieldKey='';bikeLastFetch=0;autoSyncBikeCloud().catch(e=>toast(e.message))}if(v==='bikeMaintenance'){bikeLastFetch=0;autoSyncBikeCloud().catch(e=>toast(e.message))}if(v==='bikeService'){resetBikeWizard();autoSyncBikeCloud().catch(e=>toast(e.message))}if(v==='bikeHistory'){autoSyncBikeCloud().catch(e=>toast(e.message))}if(v==='new')quickRideState={day:'',date:'',period:'',time:'',showTimePicker:false,routeId:'',placeMode:'mavili',customPlace:'',step:1};route=v;if(v==='history')historyLimit=5;nav.classList.add('hidden');document.querySelector('[data-bottom-route="menu"]')?.setAttribute('aria-expanded','false');render();if(v==='trash'&&admin)loadTrash().catch(e=>toast(e.message));if(v==='auth')document.querySelector('#login input[name="pin"]')?.focus({preventScroll:true});document.querySelector(".shell").scrollTo(0,0)}
+function navigate(v){if(v==='bikeDetails'){bikeDetailsEditId='';bikeDetailsFieldKey='';bikeLastFetch=0;autoSyncBikeCloud().catch(e=>toast(e.message))}if(v==='bikeMaintenance'){bikeLastFetch=0;autoSyncBikeCloud().catch(e=>toast(e.message))}if(v==='bikeService'){resetBikeWizard();autoSyncBikeCloud().catch(e=>toast(e.message))}if(v==='bikeHistory'){autoSyncBikeCloud().catch(e=>toast(e.message))}if(v==='new')quickRideState={day:'',date:'',period:'',time:'',showTimePicker:false,routeId:'',placeMode:'mavili',customPlace:'',step:1};route=v;if(v==='history')historyLimit=5;nav.classList.add('hidden');document.querySelector('[data-bottom-route="menu"]')?.setAttribute('aria-expanded','false');render();if(v==='trash'&&admin)loadTrash().catch(e=>toast(e.message));if(v==='settings'&&admin)loadKeepaliveInfo().catch(e=>toast(e.message));if(v==='auth')document.querySelector('#login input[name="pin"]')?.focus({preventScroll:true});document.querySelector(".shell").scrollTo(0,0)}
 function renderNotice(){return message?`<p class="alert" role="status">${safe(message)}</p>`:''}
 function stats(){let completed=db.rides.filter(x=>x.done);return `<section class="metrics"><div class="metric"><b>${completed.length}</b><small>Βόλτες</small></div><div class="metric"><b>${Math.round(completed.reduce((a,x)=>a+Number(x.km||0),0))}</b><small>Χιλιόμετρα</small></div><div class="metric"><b>${(admin?db.riders.filter(x=>x.member).length:db.members)}</b><small>Μέλη</small></div></section>`}
 function expiredRide(r){return !r.done&&Date.now()-new Date(String(r.date)+'T'+String(r.time||'10:00')+':00').getTime()>86400000}
@@ -777,17 +838,33 @@ app.addEventListener('click',async e=>{
  case 'chooseMember':chooseMember(b.dataset.name);break;
  case 'changeMember':writeLocal(memberKey,'');render();break;
  case 'checkDatabase':{
-  if(!admin)return;
+  if(!admin||keepaliveBusy)return;
+  keepaliveBusy=true;
   b.disabled=true;
   b.setAttribute('aria-busy','true');
-  b.textContent='Έλεγχος σύνδεσης...';
+  b.textContent='Έλεγχος βάσης...';
   try{
-   // A state request performs a normal database read; no row is inserted or deleted.
-   const result=await api('state');
-   if(!result||!Array.isArray(result.rides))throw Error('Μη έγκυρη απάντηση από τη βάση.');
-   toast('✅ Η βάση Supabase ανταποκρίθηκε. Έγινε μόνο ανάγνωση, χωρίς εγγραφή ή διαγραφή.');
-  }catch(e){toast('Αποτυχία ελέγχου Supabase: '+(e?.message||'Άγνωστο σφάλμα'))}
-  finally{b.disabled=false;b.removeAttribute('aria-busy')}
+   updateKeepaliveInfo(await keepaliveApi('press'));
+   toast('✅ Το Keep Alive ολοκληρώθηκε. Η αντίστροφη μέτρηση 5 ημερών ξεκίνησε ξανά.');
+  }catch(e){toast('Αποτυχία Keep Alive: '+(e?.message||'Άγνωστο σφάλμα'))}
+  finally{keepaliveBusy=false;b.removeAttribute('aria-busy');if(route==='settings')render()}
+  break;
+ }
+ case 'toggleKeepaliveAlerts':{
+  if(!admin)return;
+  const push=window.VoltesPush;
+  if(!push){toast('Η υπηρεσία Push δεν είναι διαθέσιμη.');return}
+  b.disabled=true;
+  try{
+   if(push.keepaliveAlertsActive()){
+    await push.disableKeepaliveAlerts(adminToken);
+    toast('Η υπενθύμιση Keep Alive απενεργοποιήθηκε στη συσκευή.');
+   }else{
+    await push.enableKeepaliveAlerts(adminToken);
+    toast('🔔 Η υπενθύμιση Keep Alive ενεργοποιήθηκε σε αυτή τη συσκευή.');
+   }
+  }catch(e){toast('Ειδοποίηση Keep Alive: '+(e?.message||'Αποτυχία'))}
+  finally{b.disabled=false}
   break;
  }
  case 'adminLogout':if(admin){try{await api('logout')}catch{}admin=false;adminToken='';pin='';writeLocal('voltesAdminToken','');await refresh().catch(()=>{});navigate('settings')}break;
