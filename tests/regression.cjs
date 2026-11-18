@@ -50,12 +50,12 @@ async function main(){
  vm.runInContext(app,ctx);
  await new Promise(resolve=>setTimeout(resolve,5));
  vm.runInContext("db={rides:[],riders:[],routeTemplates:[],members:2,publicMembers:[{name:'Μέλος Α'},{name:'Μέλος Β'}]}",ctx);
- vm.runInContext("bikeCloud={loaded:true,member:'Μέλος Α',bikes:[{id:'a',name:'Bike A',member_name:'Μέλος Α',is_default:true},{id:'b',name:'Bike B',member_name:'Μέλος Β',is_default:true}],services:[{id:'s1',bike_id:'a',work:'Λάστιχα',service_date:'2026-09-30',notes:'Tubeless',km:0},{id:'s2',bike_id:'b',work:'Άλλη εργασία',service_date:'2026-10-01',notes:'PrivateB',km:10}]}",ctx);
+ vm.runInContext("memberAccount={id:'a',name:'Μέλος Α'};memberToken='"+'1'.repeat(64)+"';bikeCloud={loaded:true,member:'Μέλος Α',bikes:[{id:'a',name:'Bike A',member_name:'Μέλος Α',is_default:true},{id:'b',name:'Bike B',member_name:'Μέλος Β',is_default:true}],services:[{id:'s1',bike_id:'a',work:'Λάστιχα',service_date:'2026-09-30',notes:'Tubeless',km:0},{id:'s2',bike_id:'b',work:'Άλλη εργασία',service_date:'2026-10-01',notes:'PrivateB',km:10}]}",ctx);
  const renderHistory=()=>vm.runInContext("bikeServicePage('history')",ctx);
  test('member A sees only member A history',()=>{const v=renderHistory();assert.ok(v.includes('Tubeless'));assert.ok(!v.includes('PrivateB'));assert.ok(!v.includes('Bike B'))});
- storage.set('voltesChosenMember','Μέλος Β');
+ vm.runInContext("memberAccount={id:'b',name:'Μέλος Β'};memberToken='"+'1'.repeat(64)+"'",ctx);
  test('member B sees only member B history',()=>{const v=renderHistory();assert.ok(v.includes('PrivateB'));assert.ok(!v.includes('Tubeless'))});
- storage.set('voltesChosenMember','Μέλος Α');
+ vm.runInContext("memberAccount={id:'a',name:'Μέλος Α'};memberToken='"+'1'.repeat(64)+"'",ctx);
  test('service edit and delete controls render',()=>{const v=renderHistory();assert.ok(v.includes('Διόρθωση')&&v.includes('Διαγραφή'))});
  vm.runInContext("bikeCloud.services[0].notes='<script>alert(1)</script>'",ctx);
  test('service text is HTML escaped',()=>assert.ok(!renderHistory().includes('<script>')&&renderHistory().includes('&lt;script&gt;')));
@@ -91,13 +91,25 @@ async function main(){
   assert.equal((v.match(/name="value"/g)||[]).length,1);
   vm.runInContext("bikeDetailsEditId='';bikeDetailsFieldKey=''",ctx);
  });
- storage.set('voltesChosenMember','Μέλος Β');
+ vm.runInContext("memberAccount={id:'b',name:'Μέλος Β'};memberToken='"+'1'.repeat(64)+"'",ctx);
  test('bike profile does not leak another member equipment',()=>{const v=renderDetails();assert.ok(v.includes('PRIVATE_B'));assert.ok(!v.includes('Schwalbe Pro One TLE'))});
- storage.set('voltesChosenMember','Μέλος Α');
+ vm.runInContext("memberAccount={id:'a',name:'Μέλος Α'};memberToken='"+'1'.repeat(64)+"'",ctx);
  await vm.runInContext('bikeLastFetch=0;autoSyncBikeCloud()',ctx);
  const before=requests.length;
  await vm.runInContext('autoSyncBikeCloud()',ctx);
  test('repeat service visit does not refetch within one minute',()=>assert.equal(requests.length,before));
+ test('guest cannot claim an existing member by changing localStorage',()=>{
+   const identity=vm.runInContext('memberName()',ctx);
+   storage.set('voltesChosenMember','Μέλος Β');
+   assert.equal(vm.runInContext('memberName()',ctx),identity);
+ });
+ test('new member password and session code is present',()=>{
+   assert.ok(app.includes('memberRegisterForm')&&app.includes('memberLoginForm')&&
+      app.includes('memberPasswordForm')&&app.includes('memberRemoveAvatar'));
+   assert.ok(app.includes('memberApi(\'session\')')&&app.includes('memberToken,...fields'));
+   assert.ok(read('supabase/functions/bike-services/index.ts').includes('memberSessionAuthorized(member.id,p.memberToken)'));
+   assert.ok(read('supabase/functions/member-accounts/index.ts').includes('voltes_member_login_gate'));
+ });
  console.log(checks+' frontend regression checks passed');
 }
 main().catch(e=>{console.error(e);process.exitCode=1});
