@@ -46,8 +46,9 @@ function keepaliveTimingText(){
  const elapsed=Math.max(0,Date.now()+keepaliveInfo.clockOffset-start);
  const passedDays=Math.floor(elapsed/86400000),passedHours=Math.floor((elapsed%86400000)/3600000);
  const remaining=Math.max(0,KEEPALIVE_WINDOW_MS-elapsed);
- const leftDays=Math.floor(remaining/86400000);
- const leftHours=Math.ceil((remaining%86400000)/3600000);
+ const totalHoursLeft=Math.ceil(remaining/3600000);
+ const leftDays=Math.floor(totalHoursLeft/24);
+ const leftHours=totalHoursLeft%24;
  const since='Πέρασαν '+passedDays+' ημ. και '+passedHours+' ώρ.';
  if(remaining<=0)return '⚠️ '+since+' · Το όριο των 5 ημερών έφτασε. Πάτησε Keep Alive.';
  if(elapsed>=4*86400000)return '⏳ '+since+' · Τελευταία ημέρα! Απομένουν '+leftDays+' ημ. και '+leftHours+' ώρ.';
