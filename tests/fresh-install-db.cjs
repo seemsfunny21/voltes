@@ -16,13 +16,43 @@ async function main(){
   '202611070002_idempotent_bike_import.sql',
   '202611070003_bike_service_soft_delete.sql',
   '202611070004_harden_privileges_and_bike_retention.sql',
-  '202611070005_admin_pin_rate_limit.sql'
+  '202611070005_admin_pin_rate_limit.sql',
+  '20261118_member_credentials_profiles.sql'
  ];
  let count=0;
  for(const name of migrations){await db.exec(await fs.readFile(path.join(root,'supabase/migrations',name),'utf8'));console.log('PASS fresh migration '+name);count++}
  const tables=(await db.query("select tablename from pg_tables where schemaname='public' and tablename like 'voltes_%'")).rows.map(x=>x.tablename);
- for(const name of ['voltes_rides','voltes_riders','voltes_signups','voltes_route_templates','voltes_admin_sessions','voltes_ride_admin_notes','voltes_bikes','voltes_bike_services','voltes_admin_login_attempts'])assert.ok(tables.includes(name),'Missing '+name);
- console.log('PASS all nine base tables');count++;
+ for(const name of ['voltes_rides','voltes_riders','voltes_signups','voltes_route_templates','voltes_admin_sessions','voltes_ride_admin_notes','voltes_bikes','voltes_bike_services','voltes_admin_login_attempts','voltes_member_credentials','voltes_member_sessions','voltes_member_login_attempts'])assert.ok(tables.includes(name),'Missing '+name);
+ console.log('PASS all twelve base and private account tables');count++;
+
+ const privateTables=['voltes_member_credentials','voltes_member_sessions','voltes_member_login_attempts'];
+ for(const table of privateTables){
+  const r=(await db.query("select relrowsecurity from pg_class where oid=('public.'||$1)::regclass",[table])).rows[0];
+  assert.equal(r?.relrowsecurity,true,'RLS must protect '+table);
+  const denied=(await db.query("select has_table_privilege('anon',('public.'||$1)::text,'SELECT') as can_read",[table])).rows[0];
+  assert.equal(denied.can_read,false,'No anon read access '+table);
+ }
+ console.log('PASS member credentials, sessions and throttles are private');count++;
+ const signup=(await db.query("select public.voltes_member_register('Member Signup Test',repeat('a',64),repeat('b',32),210000) as id")).rows[0];
+ assert.ok(signup.id,'Registration RPC creates account');
+ const saved=(await db.query('select member_id,password_hash,salt from public.voltes_member_credentials where member_id=$1',[signup.id])).rows[0];
+ assert.equal(saved?.password_hash,'a'.repeat(64));
+ assert.equal(saved?.salt,'b'.repeat(32));
+ let conflict=false;
+ try{await db.query("select public.voltes_member_register('member signup test',repeat('a',64),repeat('b',32),210000)")}
+ catch(e){conflict=String(e).includes('unique')||String(e).includes('duplicate');}
+ assert.ok(conflict,'Duplicate names must be rejected regardless of letter case');
+ console.log('PASS atomic account registration and case-insensitive name protection');count++;
+ const gateKey='d'.repeat(64);
+ for(let i=0;i<7;i++){
+  const r=(await db.query('select public.voltes_member_login_gate($1,false) as allowed',[gateKey])).rows[0];
+  assert.equal(r.allowed,false);
+ }
+ const blocked=(await db.query('select public.voltes_member_login_gate($1,true) as allowed',[gateKey])).rows[0];
+ assert.equal(blocked.allowed,false,'Correct code cannot bypass temporary login cooldown');
+ const fresh=(await db.query('select public.voltes_member_login_gate($1,true) as allowed',['e'.repeat(64)])).rows[0];
+ assert.equal(fresh.allowed,true,'Other member may sign in normally');
+ console.log('PASS seven wrong passwords trigger server-enforced cooldown');count++;
  const member='12345678-1234-1234-1234-123456789abc',template='12345678-1234-1234-1234-123456789abd';
  await db.query('insert into public.voltes_riders(id,name,member) values($1,$2,true)',[member,'Member One']);
  await db.query('insert into public.voltes_route_templates(id,name,points,route_type,estimate) values($1,$2,$3::jsonb,$4,$5)',[template,'Lake Loop',JSON.stringify(['Start','Finish']),'flat',31]);
