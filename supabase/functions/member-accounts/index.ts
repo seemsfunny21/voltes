@@ -20,6 +20,14 @@ const isUuid=(x:unknown)=>typeof x==='string'&&/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0
 const cleanName=(x:unknown)=>typeof x==='string'?x.normalize('NFC').trim():'';
 const validPassword=(x:unknown):x is string=>typeof x==='string'&&x.length>=6&&x.length<=64&&x.trim()===x;
 const iterations=210000;
+const recoveryAlphabet='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const normalizeRecovery=(v:unknown)=>typeof v==='string'?v.trim().toUpperCase().replace(/[\\s-]/g,''):'';
+const validRecovery=(v:string)=>v.length===20&&[...v].every(c=>recoveryAlphabet.includes(c));
+function freshRecoveryCode(){
+ const bytes=crypto.getRandomValues(new Uint8Array(20));
+ const code=Array.from(bytes,b=>recoveryAlphabet[b&31]).join('');
+ return code.match(/.{5}/g)!.join('-');
+}
 const fromHex=(str:string)=>new Uint8Array((str.match(/../g)||[]).map(x=>parseInt(x,16)));
 async function passwordHash(password:string,salt:string,rounds=iterations){
  const key=await crypto.subtle.importKey('raw',encoder.encode(password),'PBKDF2',false,['deriveBits']);
@@ -115,20 +123,84 @@ Deno.serve(async req=>{
    const token=await createSession(member.id);
    return reply({ok:true,member:{id:member.id,name:member.name},memberToken:token});
   }
+  if(action==='adminAccountStates'){
+   if(!await adminAuthorized(p.adminToken))return bad('Απαιτείται Admin.',403);
+   const {data,error}=await db.from('voltes_member_credentials').select('member_id');
+   if(error)throw error;
+   return reply({ok:true,activeMemberIds:(data||[]).map((row:any)=>row.member_id)});
+  }
+  if(action==='adminIssueReset'){
+   if(!await adminAuthorized(p.adminToken))return bad('Απαιτείται Admin.',403);
+   if(!isUuid(p.memberId))return bad('Μη έγκυρο μέλος.');
+   const {data:member,error:memberError}=await db.from('voltes_riders')
+    .select('id,name').eq('id',p.memberId).eq('member',true).maybeSingle();
+   if(memberError)throw memberError;
+   if(!member)return bad('Το μέλος δεν βρέθηκε.',404);
+   const {data:credentials,error:credError}=await db.from('voltes_member_credentials')
+    .select('member_id').eq('member_id',member.id).maybeSingle();
+   if(credError)throw credError;
+   if(!credentials)return bad('Το μέλος δεν έχει ενεργοποιηθεί. Όρισε πρώτα τον αρχικό κωδικό.',409);
+   const code=freshRecoveryCode();
+   const expiresAt=new Date(Date.now()+60*60*1000).toISOString();
+   const {error}=await db.from('voltes_member_password_resets').upsert({
+    member_id:member.id,reset_token_hash:await digest(normalizeRecovery(code)),
+    created_at:new Date().toISOString(),expires_at:expiresAt
+   },{onConflict:'member_id'});
+   if(error)throw error;
+   // This plaintext code is returned ONCE to the authenticated Admin only.
+   return reply({ok:true,memberName:member.name,resetCode:code,expiresAt});
+  }
+  if(action==='resetPassword'){
+   const name=cleanName(p.name);
+   const reset=normalizeRecovery(p.resetCode);
+   const password=p.newPassword;
+   if(name.length<2||name.length>70||!validRecovery(reset)||!validPassword(password))
+    return bad('Συμπλήρωσε έγκυρο όνομα, προσωρινό κωδικό και νέο κωδικό 6–64 χαρακτήρων.');
+   const {data:members,error:membersError}=await db.from('voltes_riders')
+     .select('id,name').eq('member',true);
+   if(membersError)throw membersError;
+   const member=(members||[]).find((r:any)=>
+     cleanName(r.name).toLocaleLowerCase('el-GR')===name.toLocaleLowerCase('el-GR'));
+   if(!member)return bad('Ο προσωρινός κωδικός είναι λανθασμένος, έχει χρησιμοποιηθεί ή έληξε.',403);
+   const tokenHash=await digest(reset);
+   // Reject bogus requests before doing costly password hashing. Final check is atomic in SQL.
+   const {data:approval,error:approvalError}=await db.from('voltes_member_password_resets')
+     .select('member_id').eq('member_id',member.id).eq('reset_token_hash',tokenHash)
+     .gt('expires_at',new Date().toISOString()).maybeSingle();
+   if(approvalError)throw approvalError;
+   if(!approval)return bad('Ο προσωρινός κωδικός είναι λανθασμένος, έχει χρησιμοποιηθεί ή έληξε.',403);
+   const salt=toHex(crypto.getRandomValues(new Uint8Array(16)));
+   const hash=await passwordHash(password,salt);
+   const consumed=await db.rpc('voltes_member_consume_password_reset',{
+     p_member_id:member.id,p_token_hash:tokenHash,p_password_hash:hash,
+     p_salt:salt,p_iterations:iterations
+   });
+   if(consumed.error)throw consumed.error;
+   if(consumed.data!==true)
+     return bad('Ο προσωρινός κωδικός είναι λανθασμένος, έχει χρησιμοποιηθεί ή έληξε.',403);
+   const token=await createSession(member.id);
+   return reply({ok:true,member:{id:member.id,name:member.name},memberToken:token});
+  }
   if(action==='adminSetPassword'){
    if(!await adminAuthorized(p.adminToken))return bad('Απαιτείται Admin.',403);
    if(!isUuid(p.memberId)||!validPassword(p.password))return bad('Απαιτείται κωδικός 6–64 χαρακτήρων.');
    const found=await db.from('voltes_riders').select('id,name,member').eq('id',p.memberId).eq('member',true).maybeSingle();
    if(found.error)throw found.error;
    if(!found.data)return bad('Το μέλος δεν βρέθηκε.',404);
+   // Initial activation ONLY. Existing member passwords may be recovered with a one-hour code.
+   const {data:already,error:checkError}=await db.from('voltes_member_credentials')
+     .select('member_id').eq('member_id',found.data.id).maybeSingle();
+   if(checkError)throw checkError;
+   if(already)return bad('Το μέλος έχει ήδη προσωπικό κωδικό. Δώσε έγκριση επαναφοράς μίας ώρας.',409);
    const salt=toHex(crypto.getRandomValues(new Uint8Array(16)));
    const hash=await passwordHash(p.password,salt);
-   const saved=await db.from('voltes_member_credentials').upsert({
-    member_id:found.data.id,password_hash:hash,salt,iterations,updated_at:new Date().toISOString()
-   },{onConflict:'member_id'});
-   if(saved.error)throw saved.error;
-   const rev=await db.from('voltes_member_sessions').delete().eq('member_id',found.data.id);
-   if(rev.error)throw rev.error;
+   const saved=await db.from('voltes_member_credentials').insert({
+    member_id:found.data.id,password_hash:hash,salt,iterations
+   });
+   if(saved.error){
+     if(saved.error.code==='23505')return bad('Ο κωδικός μέλους έχει ήδη ενεργοποιηθεί.',409);
+     throw saved.error;
+   }
    return reply({ok:true});
   }
   if(action==='session'){
@@ -167,6 +239,8 @@ Deno.serve(async req=>{
    if(result.error)throw result.error;
    const revoked=await db.from('voltes_member_sessions').delete().eq('member_id',member.id);
    if(revoked.error)throw revoked.error;
+   const cleared=await db.from('voltes_member_password_resets').delete().eq('member_id',member.id);
+   if(cleared.error)throw cleared.error;
    const token=await createSession(member.id);
    return reply({ok:true,member:{id:member.id,name:member.name},memberToken:token});
   }
