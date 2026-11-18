@@ -793,7 +793,17 @@ function analytics(){let list=db.riders.map(p=>{let rides=completed().filter(r=>
 function auth(){return `<h1>Είσοδος Admin</h1><div class="card"><form id="login"><label>PIN Admin <input type="password" name="pin" required inputmode="numeric" maxlength="4" minlength="4" pattern="[0-9]{4}" placeholder="••••"></label><button class="btn">Είσοδος</button></form></div>`}
 function render(){if(!admin&&['new','newDetailed','riders','stats','finish','historyAdd','editDone','routeAdd','routes','routeEdit','trash','backup'].includes(route))route='home';document.querySelector('#adminNav').classList.toggle('hidden',!admin);document.querySelector('#authBtn').textContent=admin?'Αποσύνδεση Admin':'Είσοδος Admin';let html=route==='backup'?backupPage():route==='trash'?trashPage():route==='settings'?themeSettings():route==='bikeService'?bikeServicePage():route==='bikeHistory'?bikeServicePage('history'):route==='bikeMaintenance'?bikeMaintenancePage():route==='bikeDetails'?bikeDetailsPage():route==='home'?home():route==='members'?memberHub():route==='memberDirectory'?publicMembers():route==='memberRegister'?memberRegisterPage():route==='memberLogin'?memberLoginPage():route==='memberRecovery'?memberRecoveryPage():route==='memberProfile'?memberProfilePage():route==='upcoming'?upcoming():route==='history'?history():route==='new'?newRide():route==='newDetailed'?detailedRide():route==='routeAdd'?addRoutePage():route==='routes'?savedRoutesPage():route==='routeEdit'?editRoutePage():route==='historyAdd'?historicalRide():route==='editDone'&&window.currentRide&&admin?editCompletedRide(window.currentRide):route==='riders'?riders():route==='stats'?analytics():route==='auth'?auth():route==='signup'&&window.currentRide?signup(window.currentRide):route==='finish'&&window.currentRide&&admin?finish(window.currentRide):home();app.innerHTML=renderNotice()+html;message='';syncBottomNav();window.VoltesPush?.updateUi()}
 const bottomNav=document.querySelector('#bottomNav');
-function syncBottomNav(){bottomNav.querySelectorAll('button').forEach(b=>{const selected=b.dataset.bottomRoute===(nav.classList.contains('hidden')?(['home','members','history'].includes(route)?route:'menu'):'menu');b.classList.toggle('active',selected)});}
+// Keep the Profile tab selected throughout its private screens; Admin tools stay in Settings.
+const profileRoutes=new Set(['members','memberDirectory','memberRegister','memberLogin','memberRecovery','memberProfile','bikeService','bikeHistory','bikeMaintenance','bikeDetails']);
+function syncBottomNav(){
+ const current=profileRoutes.has(route)?'members':route==='home'||route==='upcoming'||route==='signup'?'home':route==='history'?'history':'menu';
+ bottomNav.querySelectorAll('button').forEach(b=>{
+  const selected=b.dataset.bottomRoute===current;
+  b.classList.toggle('active',selected);
+  if(selected)b.setAttribute('aria-current','page');
+  else b.removeAttribute('aria-current');
+ });
+}
 bottomNav.addEventListener('click',async e=>{
  const b=e.target.closest('button[data-bottom-route]');if(!b)return;
  const page=b.dataset.bottomRoute;
