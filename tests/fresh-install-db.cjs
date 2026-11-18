@@ -17,15 +17,16 @@ async function main(){
   '202611070003_bike_service_soft_delete.sql',
   '202611070004_harden_privileges_and_bike_retention.sql',
   '202611070005_admin_pin_rate_limit.sql',
-  '20261118_member_credentials_profiles.sql'
+  '20261118_member_credentials_profiles.sql',
+  '20261118_member_password_recovery_window.sql'
  ];
  let count=0;
  for(const name of migrations){await db.exec(await fs.readFile(path.join(root,'supabase/migrations',name),'utf8'));console.log('PASS fresh migration '+name);count++}
  const tables=(await db.query("select tablename from pg_tables where schemaname='public' and tablename like 'voltes_%'")).rows.map(x=>x.tablename);
- for(const name of ['voltes_rides','voltes_riders','voltes_signups','voltes_route_templates','voltes_admin_sessions','voltes_ride_admin_notes','voltes_bikes','voltes_bike_services','voltes_admin_login_attempts','voltes_member_credentials','voltes_member_sessions','voltes_member_login_attempts'])assert.ok(tables.includes(name),'Missing '+name);
- console.log('PASS all twelve base and private account tables');count++;
+ for(const name of ['voltes_rides','voltes_riders','voltes_signups','voltes_route_templates','voltes_admin_sessions','voltes_ride_admin_notes','voltes_bikes','voltes_bike_services','voltes_admin_login_attempts','voltes_member_credentials','voltes_member_sessions','voltes_member_login_attempts','voltes_member_password_resets'])assert.ok(tables.includes(name),'Missing '+name);
+ console.log('PASS all thirteen base and private account tables');count++;
 
- const privateTables=['voltes_member_credentials','voltes_member_sessions','voltes_member_login_attempts'];
+ const privateTables=['voltes_member_credentials','voltes_member_sessions','voltes_member_login_attempts','voltes_member_password_resets'];
  for(const table of privateTables){
   const r=(await db.query("select relrowsecurity from pg_class where oid=('public.'||$1)::regclass",[table])).rows[0];
   assert.equal(r?.relrowsecurity,true,'RLS must protect '+table);
@@ -43,6 +44,44 @@ async function main(){
  catch(e){conflict=String(e).includes('unique')||String(e).includes('duplicate');}
  assert.ok(conflict,'Duplicate names must be rejected regardless of letter case');
  console.log('PASS atomic account registration and case-insensitive name protection');count++;
+ const resetHash='f'.repeat(64);
+ await db.query(
+  "insert into public.voltes_member_password_resets(member_id,reset_token_hash,expires_at) values($1,$2,now()+interval '1 hour')",
+  [signup.id,resetHash]
+ );
+ const ticket=(await db.query(
+  "select expires_at>now() as active from public.voltes_member_password_resets where member_id=$1",
+  [signup.id]
+ )).rows[0];
+ assert.equal(ticket?.active,true,'Reset approval must be time limited and initially valid');
+ const recovered=await db.query(
+  'select public.voltes_member_consume_password_reset($1,$2,$3,$4,$5) as done',
+  [signup.id,resetHash,'c'.repeat(64),'d'.repeat(32),210000]
+ );
+ assert.equal(recovered.rows[0].done,true,'Valid recovery code must work');
+ const newCredentials=(await db.query(
+  'select password_hash from public.voltes_member_credentials where member_id=$1',[signup.id]
+ )).rows[0];
+ assert.equal(newCredentials?.password_hash,'c'.repeat(64),'New credential hash must be stored');
+ const reused=(await db.query(
+  'select public.voltes_member_consume_password_reset($1,$2,$3,$4,$5) as done',
+  [signup.id,resetHash,'a'.repeat(64),'b'.repeat(32),210000]
+ )).rows[0];
+ assert.equal(reused.done,false,'Reset code cannot be used twice');
+ await db.query(
+  "insert into public.voltes_member_password_resets(member_id,reset_token_hash,expires_at) values($1,$2,now()-interval '1 second')",
+  [signup.id,'e'.repeat(64)]
+ );
+ const expired=(await db.query(
+  'select public.voltes_member_consume_password_reset($1,$2,$3,$4,$5) as done',
+  [signup.id,'e'.repeat(64),'a'.repeat(64),'b'.repeat(32),210000]
+ )).rows[0];
+ assert.equal(expired.done,false,'Reset code expires after the approved window');
+ const stillValid=(await db.query(
+  'select password_hash from public.voltes_member_credentials where member_id=$1',[signup.id]
+ )).rows[0];
+ assert.equal(stillValid.password_hash,'c'.repeat(64),'Failed recovery must never replace the password');
+ console.log('PASS one-hour reset window, expired tokens, one-time atomic password reset');count++;
  const gateKey='d'.repeat(64);
  for(let i=0;i<7;i++){
   const r=(await db.query('select public.voltes_member_login_gate($1,false) as allowed',[gateKey])).rows[0];
