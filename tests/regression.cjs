@@ -74,11 +74,33 @@ async function main(){
  test('service edit and delete controls render',()=>{const v=renderHistory();assert.ok(v.includes('Διόρθωση')&&v.includes('Διαγραφή'))});
  vm.runInContext("bikeCloud.services[0].notes='<script>alert(1)</script>'",ctx);
  test('service text is HTML escaped',()=>assert.ok(!renderHistory().includes('<script>')&&renderHistory().includes('&lt;script&gt;')));
- test('settings include each bicycle action once',()=>{const v=vm.runInContext('themeSettings()',ctx);
-  assert.equal((v.match(/data-go="bikeService"/g)||[]).length,1);
-  assert.equal((v.match(/data-go="bikeHistory"/g)||[]).length,1);
-  assert.equal((v.match(/data-go="bikeMaintenance"/g)||[]).length,1);
-  assert.equal((v.match(/data-go="bikeDetails"/g)||[]).length,1);
+ test('bike tools live only in authenticated profile, not general settings',()=>{
+  const settings=vm.runInContext('themeSettings()',ctx);
+  const profile=vm.runInContext('memberHub()',ctx);
+  for(const route of ['bikeService','bikeHistory','bikeMaintenance','bikeDetails']){
+    assert.equal((settings.match(new RegExp('data-go="'+route+'"','g'))||[]).length,0,'No '+route+' inside settings');
+    assert.equal((profile.match(new RegExp('data-go="'+route+'"','g'))||[]).length,1,'One '+route+' button in profile');
+  }
+  assert.ok(profile.includes('data-go="memberDirectory"'),'Member directory is accessible from profile');
+  assert.ok(!settings.includes('data-go="riders"')&&!settings.includes('data-go="new"'),
+    'Non-admin settings have no privileged controls');
+ });
+ test('guest has clear login and member directory, but no private bike tools',()=>{
+  vm.runInContext('memberAccount=null;memberToken=""',ctx);
+  const hub=vm.runInContext('memberHub()',ctx);
+  assert.ok(hub.includes('data-go="memberLogin"')&&hub.includes('data-go="memberRegister"'));
+  assert.ok(hub.includes('data-go="memberDirectory"'));
+  assert.ok(!hub.includes('data-go="bikeService"'));
+  vm.runInContext("memberAccount={id:'a',name:'Μέλος Α'};memberToken='"+'1'.repeat(64)+"'",ctx);
+ });
+ test('Admin settings retain all essential actions under organized sections',()=>{
+  vm.runInContext('admin=true',ctx);
+  const settings=vm.runInContext('themeSettings()',ctx);
+  for(const action of ['new','riders','historyAdd','routeAdd','routes','stats','trash','backup']){
+    assert.ok(settings.includes('data-go="'+action+'"'),'Admin action '+action+' still reachable');
+  }
+  assert.ok(settings.includes('data-do="downloadBackup"')&&settings.includes('data-do="adminLogout"'));
+  vm.runInContext('admin=false',ctx);
  });
  vm.runInContext("bikeCloud.bikes[0].bike_details={tires:'Schwalbe Pro One TLE',frontBar:4.2,rearBar:4.6,wheelset:'<img src=x onerror=alert(1)>'};bikeCloud.bikes[1].bike_details={tires:'PRIVATE_B'}",ctx);
  const renderDetails=()=>vm.runInContext('bikeDetailsPage()',ctx);
