@@ -1646,3 +1646,34 @@ html[data-theme] .keepalive-monitor .keepalive-countdown{
 }
 html[data-theme] .keepalive-monitor .btn{width:100%;margin:0;white-space:normal}
 
+
+
+/* Member profile and server-verified login — same compact mobile layout. */
+.member-access,.member-account-page,.member-profile{max-width:680px;margin:14px auto}
+.member-access h2,.member-profile h2{margin:0 0 10px}
+.member-access p{margin:8px 0 12px}
+.member-access-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:12px 0}
+.member-access-actions .btn{flex:1 1 180px;min-height:45px}
+.member-access .row{align-items:center}
+.member-account-page form,.member-password-panel form{display:grid;gap:12px;margin-top:13px}
+.member-account-page label,.member-password-panel label{display:grid;gap:6px;min-width:0;text-align:left}
+.member-account-page input,.member-password-panel input{width:100%;min-width:0}
+.member-public-status{color:var(--sub,#b6cfe7);font-size:11px}
+.member-profile-head{display:flex;gap:14px;align-items:center;justify-content:center;margin-bottom:16px}
+.member-profile-head .rider-avatar{width:72px;height:72px;flex:0 0 72px}
+.member-profile-head>div{min-width:0}
+.member-profile-head h2{margin:0;overflow-wrap:anywhere}
+.member-profile-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:13px 0 18px}
+.member-profile-metrics>div{border:1px solid var(--edge,#3f709e);background:var(--nav,#112949);border-radius:13px;padding:13px 9px;display:grid;gap:4px;text-align:center}
+.member-profile-metrics b{font-size:22px;color:var(--fg,#fff);font-variant-numeric:tabular-nums}
+.member-profile-metrics small{font-size:12px;color:var(--sub,#b6cfe7)}
+.member-profile .avatar-picker{display:flex;align-items:center;justify-content:center;margin:10px 0;min-height:44px}
+.member-password-panel{margin:15px 0;padding:13px;border:1px solid var(--edge,#3f709e);border-radius:12px}
+.member-password-panel summary{cursor:pointer;font-weight:750}
+.admin-member-card [data-do="adminMemberPassword"]{white-space:normal;line-height:1.25;max-width:100%}
+@media(max-width:600px){
+ .member-access,.member-account-page,.member-profile{margin:12px auto}
+ .member-access-actions{gap:8px}
+ .member-access-actions .btn{flex:1 1 135px;padding:10px 9px;font-size:13px}
+ .member-profile-metrics b{font-size:19px}
+}
