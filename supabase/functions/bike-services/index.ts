@@ -5,6 +5,17 @@ const reply=(x:unknown,status=200)=>new Response(JSON.stringify(x),{status,heade
 const bad=(msg:string,status=400)=>reply({error:msg},status);
 const uuid=(x:unknown)=>typeof x==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(x);
 const plain=(x:unknown,max:number)=>typeof x==='string'?x.trim().slice(0,max+1):'';
+const sessionToken=(value:unknown):value is string=>typeof value==='string'&&/^[0-9a-f]{64}$/.test(value);
+async function memberSessionAuthorized(memberId:string,token:unknown){
+ if(!sessionToken(token))return false;
+ const bytes=new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(token)));
+ const tokenHash=Array.from(bytes,x=>x.toString(16).padStart(2,'0')).join('');
+ const {data,error}=await db.from('voltes_member_sessions')
+  .select('member_id').eq('token_hash',tokenHash).eq('member_id',memberId)
+  .gt('expires_at',new Date().toISOString()).maybeSingle();
+ if(error)throw error;
+ return !!data;
+}
 
 /* One Strava screenshot supplies a ride distance to every recorded participant,
    regardless of the member who uploaded it. */
@@ -93,6 +104,9 @@ Deno.serve(async req=>{
   const memberName=plain(p.memberName,70);if(memberName.length<2)return bad('Επίλεξε μέλος από τις Ρυθμίσεις.');
   const {data:member,error:me}=await db.from('voltes_riders').select('id').eq('name',memberName).eq('member',true).maybeSingle();
   if(me)throw me;if(!member)return bad('Το μέλος δεν βρέθηκε.',404);
+  // Mutations require a real member session. Choosing a name on a device is not authorization.
+  if(!await memberSessionAuthorized(member.id,p.memberToken))
+   return bad('Για αλλαγές στο ποδήλατο ή στα σέρβις συνδέσου στο προσωπικό σου προφίλ.',403);
   if(action==='createBike'){
    const name=plain(p.name,90);if(name.length<2||name.length>90)return bad('Γράψε όνομα ποδηλάτου (2–90 χαρακτήρες).');
    const {data:existing,error:ee}=await db.from('voltes_bikes').select('id,name').eq('member_id',member.id);
