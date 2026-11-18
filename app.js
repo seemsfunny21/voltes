@@ -86,7 +86,7 @@ let bikeCloud={bikes:[],services:[],maintenance:[],memberKm:0,loaded:false,membe
 const bikeApiUrl=API_URL.replace(/\/rapid-responder\/?(?:\?.*)?$/,'/bike-services');
 async function bikeApi(action,fields={}){
  if(!bikeApiUrl||bikeApiUrl===API_URL)throw Error('Δεν έχει ρυθμιστεί η υπηρεσία σέρβις.');
- const response=await fetch(bikeApiUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...fields})});
+ const response=await fetch(bikeApiUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,memberToken,...fields})});
  const data=await response.json();if(!response.ok)throw Error(data.error||'Σφάλμα επικοινωνίας');return data;
 }
 let bikeLastFetch=0;
@@ -97,7 +97,7 @@ const bikeLegacyLedgerKey='voltesBikeLegacySyncV1';
 let bikeSyncPromise=null;
 async function syncLegacyBikes(){
  const names=legacyBikeNames(),entries=bikeServiceEntries();
- if(!memberName()||(!names.length&&!entries.length))return;
+ if(!memberAccount||!memberToken||!memberName()||(!names.length&&!entries.length))return;
  let ledger={owner:'',bikes:[],services:[]};
  try{
   const value=JSON.parse(readLocal(bikeLegacyLedgerKey,'{}'));
@@ -139,6 +139,7 @@ function autoSyncBikeCloud(){
  return bikeSyncPromise;
 }
 async function bikeAction(action,fields,success){
+ if(!memberAccount||!memberToken){navigate('memberLogin');toast('Συνδέσου πρώτα στο προσωπικό σου προφίλ.');return false}
  try{await bikeApi(action,{memberName:memberName(),...fields});await loadBikeCloud();if(success)toast(success);return true}
  catch(e){toast(e.message);return false}
 }
@@ -168,7 +169,7 @@ function bikeServicePage(view='new'){
  const name=memberName(),q=bikeWizard,bikes=registeredBikes(),shownBikes=ownBikes();
  const items=bikeCloud.services.filter(s=>shownBikes.some(b=>b.id===s.bike_id)).sort((a,b)=>b.service_date.localeCompare(a.service_date));
  let blocks='';
- if(!name)blocks='<div class="card"><p>Για να προσθέσεις ποδήλατο ή σέρβις, επίλεξε πρώτα το όνομά σου από τα Μέλη.</p><button class="btn secondary" data-go="members">Επιλογή μέλους</button></div>';
+ if(!name)blocks='<div class="card"><p>Για να προσθέσεις ποδήλατο ή σέρβις, συνδέσου πρώτα στο προσωπικό σου προφίλ από τα Μέλη.</p><button class="btn secondary" data-go="members">Επιλογή μέλους</button></div>';
  else if(!bikeCloud.loaded)blocks='<div class="card"><p>Φόρτωση των σέρβις…</p></div>';
  else if(view==='new'){
  if(q.step>1&&q.bike)blocks+=serviceWizardCompleted(1,'Ποδήλατο',q.bike);
@@ -433,10 +434,44 @@ async function downloadFileBackup(button){
 }
 
 function themeSettings(){return `<div class="card"><h2>Χρώμα εφαρμογής</h2><div class="theme-options">${Object.entries(themes).map(([k,v])=>`<button type="button" class="theme-option theme-${k}" data-theme="${k}" aria-pressed="${k===chosenTheme}">${v}${k===chosenTheme?' ✓':''}</button>`).join('')}</div></div>${bikeServiceSummary()}<section class="card voltes-push-card" aria-labelledby="voltesPushHeading"><div class="voltes-push-heading"><span aria-hidden="true">🔔</span><h2 id="voltesPushHeading">Ειδοποιήσεις νέας βόλτας</h2></div><p id="voltesPushState" role="status" aria-live="polite">Ενεργοποίησε τις ειδοποιήσεις για τις επόμενες βόλτες της παρέας.</p><div class="voltes-push-actions" role="group" aria-label="Ειδοποιήσεις νέας βόλτας"><button type="button" class="btn" id="voltesPushEnable" aria-pressed="false">Ενεργοποίηση</button><button type="button" class="btn secondary" id="voltesPushDisable" aria-pressed="false">Απενεργοποίηση</button></div></section><div class="card"><h2>Διαχείριση Admin</h2>${admin?`<div class="admin-settings"><button class="btn" data-go="new">+ Νέα βόλτα</button><button class="btn secondary" data-go="historyAdd">+ Προσθήκη παλιάς βόλτας</button><button class="btn secondary" data-go="routeAdd">+ Προσθήκη διαδρομής</button><button class="btn secondary" data-go="routes">Διαδρομές</button><button class="btn secondary" data-go="riders">Ποδηλάτες & επισκέπτες</button><button class="btn secondary" data-go="stats">Στατιστικά</button><button class="btn secondary" data-go="trash">🗑️ Κάδος διαγραμμένων</button><button class="btn secondary" data-do="downloadBackup">⬇ Λήψη Backup</button><button class="btn secondary" data-go="backup">↩ Επαναφορά Backup</button><button class="btn secondary" data-do="adminLogout">Αποσύνδεση</button></div>${keepaliveCard()}`:`<button class="btn" data-go="auth">Είσοδος Admin</button>`}</div>${admin&&db.rides.some(expiredRide)?`<div class="card"><h2>Παλιές προγραμματισμένες βόλτες</h2><p class="muted">Αποσύρθηκαν από την Αρχική. Μπορείς να τις ολοκληρώσεις ή να τις διαγράψεις.</p>${db.rides.filter(expiredRide).map(rideCard).join('')}</div>`:''}`}
-const memberKey='voltesChosenMember';
-const savedMember=()=>readLocal(memberKey);
-function memberName(){const name=savedMember();return db.publicMembers.some(x=>x.name===name)?name:''}
-function chooseMember(name){if(!db.publicMembers.some(x=>x.name===name))return;writeLocal(memberKey,name);writeLocal('voltesLastSignupName',name);bikeCloud.loaded=false;bikeLastFetch=0;bikeDetailsEditId='';bikeDetailsFieldKey='';resetBikeWizard();render();autoSyncBikeCloud().catch(()=>{})}
+/* Password-backed member profiles. The former locally chosen name is never authorization. */
+const memberSessionKey='voltesMemberTokenV1';
+const accountApiUrl=API_URL.replace(/\\/rapid-responder\\/?(?:\\?.*)?$/,'/member-accounts');
+let memberToken=readLocal(memberSessionKey),memberAccount=null;
+function memberName(){return memberAccount?.name||''}
+async function memberApi(action,fields={}){
+ if(!accountApiUrl||accountApiUrl===API_URL)throw Error('Η υπηρεσία προφίλ δεν είναι διαθέσιμη.');
+ const response=await fetch(accountApiUrl,{method:'POST',
+  headers:{'Content-Type':'application/json'},cache:'no-store',
+  body:JSON.stringify({action,memberToken,adminToken,...fields})});
+ const data=await response.json();if(!response.ok||!data?.ok)throw Error(data?.error||'Η ενέργεια απέτυχε.');
+ return data;
+}
+function memberSignedIn(data){
+ if(!data?.memberToken||!data?.member?.name)throw Error('Η υπηρεσία σύνδεσης δεν επέστρεψε έγκυρα στοιχεία.');
+ memberToken=data.memberToken;memberAccount=data.member;
+ writeLocal(memberSessionKey,memberToken);
+ writeLocal('voltesLastSignupName',memberAccount.name);
+ bikeCloud.loaded=false;bikeLastFetch=0;bikeDetailsEditId='';bikeDetailsFieldKey='';
+ resetBikeWizard();
+}
+async function restoreMemberSession(){
+ if(!memberToken)return;
+ try{
+  const result=await memberApi('session');
+  memberAccount=result.member;
+  writeLocal('voltesLastSignupName',memberAccount.name);
+ }catch{
+  memberToken='';memberAccount=null;writeLocal(memberSessionKey,'');
+ }
+ render();
+}
+async function memberLogout(){
+ try{if(memberToken)await memberApi('logout')}catch{}
+ memberToken='';memberAccount=null;writeLocal(memberSessionKey,'');
+ bikeCloud={bikes:[],services:[],maintenance:[],memberKm:0,loaded:false,member:''};
+ bikeLastFetch=0;resetBikeWizard();navigate('members');
+}
 let signupTokens;try{signupTokens=JSON.parse(readLocal('voltesSignupTokens','{}'));if(!signupTokens||typeof signupTokens!=='object'||Array.isArray(signupTokens))signupTokens={}}catch{signupTokens={}}
 sessionStorage.removeItem('voltesAdminPin');
 function newToken(){return Array.from(crypto.getRandomValues(new Uint8Array(32)),b=>b.toString(16).padStart(2,'0')).join('')}
@@ -451,7 +486,7 @@ async function refresh(){const result=await api('state');db={rides:result.rides|
 async function perform(action,fields,success){try{await api(action,fields);await refresh();return true}catch(e){toast(e.message);return false}}
 async function start(){
  if(!API_URL){app.innerHTML='<p class="alert">Η εφαρμογή χρειάζεται ρύθμιση του Supabase. Συμπλήρωσε το API_URL στο config.js σύμφωνα με το README.</p>';return}
- try{await refresh();await autoSyncBikeCloud()}catch(e){if(route==='bikeHistory'||route==='bikeService'||route==='bikeDetails'||route==='bikeMaintenance')toast(e.message);else if(!db.publicMembers.length)app.innerHTML=`<p class="alert">${safe(e.message)}</p>`}
+ try{await refresh();await restoreMemberSession();await autoSyncBikeCloud()}catch(e){if(route==='bikeHistory'||route==='bikeService'||route==='bikeDetails'||route==='bikeMaintenance')toast(e.message);else if(!db.publicMembers.length)app.innerHTML=`<p class="alert">${safe(e.message)}</p>`}
 }
 const datefmt=d=>new Date(d+'T12:00:00').toLocaleDateString('el-GR',{day:'2-digit',month:'2-digit',year:'numeric'});
 function toast(v){message=v;render()}
@@ -473,9 +508,64 @@ function publicMembers(){
   const pct=total?Math.round(attended/total*100):0;
   const level=total>=5?(pct>=70?'Υψηλή συμμετοχή':pct>=30?'Τακτική συμμετοχή':'Περιστασιακή συμμετοχή'):'';
   const activity=total?`<div class="member-activity"><span>Συμμετοχές <b>${attended}/${total}</b> · <b>${pct}%</b></span><div class="member-activity-km">Χλμ. ομάδας: <b>${Number(person.activityKm||0).toLocaleString('el-GR',{maximumFractionDigits:2})}</b></div><div class="member-activity-track" role="progressbar" aria-label="Ποσοστό συμμετοχής" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><span style="width:${pct}%"></span></div></div>`:'';
-  return `<article class="card member-card">${riderAvatar(person)}<div class="member-details"><strong class="rider-name">${safe(person.name)}</strong><div class="member-meta"><span class="rider-status is-member">Μέλος</span>${level?`<span class="member-activity-label">${level}</span>`:''}</div>${activity}</div><div class="member-select">${selected===person.name?'<span class="member-self">✓ Εσύ</span><button type="button" class="btn secondary" data-go="bikeMaintenance">Οι έλεγχοι μου</button>':`<button type="button" class="btn secondary" data-do="chooseMember" data-name="${safe(person.name)}">Αυτός είμαι εγώ</button>`}</div></article>`;
+  return `<article class="card member-card">${riderAvatar(person)}<div class="member-details"><strong class="rider-name">${safe(person.name)}</strong><div class="member-meta"><span class="rider-status is-member">Μέλος</span>${level?`<span class="member-activity-label">${level}</span>`:''}</div>${activity}</div><div class="member-select">${selected===person.name?'<span class="member-self">✓ Εσύ</span><button type="button" class="btn secondary" data-go="memberProfile">Το προφίλ μου</button>':'<span class="member-public-status">Προφίλ μέλους</span>'}</div></article>`;
  }).join('');
- return `${intro}<div class="member-list">${cards||'<p class="empty">Δεν έχουν προστεθεί μέλη ακόμη.</p>'}</div>`;
+ const accountPanel=memberAccount
+  ? `<section class="card member-access"><div class="row"><div><b>✓ Συνδεδεμένος: ${safe(memberName())}</b><p class="note">Το προφίλ σου προστατεύεται με προσωπικό κωδικό.</p></div><button type="button" class="btn" data-go="memberProfile">Το προφίλ μου</button></div></section>`
+  : '<section class="card member-access"><h2>Το προφίλ σου</h2><p class="muted">Χωρίς email. Διάλεξε όνομα ή ψευδώνυμο και τον προσωπικό σου κωδικό.</p><div class="member-access-actions"><button type="button" class="btn" data-go="memberRegister">+ Εγγραφή νέου μέλους</button><button type="button" class="btn secondary" data-go="memberLogin">Σύνδεση</button></div><p class="note">Αν το όνομά σου υπάρχει ήδη, ο Admin πρέπει πρώτα να ενεργοποιήσει τον λογαριασμό σου.</p></section>';
+ return `${accountPanel}${intro}<div class="member-list">${cards||'<p class="empty">Δεν έχουν προστεθεί μέλη ακόμη.</p>'}</div>`;
+}
+
+function memberRegisterPage(){
+ if(memberAccount)return memberProfilePage();
+ return `<h1>Εγγραφή νέου μέλους</h1><section class="card member-account-page">
+  <p class="muted">Δημιούργησε το προσωπικό σου προφίλ χωρίς email. Κράτησε τον κωδικό σου: για αλλαγή ή επαναφορά χρειάζεται ο Admin.</p>
+  <form id="memberRegisterForm" autocomplete="on">
+   <label>Όνομα ή ψευδώνυμο<input name="name" required minlength="2" maxlength="70" autocomplete="nickname" placeholder="π.χ. Κώστας ή KostasRider"></label>
+   <label>Προσωπικός κωδικός<input type="password" name="password" required minlength="6" maxlength="64" autocomplete="new-password" placeholder="Τουλάχιστον 6 χαρακτήρες"></label>
+   <label>Επιβεβαίωση κωδικού<input type="password" name="confirmPassword" required minlength="6" maxlength="64" autocomplete="new-password"></label>
+   <div class="member-access-actions"><button class="btn" type="submit">Δημιουργία προφίλ</button><button class="btn secondary" type="button" data-go="members">Πίσω</button></div>
+  </form>
+ </section>`;
+}
+function memberLoginPage(){
+ if(memberAccount)return memberProfilePage();
+ return `<h1>Σύνδεση μέλους</h1><section class="card member-account-page">
+  <p class="muted">Συνδέσου με το όνομα ή ψευδώνυμο και τον προσωπικό σου κωδικό.</p>
+  <form id="memberLoginForm" autocomplete="on">
+   <label>Όνομα ή ψευδώνυμο<input name="name" required maxlength="70" autocomplete="username" value="${safe(readLocal('voltesLastSignupName'))}"></label>
+   <label>Κωδικός<input type="password" name="password" required autocomplete="current-password" minlength="6" maxlength="64"></label>
+   <div class="member-access-actions"><button class="btn" type="submit">Σύνδεση</button><button class="btn secondary" type="button" data-go="memberRegister">Νέα εγγραφή</button></div>
+  </form>
+  <p class="note">Ξέχασες τον κωδικό; Ζήτησε από τον Admin να ορίσει έναν νέο.</p>
+ </section>`;
+}
+function memberProfilePage(){
+ if(!memberAccount)return memberLoginPage();
+ const member=db.publicMembers.find(x=>x.name===memberName());
+ const total=Number(member?.activityTotal||0),count=Number(member?.activityCount||0);
+ const km=Number(member?.activityKm||0).toLocaleString('el-GR',{maximumFractionDigits:2});
+ return `<h1>Το προφίλ μου</h1><section class="card member-profile">
+  <div class="member-profile-head">${member?riderAvatar(member):'<span class="rider-avatar avatar-initials" aria-hidden="true">🚴</span>'}
+   <div><h2>${safe(memberName())}</h2><p class="muted">Προσωπικό προφίλ μέλους</p></div></div>
+  <div class="member-profile-metrics"><div><b>${count}/${total}</b><small>Συμμετοχές</small></div><div><b>${km}</b><small>Χλμ. ομάδας</small></div></div>
+  <div class="member-access-actions">
+   <button type="button" class="btn" data-go="bikeDetails">Το ποδήλατό μου</button>
+   <button type="button" class="btn secondary" data-go="bikeMaintenance">Οι έλεγχοί μου</button>
+   <button type="button" class="btn secondary" data-go="bikeHistory">Τα σέρβις μου</button>
+  </div>
+  <label class="btn secondary avatar-picker">Αλλαγή φωτογραφίας προφίλ<input type="file" accept="image/jpeg,image/png,image/webp" data-member-avatar aria-label="Φωτογραφία προφίλ"></label>
+  ${member?.avatar_data_url?'<button type="button" class="btn secondary" data-do="memberRemoveAvatar">Αφαίρεση φωτογραφίας</button>':''}
+  <details class="member-password-panel"><summary>Αλλαγή προσωπικού κωδικού</summary>
+   <form id="memberPasswordForm">
+    <label>Τρέχων κωδικός<input type="password" name="currentPassword" required minlength="6" maxlength="64" autocomplete="current-password"></label>
+    <label>Νέος κωδικός<input type="password" name="newPassword" required minlength="6" maxlength="64" autocomplete="new-password"></label>
+    <label>Επιβεβαίωση<input type="password" name="confirmPassword" required minlength="6" maxlength="64" autocomplete="new-password"></label>
+    <button type="submit" class="btn">Αλλαγή κωδικού</button>
+   </form>
+  </details>
+  <button type="button" class="btn secondary" data-do="memberLogout">Αποσύνδεση</button>
+ </section>`;
 }
 function upcoming(){return `<h1>Προγραμματισμένες βόλτες</h1>${admin?'<button class="btn" data-go="new">+ Νέα βόλτα</button>':''}${active().length?active().map(rideCard).join(''):'<p class="empty">Καμία προγραμματισμένη βόλτα.</p>'}`}
 function history(){const rides=completed();return `${rides.length?rides.slice(0,historyLimit).map(rideCard).join(''):'<p class="empty">Καμία ολοκληρωμένη διαδρομή.</p>'}${rides.length>historyLimit?'<div class="actions archive-actions"><button class="btn secondary" data-do="moreHistory">Παλαιότερες διαδρομές</button></div>':''}`}
@@ -602,7 +692,7 @@ function syncEditRouteChoice(){
  form.elements.namedItem('points').value=(template.points||[]).join(', ');
  form.elements.namedItem('routeType').value=template.route_type;
 }
-function riders(){let r=db.riders;return `<h1>Ποδηλάτες & επισκέπτες</h1><div class="card"><form id="addRider"><label>Όνομα <input name="name" required maxlength="70" placeholder="Όνομα και επώνυμο"></label><fieldset class="rider-type-choice"><legend>Τύπος ποδηλάτη</legend><label class="check"><input type="radio" name="riderType" value="member" checked>Μέλος</label><label class="check"><input type="radio" name="riderType" value="visitor">Επισκέπτης</label></fieldset><button class="btn">Προσθήκη ποδηλάτη</button></form></div><div class="member-list">${r.length?r.map(x=>`<article class="card member-card admin-member-card">${riderAvatar(x)}<div class="rider-identity"><strong class="rider-name">${safe(x.name)}</strong><span class="rider-status ${x.member?'is-member':'is-guest'}">${x.member?'Μέλος':'Επισκέπτης'}</span><button type="button" class="btn secondary member-type-toggle" data-do="toggleMember" data-id="${safe(x.id)}">Αλλαγή τύπου</button></div><div class="rider-actions"><label class="btn secondary avatar-picker">${x.avatar_data_url?'Αλλαγή φωτογραφίας':'Προσθήκη φωτογραφίας'}<input type="file" accept="image/jpeg,image/png,image/webp" data-avatar-id="${safe(x.id)}" aria-label="Φωτογραφία για ${safe(x.name)}"></label>${x.avatar_data_url?`<button class="btn secondary" data-do="removeAvatar" data-id="${safe(x.id)}">Αφαίρεση φωτογραφίας</button>`:''}<button class="btn danger" data-do="deleteRider" data-id="${safe(x.id)}">Διαγραφή</button></div></article>`).join(''):'<p class="muted">Δεν υπάρχουν καταχωρισμένοι ποδηλάτες.</p>'}</div>`}
+function riders(){let r=db.riders;return `<h1>Ποδηλάτες & επισκέπτες</h1><div class="card"><form id="addRider"><label>Όνομα <input name="name" required maxlength="70" placeholder="Όνομα και επώνυμο"></label><fieldset class="rider-type-choice"><legend>Τύπος ποδηλάτη</legend><label class="check"><input type="radio" name="riderType" value="member" checked>Μέλος</label><label class="check"><input type="radio" name="riderType" value="visitor">Επισκέπτης</label></fieldset><button class="btn">Προσθήκη ποδηλάτη</button></form></div><div class="member-list">${r.length?r.map(x=>`<article class="card member-card admin-member-card">${riderAvatar(x)}<div class="rider-identity"><strong class="rider-name">${safe(x.name)}</strong><span class="rider-status ${x.member?'is-member':'is-guest'}">${x.member?'Μέλος':'Επισκέπτης'}</span><button type="button" class="btn secondary member-type-toggle" data-do="toggleMember" data-id="${safe(x.id)}">Αλλαγή τύπου</button></div><div class="rider-actions"><label class="btn secondary avatar-picker">${x.avatar_data_url?'Αλλαγή φωτογραφίας':'Προσθήκη φωτογραφίας'}<input type="file" accept="image/jpeg,image/png,image/webp" data-avatar-id="${safe(x.id)}" aria-label="Φωτογραφία για ${safe(x.name)}"></label>${x.avatar_data_url?`<button class="btn secondary" data-do="removeAvatar" data-id="${safe(x.id)}">Αφαίρεση φωτογραφίας</button>`:''} ${x.member?'<button type="button" class="btn secondary" data-do="adminMemberPassword" data-id="'+safe(x.id)+'">Ορισμός / επαναφορά κωδικού</button>':''}<button class="btn danger" data-do="deleteRider" data-id="${safe(x.id)}">Διαγραφή</button></div></article>`).join(''):'<p class="muted">Δεν υπάρχουν καταχωρισμένοι ποδηλάτες.</p>'}</div>`}
 function riderAvatar(r){const initials=r.name.trim().split(/\s+/).slice(0,2).map(n=>Array.from(n)[0]).join('').toLocaleUpperCase('el');return r.avatar_data_url&&/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(r.avatar_data_url)?`<img class="rider-avatar" src="${safe(r.avatar_data_url)}" alt="Φωτογραφία ${safe(r.name)}" width="56" height="56">`:`<span class="rider-avatar avatar-initials" aria-hidden="true">${safe(initials)}</span>`}
 async function prepareAvatar(file){
  if(!file||!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>10*1024*1024)throw Error('Επίλεξε φωτογραφία JPG, PNG ή WebP έως 10 MB.');
@@ -632,9 +722,20 @@ app.addEventListener('change',async e=>{
  finally{input.disabled=false}
 });
 app.addEventListener('change',async e=>{const input=e.target;if(!input.dataset.avatarId||!admin||!input.files?.length)return;input.disabled=true;try{const avatar=await prepareAvatar(input.files[0]);await perform('setAvatar',{id:input.dataset.avatarId,avatar},'Η φωτογραφία αποθηκεύτηκε.')}catch(err){toast(err.message)}finally{input.disabled=false;input.value=''}});
+
+app.addEventListener('change',async e=>{
+ const input=e.target;
+ if(!input.matches?.('[data-member-avatar]')||!input.files?.length||!memberAccount)return;
+ input.disabled=true;
+ try{
+  const avatar=await prepareAvatar(input.files[0]);
+  await memberApi('setAvatar',{avatar});await refresh();navigate('memberProfile');
+ }catch(err){toast(err.message||'Η φωτογραφία δεν αποθηκεύτηκε.')}
+ finally{input.disabled=false;input.value=''}
+});
 function analytics(){let list=db.riders.map(p=>{let rides=completed().filter(r=>(r.attendees||[]).includes(p.name));let total=rides.reduce((s,r)=>s+Number(r.km),0);return {name:p.name,count:rides.length,km:total,elevation:rides.some(r=>r.elevationGain!=null)?rides.reduce((s,r)=>s+Number(r.elevationGain||0),0):null,moving:rides.some(r=>r.movingMinutes!=null)?rides.reduce((s,r)=>s+Number(r.movingMinutes||0),0):null,mean:rides.length?rides.reduce((s,r)=>s+Number(r.speed),0)/rides.length:0}}).sort((a,b)=>b.km-a.km);return `<h1>Στατιστικά ποδηλατών</h1><p class="alert">Ο κοινός μέσος όρος των διαδρομών δεν αποτελεί μέτρηση ατομικής ταχύτητας. Δεν παράγεται ακόμη αυτόματη κατάταξη.</p>${list.length?list.map(p=>`<article class="card"><div class="row"><strong>${safe(p.name)}</strong><span>${p.count} βόλτες</span></div><p>${p.km.toFixed(1)} km · Μ.Ο. ομάδων ${p.count?p.mean.toFixed(1)+' km/h':'—'}</p><p class="muted">Καταγεγραμμένη ανάβαση: ${p.elevation==null?'—':safe(p.elevation)+' m'} · Χρόνος κίνησης: ${p.moving==null?'—':safe(formatMovingTime(p.moving))}</p></article>`).join(''):'<p class="empty">Πρόσθεσε μέλη και ολοκληρωμένες βόλτες για να εμφανιστούν στατιστικά.</p>'}`}
 function auth(){return `<h1>Είσοδος Admin</h1><div class="card"><form id="login"><label>PIN Admin <input type="password" name="pin" required inputmode="numeric" maxlength="4" minlength="4" pattern="[0-9]{4}" placeholder="••••"></label><button class="btn">Είσοδος</button></form></div>`}
-function render(){if(!admin&&['new','newDetailed','riders','stats','finish','historyAdd','editDone','routeAdd','routes','routeEdit','trash','backup'].includes(route))route='home';document.querySelector('#adminNav').classList.toggle('hidden',!admin);document.querySelector('#authBtn').textContent=admin?'Αποσύνδεση Admin':'Είσοδος Admin';let html=route==='backup'?backupPage():route==='trash'?trashPage():route==='settings'?themeSettings():route==='bikeService'?bikeServicePage():route==='bikeHistory'?bikeServicePage('history'):route==='bikeMaintenance'?bikeMaintenancePage():route==='bikeDetails'?bikeDetailsPage():route==='home'?home():route==='members'?publicMembers():route==='upcoming'?upcoming():route==='history'?history():route==='new'?newRide():route==='newDetailed'?detailedRide():route==='routeAdd'?addRoutePage():route==='routes'?savedRoutesPage():route==='routeEdit'?editRoutePage():route==='historyAdd'?historicalRide():route==='editDone'&&window.currentRide&&admin?editCompletedRide(window.currentRide):route==='riders'?riders():route==='stats'?analytics():route==='auth'?auth():route==='signup'&&window.currentRide?signup(window.currentRide):route==='finish'&&window.currentRide&&admin?finish(window.currentRide):home();app.innerHTML=renderNotice()+html;message='';syncBottomNav();window.VoltesPush?.updateUi()}
+function render(){if(!admin&&['new','newDetailed','riders','stats','finish','historyAdd','editDone','routeAdd','routes','routeEdit','trash','backup'].includes(route))route='home';document.querySelector('#adminNav').classList.toggle('hidden',!admin);document.querySelector('#authBtn').textContent=admin?'Αποσύνδεση Admin':'Είσοδος Admin';let html=route==='backup'?backupPage():route==='trash'?trashPage():route==='settings'?themeSettings():route==='bikeService'?bikeServicePage():route==='bikeHistory'?bikeServicePage('history'):route==='bikeMaintenance'?bikeMaintenancePage():route==='bikeDetails'?bikeDetailsPage():route==='home'?home():route==='members'?publicMembers():route==='memberRegister'?memberRegisterPage():route==='memberLogin'?memberLoginPage():route==='memberProfile'?memberProfilePage():route==='upcoming'?upcoming():route==='history'?history():route==='new'?newRide():route==='newDetailed'?detailedRide():route==='routeAdd'?addRoutePage():route==='routes'?savedRoutesPage():route==='routeEdit'?editRoutePage():route==='historyAdd'?historicalRide():route==='editDone'&&window.currentRide&&admin?editCompletedRide(window.currentRide):route==='riders'?riders():route==='stats'?analytics():route==='auth'?auth():route==='signup'&&window.currentRide?signup(window.currentRide):route==='finish'&&window.currentRide&&admin?finish(window.currentRide):home();app.innerHTML=renderNotice()+html;message='';syncBottomNav();window.VoltesPush?.updateUi()}
 const bottomNav=document.querySelector('#bottomNav');
 function syncBottomNav(){bottomNav.querySelectorAll('button').forEach(b=>{const selected=b.dataset.bottomRoute===(nav.classList.contains('hidden')?(['home','members','history'].includes(route)?route:'menu'):'menu');b.classList.toggle('active',selected)});}
 bottomNav.addEventListener('click',async e=>{
@@ -836,8 +937,25 @@ app.addEventListener('click',async e=>{
   }catch(e){toast('Αδυναμία επαναφοράς: '+(e?.message||'Άγνωστο σφάλμα'))}
   break;
  }
- case 'chooseMember':chooseMember(b.dataset.name);break;
- case 'changeMember':writeLocal(memberKey,'');render();break;
+ case 'memberLogout':await memberLogout();break;
+ case 'memberRemoveAvatar':
+  if(memberAccount&&confirm('Να αφαιρεθεί η φωτογραφία σου;')){
+   try{await memberApi('setAvatar',{avatar:null});await refresh();navigate('memberProfile')}
+   catch(e){toast(e.message)}
+  }
+  break;
+ case 'adminMemberPassword':
+  if(admin){
+   const rider=db.riders.find(x=>x.id===b.dataset.id&&x.member);
+   if(!rider)return;
+   const chosen=prompt('Νέος προσωρινός κωδικός για '+rider.name+' (6–64 χαρακτήρες):');
+   if(chosen===null)return;
+   if(chosen.length<6||chosen.length>64||chosen.trim()!==chosen){toast('Χρειάζονται 6–64 χαρακτήρες χωρίς κενά στην αρχή ή στο τέλος.');return}
+   if(!confirm('Να οριστεί νέος κωδικός για '+rider.name+'; Τυχόν προηγούμενες συνδέσεις θα αποσυνδεθούν.'))return;
+   try{await memberApi('adminSetPassword',{memberId:rider.id,password:chosen});toast('Ο κωδικός του '+rider.name+' ορίστηκε. Ενημέρωσέ τον ιδιωτικά.')}
+   catch(e){toast(e.message)}
+  }
+  break;
  case 'checkDatabase':{
   if(!admin||keepaliveBusy)return;
   keepaliveBusy=true;
@@ -919,6 +1037,27 @@ app.addEventListener('input',e=>{
 app.addEventListener('submit',async e=>{
  e.preventDefault();let f=e.target,d=new FormData(f);
  const values=Object.fromEntries(d.entries());
+ if(f.id==='memberRegisterForm'||f.id==='memberLoginForm'){
+  const name=String(values.name||'').trim(),password=String(values.password||'');
+  if(name.length<2||name.length>70||password.length<6||password.length>64){toast('Συμπλήρωσε όνομα και κωδικό 6–64 χαρακτήρων.');return}
+  if(f.id==='memberRegisterForm'&&password!==String(values.confirmPassword||'')){toast('Οι κωδικοί δεν ταιριάζουν.');return}
+  const button=f.querySelector('button[type="submit"]');if(button)button.disabled=true;
+  try{
+   const result=await memberApi(f.id==='memberRegisterForm'?'register':'login',{name,password});
+   memberSignedIn(result);await refresh();navigate('memberProfile');autoSyncBikeCloud().catch(()=>{});
+  }catch(err){if(button)button.disabled=false;toast(err.message||'Η σύνδεση απέτυχε.')}
+  return;
+ }
+ if(f.id==='memberPasswordForm'){
+  const currentPassword=String(values.currentPassword||'');
+  const newPassword=String(values.newPassword||'');
+  if(newPassword!==String(values.confirmPassword||'')){toast('Οι νέοι κωδικοί δεν ταιριάζουν.');return}
+  if(newPassword.length<6||newPassword.length>64){toast('Ο νέος κωδικός πρέπει να είναι 6–64 χαρακτήρες.');return}
+  const button=f.querySelector('button[type="submit"]');if(button)button.disabled=true;
+  try{memberSignedIn(await memberApi('changePassword',{currentPassword,newPassword}));navigate('memberProfile');toast('Ο προσωπικός κωδικός άλλαξε.')}
+  catch(err){if(button)button.disabled=false;toast(err.message||'Η αλλαγή απέτυχε.')}
+  return;
+ }
  if(f.id==='bikeDetailsFieldForm'){
   const bikeId=f.dataset.bikeId,field=f.dataset.field;
   const bike=ownBikes().find(x=>x.id===bikeId);
