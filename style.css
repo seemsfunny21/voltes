@@ -1626,3 +1626,22 @@ html[data-theme="blue"] .shell > header{
     0 0 14px rgba(27,155,255,.42),
     0 0 27px rgba(21,111,244,.23)!important;
 }
+
+/* Admin-only keep-alive clock and optional private push reminder. */
+html[data-theme] .keepalive-monitor{
+ display:grid;gap:9px;
+ margin-top:16px;padding:15px 12px;
+ border:1px solid var(--edge);
+ border-radius:16px;
+ background:var(--panel);
+ color:var(--fg);
+}
+html[data-theme] .keepalive-monitor h3{margin:0;font-size:17px;color:var(--fg)}
+html[data-theme] .keepalive-monitor .note{margin:0;font-size:12px;line-height:1.5;color:var(--sub)}
+html[data-theme] .keepalive-monitor .keepalive-countdown{
+ margin:4px 0;padding:12px 10px;
+ font-size:14px;font-weight:720;line-height:1.6;
+ border-radius:11px;background:var(--field);color:var(--fg);
+ border:1px solid var(--edge);
+}
+html[data-theme] .keepalive-monitor .btn{width:100%;margin:0;white-space:normal}
