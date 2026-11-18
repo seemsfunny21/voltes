@@ -6,6 +6,13 @@
  const STORAGE_KEY="voltes.push.device.v1";
  const $=id=>document.getElementById(id);
  let active=false,busy=false,lastMessage="";
+ const ADMIN_ALERT_KEY="voltes.keepalive.admin-push.v1";
+ let keepaliveAlerts=false;
+ try{keepaliveAlerts=localStorage.getItem(ADMIN_ALERT_KEY)==="yes"}catch{}
+ const setKeepaliveAlerts=value=>{
+  keepaliveAlerts=!!value;
+  try{if(value)localStorage.setItem(ADMIN_ALERT_KEY,"yes");else localStorage.removeItem(ADMIN_ALERT_KEY)}catch{}
+ };
  const supported=()=>window.isSecureContext && "Notification" in window &&
    "serviceWorker" in navigator && "PushManager" in window;
  const encode64=bytes=>{
@@ -99,10 +106,27 @@
      const reg=await navigator.serviceWorker.getRegistration(new URL("./",location.href).href);
      const subscription=await reg?.pushManager.getSubscription();
      if(subscription)await subscription.unsubscribe();
-     removeCredentials();active=false;
+     removeCredentials();active=false;setKeepaliveAlerts(false);
      setMessage("Οι ειδοποιήσεις νέας βόλτας απενεργοποιήθηκαν.");
    }catch(error){setMessage(error?.message||"Η απενεργοποίηση απέτυχε.");}
    finally{busy=false;updateUi()}
+ }
+ async function enableKeepaliveAlerts(adminToken){
+   if(!adminToken)throw Error("Συνδέσου πρώτα ως Admin.");
+   if(!supported())throw Error("Η συσκευή δεν υποστηρίζει Push.");
+   if(!active){await enable();if(!active)throw Error("Πρέπει πρώτα να ενεργοποιήσεις τις ειδοποιήσεις Push.");}
+   const credentials=readCredentials();
+   if(!credentials)throw Error("Δεν υπάρχουν στοιχεία ειδοποιήσεων σε αυτή τη συσκευή.");
+   await request("adminAlerts",{...credentials,adminToken,enabled:true});
+   setKeepaliveAlerts(true);
+   return true;
+ }
+ async function disableKeepaliveAlerts(adminToken){
+   if(!adminToken)throw Error("Συνδέσου πρώτα ως Admin.");
+   const credentials=readCredentials();
+   if(credentials)await request("adminAlerts",{...credentials,adminToken,enabled:false});
+   setKeepaliveAlerts(false);
+   return true;
  }
  async function init(){
    updateUi();
@@ -126,7 +150,7 @@
    if(button.id==="voltesPushEnable"){event.preventDefault();enable();}
    else if(button.id==="voltesPushDisable"){event.preventDefault();disable();}
  });
- window.VoltesPush={updateUi,init};
+ window.VoltesPush={updateUi,init,enableKeepaliveAlerts,disableKeepaliveAlerts,keepaliveAlertsActive:()=>active&&keepaliveAlerts};
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});
  else init();
 })();
