@@ -40,6 +40,14 @@ async function sha256(value:string) {
  return Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",bytes)))
    .map(byte=>byte.toString(16).padStart(2,"0")).join("");
 }
+async function isVerifiedVoltesAdmin(token:unknown):Promise<boolean>{
+ const pin=Deno.env.get("ADMIN_PIN")||"";
+ if(!pin||typeof token!=="string"||!/^[0-9a-f]{64}$/.test(token))return false;
+ const hash=await sha256(token);
+ const session=await db.from("voltes_admin_sessions").select("pin_version").eq("token_hash",hash).maybeSingle();
+ if(session.error)throw session.error;
+ return Boolean(session.data&&session.data.pin_version===await sha256(KEY+":"+pin));
+}
 async function getSecret(name:string):Promise<Record<string,unknown>> {
  const {data,error}=await db.from("reminder_push_secrets")
     .select("value").eq("name",name).single();
@@ -117,6 +125,46 @@ async function handleDispatch() {
  }
  return json({ok:true,claimed:events.length,devices:(devices||[]).length,delivered,failed});
 }
+async function handleKeepaliveReminder(){
+ const {data:status,error:statusError}=await db.from("voltes_keepalive_state")
+    .select("last_pressed_at,last_notified_for").eq("id",true).single();
+ if(statusError)throw statusError;
+ const last=status?.last_pressed_at;
+ if(!last)return json({ok:true,due:false,reason:"never pressed"});
+ const since=Date.now()-new Date(last).getTime();
+ if(!Number.isFinite(since)||since<4*86400000 || status.last_notified_for===last)
+   return json({ok:true,due:false});
+ const {data:devices,error}=await db.from("voltes_push_devices")
+    .select("device_id,endpoint,p256dh,auth")
+    .eq("enabled",true).eq("admin_keepalive_alerts",true).limit(20);
+ if(error)throw error;
+ if(!devices?.length)return json({ok:true,due:true,devices:0,delivered:0});
+ let sent=0,failed=0;
+ const payload={
+  title:"⏳ Keep Alive – 1 ημέρα απομένει",
+  body:"Το κουμπί Keep Alive στην Ποδηλασία δεν πατήθηκε εδώ και 4 ημέρες. Άνοιξε το Admin για έλεγχο.",
+  tag:"voltes-admin-keepalive-warning",
+  url:"https://seemsfunny21.github.io/voltes/"
+ };
+ for(let i=0;i<devices.length;i+=8){
+  await Promise.all(devices.slice(i,i+8).map(async d=>{
+   try{await pushTo(d,payload);sent++;}
+   catch(e){
+    failed++;console.error("Keepalive push failed",errorStatus(e),String(e).slice(0,250));
+    if([404,410].includes(errorStatus(e)))
+      await db.from("voltes_push_devices").update({enabled:false}).eq("device_id",d.device_id);
+   }
+  }));
+ }
+ // One alert per manual-check cycle, only after successful push delivery.
+ if(sent>0){
+  const updated=await db.from("voltes_keepalive_state")
+   .update({last_notified_for:last}).eq("id",true)
+   .eq("last_pressed_at",last).is("last_notified_for",null);
+  if(updated.error)throw updated.error;
+ }
+ return json({ok:true,due:true,devices:devices.length,delivered:sent,failed});
+}
 Deno.serve(async(req:Request)=>{
  if(req.method==="OPTIONS")return new Response(null,{status:204,headers:CORS});
  const origin=req.headers.get("Origin");
@@ -137,6 +185,11 @@ Deno.serve(async(req:Request)=>{
      const secret=await getSecret("cron");
      if(req.headers.get("X-Reminder-Cron-Secret")!==secret.token)return fail("Forbidden",403);
      return await handleDispatch();
+   }
+   if(payload.action==="keepaliveReminder"){
+     const cron=await getSecret("cron");
+     if(req.headers.get("X-Reminder-Cron-Secret")!==cron.token)return fail("Forbidden",403);
+     return await handleKeepaliveReminder();
    }
    if(!validDevice(payload.deviceId,payload.token))return fail("Invalid device credentials");
    if(payload.action==="register") {
@@ -172,6 +225,17 @@ Deno.serve(async(req:Request)=>{
      const {error}=await db.from("voltes_push_devices").update({enabled:false,updated_at:new Date().toISOString()}).eq("device_id",device.device_id);
      if(error)throw error;
      return json({ok:true,enabled:false});
+   }
+   if(payload.action==="adminAlerts"){
+     if(!await isVerifiedVoltesAdmin(payload.adminToken))return fail("Admin session required",403);
+     const enabled=payload.enabled===true;
+     if(enabled&&!device.enabled)return fail("Enable device notifications first",409);
+     if(typeof payload.enabled!=="boolean")return fail("Invalid state");
+     const {error}=await db.from("voltes_push_devices")
+       .update({admin_keepalive_alerts:enabled,updated_at:new Date().toISOString()})
+       .eq("device_id",device.device_id);
+     if(error)throw error;
+     return json({ok:true,enabled});
    }
    if(payload.action==="test") {
      if(!device.enabled)return fail("Notifications disabled",403);
