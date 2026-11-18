@@ -23,6 +23,21 @@ async function main(){
   const api=read('supabase/functions/bike-services/index.ts');
   assert.ok(app.includes('data-go="bikeDetails"')&&app.includes('saveBikeDetails')&&api.includes("action==='saveBikeDetails'")&&api.includes('bike_details'));
  });
+ test('member password recovery UI offers both self-change and Admin-approved reset',()=>{
+   const accounts=read('supabase/functions/member-accounts/index.ts');
+   const migration=read('supabase/migrations/20261118_member_password_recovery_window.sql');
+   assert.ok(app.includes('memberPasswordForm')&&app.includes('memberRecoveryForm'));
+   assert.ok(app.includes('adminMemberReset')&&app.includes('memberCredentialIds'));
+   assert.ok(app.includes("memberApi('adminIssueReset'")&&app.includes("memberApi('resetPassword'"));
+   assert.ok(accounts.includes("action==='adminIssueReset'")&&accounts.includes("action==='resetPassword'"));
+   assert.ok(accounts.includes("action==='adminAccountStates'"));
+   assert.ok(accounts.includes('await adminAuthorized(p.adminToken)'));
+   assert.ok(accounts.includes('voltes_member_consume_password_reset'));
+   assert.ok(accounts.includes("if(already)return bad("),'Admin cannot silently overwrite an activated password');
+   assert.ok(migration.includes('expires_at>now()')&&migration.includes('return false'));
+   assert.ok(migration.includes('delete from public.voltes_member_sessions'),'Reset revokes older sessions');
+   assert.ok(migration.includes('revoke all on public.voltes_member_password_resets'));
+ });
  const used=new Set([...app.matchAll(/data-do=["']([\w-]+)["']/g)].map(x=>x[1]));
  const handlers=new Set([...app.matchAll(/case '([\w-]+)'/g),...app.matchAll(/b\.dataset\.do===['"]([\w-]+)['"]/g)].map(x=>x[1]));
  test('every rendered action has a handler',()=>{for(const action of used)assert.ok(handlers.has(action),'Missing handler '+action)});
