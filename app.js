@@ -66,7 +66,7 @@ function keepaliveCard(){
   <p class="note">Μία υπενθύμιση push στην 4η ημέρα, μόνο σε συσκευές Admin που την έχουν ενεργοποιήσει. Ο αυτόματος ημερήσιος keep-alive συνεχίζεται ανεξάρτητα· το 5ήμερο μετρά μόνο τα πατήματα αυτού του κουμπιού.</p>
  </section>`;
 }
-window.setInterval(()=>{
+if(typeof window.setInterval==='function')window.setInterval(()=>{
  if(route==='settings'&&admin){
   const target=document.getElementById('keepaliveCountdown');
   if(target)target.textContent=keepaliveTimingText();
