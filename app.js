@@ -156,15 +156,6 @@ function bikeWizardSelection(label,field,value,selected){
 function serviceWizardCompleted(step,title,detail){
  return '<div class="quick-completed"><span class="quick-completed-label"><b>'+step+'. '+safe(title)+'</b><span>'+safe(detail)+'</span></span><button type="button" class="btn secondary quick-change" data-do="bikeWizardEdit" data-step="'+step+'">Αλλαγή</button></div>';
 }
-function bikeServiceSummary(){
- return '<div class="card bike-service-card"><h2>🔧 Σέρβις ποδηλάτων</h2>'+
- '<div class="bike-service-actions">'+
- '<button type="button" class="btn" data-go="bikeService">+ Νέο σέρβις</button>'+
- '<button type="button" class="btn secondary" data-go="bikeHistory">Προβολή παλιών σέρβις</button>'+ 
- '<button type="button" class="btn secondary" data-go="bikeMaintenance">Προγραμματισμένοι έλεγχοι</button>'+ 
- '<button type="button" class="btn secondary" data-go="bikeDetails">Πληροφορίες ποδηλάτου</button>'+
- '</div></div>';
-}
 function bikeServicePage(view='new'){
  const name=memberName(),q=bikeWizard,bikes=registeredBikes(),shownBikes=ownBikes();
  const items=bikeCloud.services.filter(s=>shownBikes.some(b=>b.id===s.bike_id)).sort((a,b)=>b.service_date.localeCompare(a.service_date));
@@ -433,7 +424,35 @@ async function downloadFileBackup(button){
  finally{button.disabled=false}
 }
 
-function themeSettings(){return `<div class="card"><h2>Χρώμα εφαρμογής</h2><div class="theme-options">${Object.entries(themes).map(([k,v])=>`<button type="button" class="theme-option theme-${k}" data-theme="${k}" aria-pressed="${k===chosenTheme}">${v}${k===chosenTheme?' ✓':''}</button>`).join('')}</div></div>${bikeServiceSummary()}<section class="card voltes-push-card" aria-labelledby="voltesPushHeading"><div class="voltes-push-heading"><span aria-hidden="true">🔔</span><h2 id="voltesPushHeading">Ειδοποιήσεις νέας βόλτας</h2></div><p id="voltesPushState" role="status" aria-live="polite">Ενεργοποίησε τις ειδοποιήσεις για τις επόμενες βόλτες της παρέας.</p><div class="voltes-push-actions" role="group" aria-label="Ειδοποιήσεις νέας βόλτας"><button type="button" class="btn" id="voltesPushEnable" aria-pressed="false">Ενεργοποίηση</button><button type="button" class="btn secondary" id="voltesPushDisable" aria-pressed="false">Απενεργοποίηση</button></div></section><div class="card"><h2>Διαχείριση Admin</h2>${admin?`<div class="admin-settings"><button class="btn" data-go="new">+ Νέα βόλτα</button><button class="btn secondary" data-go="historyAdd">+ Προσθήκη παλιάς βόλτας</button><button class="btn secondary" data-go="routeAdd">+ Προσθήκη διαδρομής</button><button class="btn secondary" data-go="routes">Διαδρομές</button><button class="btn secondary" data-go="riders">Ποδηλάτες & επισκέπτες</button><button class="btn secondary" data-go="stats">Στατιστικά</button><button class="btn secondary" data-go="trash">🗑️ Κάδος διαγραμμένων</button><button class="btn secondary" data-do="downloadBackup">⬇ Λήψη Backup</button><button class="btn secondary" data-go="backup">↩ Επαναφορά Backup</button><button class="btn secondary" data-do="adminLogout">Αποσύνδεση</button></div>${keepaliveCard()}`:`<button class="btn" data-go="auth">Είσοδος Admin</button>`}</div>${admin&&db.rides.some(expiredRide)?`<div class="card"><h2>Παλιές προγραμματισμένες βόλτες</h2><p class="muted">Αποσύρθηκαν από την Αρχική. Μπορείς να τις ολοκληρώσεις ή να τις διαγράψεις.</p>${db.rides.filter(expiredRide).map(rideCard).join('')}</div>`:''}`}
+function themeSettings(){
+ const colors=`<section class="card settings-compact"><h2>🎨 Εμφάνιση</h2><div class="theme-options">${Object.entries(themes).map(([k,v])=>`<button type="button" class="theme-option theme-${k}" data-theme="${k}" aria-pressed="${k===chosenTheme}">${v}${k===chosenTheme?' ✓':''}</button>`).join('')}</div></section>`;
+ const notifications=`<section class="card voltes-push-card" aria-labelledby="voltesPushHeading"><div class="voltes-push-heading"><span aria-hidden="true">🔔</span><h2 id="voltesPushHeading">Ειδοποιήσεις νέας βόλτας</h2></div><p id="voltesPushState" role="status" class="muted">Ειδοποιήσεις για νέες βόλτες της παρέας.</p><div class="voltes-push-actions" role="group" aria-label="Ειδοποιήσεις νέας βόλτας"><button type="button" class="btn" id="voltesPushEnable" aria-pressed="false">Ενεργοποίηση</button><button type="button" class="btn secondary" id="voltesPushDisable" aria-pressed="false">Απενεργοποίηση</button></div></section>`;
+ const adminPanel=admin?`
+  <div class="settings-admin-primary">
+   <button type="button" class="btn" data-go="new">+ Νέα βόλτα</button>
+   <button type="button" class="btn secondary" data-go="riders">Ποδηλάτες & επισκέπτες</button>
+  </div>
+  <details class="settings-more"><summary>Διαδρομές και στατιστικά</summary>
+   <div class="admin-settings">
+    <button class="btn secondary" data-go="routes">Αποθηκευμένες διαδρομές</button>
+    <button class="btn secondary" data-go="routeAdd">+ Προσθήκη διαδρομής</button>
+    <button class="btn secondary" data-go="historyAdd">+ Προσθήκη παλιάς βόλτας</button>
+    <button class="btn secondary" data-go="stats">Στατιστικά</button>
+   </div>
+  </details>
+  <details class="settings-more"><summary>Ασφάλεια, Backup & έλεγχος βάσης</summary>
+   <div class="admin-settings">
+    <button class="btn secondary" data-go="trash">🗑️ Κάδος διαγραμμένων</button>
+    <button class="btn secondary" data-do="downloadBackup">⬇ Λήψη Backup</button>
+    <button class="btn secondary" data-go="backup">↩ Επαναφορά Backup</button>
+   </div>
+   ${keepaliveCard()}
+  </details>
+  <button type="button" class="btn secondary settings-admin-logout" data-do="adminLogout">Αποσύνδεση Admin</button>
+ `:'<button type="button" class="btn secondary" data-go="auth">Είσοδος Admin</button>';
+ const expired=admin&&db.rides.some(expiredRide)?`<section class="card"><h2>Παλιές προγραμματισμένες βόλτες</h2><p class="muted">Αποσύρθηκαν από την Αρχική. Μπορείς να τις ολοκληρώσεις ή να τις διαγράψεις.</p>${db.rides.filter(expiredRide).map(rideCard).join('')}</section>`:'';
+ return `<h1>Ρυθμίσεις</h1>${colors}${notifications}<section class="card settings-compact settings-admin-card"><h2>🛡️ Διαχείριση Admin</h2>${adminPanel}</section>${expired}`;
+}
 /* Password-backed member profiles. The former locally chosen name is never authorization. */
 const memberSessionKey='voltesMemberTokenV1';
 const accountApiUrl=API_URL.replace(/\/rapid-responder\/?(?:\?.*)?$/,'/member-accounts');
