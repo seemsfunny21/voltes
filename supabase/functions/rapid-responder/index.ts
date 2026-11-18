@@ -200,8 +200,24 @@ Deno.serve(async req=>{
   if(!/^[0-9a-f-]{36}$/i.test(id))return bad();
   if(action==='cancelSignup'&&!tokenValid(payload.cancelToken))return bad();
   if(action==='signup'&&(name.length<2||(payload.cancelToken!=null&&!tokenValid(payload.cancelToken))))return bad();
+  // Protect registered member attendance; anonymous guests remain supported.
+  let signedName=name;
+  if(action==='signup'){
+   const {data:members,error:lookupError}=await db.from('voltes_riders').select('id,name').eq('member',true);
+   if(lookupError)throw lookupError;
+   const matched=(members||[]).find((m:any)=>m.name.trim().toLocaleLowerCase('el-GR')===name.toLocaleLowerCase('el-GR'));
+   if(matched){
+    if(!tokenValid(payload.memberToken))return bad('Αυτό το όνομα ανήκει σε μέλος. Συνδέσου στο προσωπικό σου προφίλ.',403);
+    const {data:session,error:sessionError}=await db.from('voltes_member_sessions')
+     .select('member_id').eq('token_hash',await digest(payload.memberToken))
+     .eq('member_id',matched.id).gt('expires_at',new Date().toISOString()).maybeSingle();
+    if(sessionError)throw sessionError;
+    if(!session)return bad('Για αυτό το όνομα χρειάζεται η προσωπική σου σύνδεση.',403);
+    signedName=matched.name;
+   }
+  }
   const hash=tokenValid(payload.cancelToken)?await digest(payload.cancelToken):null;
-  const {error}=await db.rpc(action==='signup'?'voltes_signup':'voltes_cancel_signup',action==='signup'?{p_id:id,p_name:name,p_hash:hash}:{p_id:id,p_hash:hash});
+  const {error}=await db.rpc(action==='signup'?'voltes_signup':'voltes_cancel_signup',action==='signup'?{p_id:id,p_name:signedName,p_hash:hash}:{p_id:id,p_hash:hash});
   if(error){if(error.code==='23505')return bad('Υπάρχει ήδη δήλωση με αυτό το όνομα.',409);if(error.code==='P0002')return bad('Η βόλτα δεν δέχεται αλλαγές συμμετοχής.',409);throw error}
   return reply({ok:true});
  }
