@@ -1645,3 +1645,43 @@ html[data-theme] .keepalive-monitor .keepalive-countdown{
  border:1px solid var(--edge);
 }
 html[data-theme] .keepalive-monitor .btn{width:100%;margin:0;white-space:normal}
+
+
+/* Wide-screen dashboard for PCs and living-room displays.
+   Tablet/phone layouts below 1200px retain their existing geometry. */
+@media (min-width:1200px){
+  html[data-theme] .shell{
+    max-width:1500px;
+    width:100%;
+    padding:0 clamp(26px,3vw,52px) 36px;
+  }
+  html[data-theme] #app{min-width:0;width:100%;margin:0 auto}
+  html[data-theme] #app .cards{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:20px;
+    align-items:stretch;
+  }
+  html[data-theme] #app .cards > .card{margin:0;min-width:0}
+  html[data-theme] #app .member-list{
+    max-width:none;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:18px;
+  }
+  html[data-theme] #app .member-list .member-card{min-width:0}
+  html[data-theme] #app .metrics{gap:16px}
+  html[data-theme] #app .metric{padding:20px 14px}
+  html[data-theme] .bottom-nav{
+    width:min(850px,calc(100% - 40px));
+    max-width:850px;
+    border-radius:18px 18px 0 0;
+  }
+  html[data-theme] .bottom-nav button{min-width:145px;min-height:62px;font-size:14px}
+  html[data-theme] #app h2{font-size:clamp(20px,1.35vw,25px)}
+  html[data-theme] #app .card{border-radius:19px}
+}
+@media (min-width:1800px){
+  html[data-theme] .shell{max-width:1680px}
+  html[data-theme] #app .cards{gap:24px}
+  html[data-theme] #app .member-list{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
