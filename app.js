@@ -479,7 +479,7 @@ function saveSignupTokens(){return writeLocal('voltesSignupTokens',JSON.stringif
 const app=document.querySelector('#app'),nav=document.querySelector('#nav');
 async function api(action,fields={}){
  if(!API_URL)throw Error('Χρειάζεται σύνδεση με το Supabase (config.js).');
- const response=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...fields,pin:pin||undefined,adminToken:adminToken||undefined,...(action==='state'?{signupTokens}: {})})});
+ const response=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...fields,pin:pin||undefined,adminToken:adminToken||undefined,memberToken:memberToken||undefined,...(action==='state'?{signupTokens}: {})})});
  const data=await response.json();if(!response.ok)throw Error(data.error||'Σφάλμα επικοινωνίας');return data;
 }
 async function refresh(){const result=await api('state');db={rides:result.rides||[],riders:result.riders||[],members:result.members||0,routeTemplates:result.routeTemplates||[],publicMembers:result.publicMembers||[]};admin=!!result.admin;if(!admin&&adminToken){adminToken='';writeLocal('voltesAdminToken','')}completionV2=result.capabilities?.rideCompletionV2===true;if(!admin){trashItems=[];trashError='';backupDraft=null;backupFilename=''}render()}
