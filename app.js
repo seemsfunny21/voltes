@@ -370,7 +370,7 @@ async function downloadFileBackup(button){
  finally{button.disabled=false}
 }
 
-function themeSettings(){return `<div class="card"><h2>Χρώμα εφαρμογής</h2><div class="theme-options">${Object.entries(themes).map(([k,v])=>`<button type="button" class="theme-option theme-${k}" data-theme="${k}" aria-pressed="${k===chosenTheme}">${v}${k===chosenTheme?' ✓':''}</button>`).join('')}</div></div>${bikeServiceSummary()}<section class="card voltes-push-card" aria-labelledby="voltesPushHeading"><div class="voltes-push-heading"><span aria-hidden="true">🔔</span><h2 id="voltesPushHeading">Ειδοποιήσεις νέας βόλτας</h2></div><p id="voltesPushState" role="status" aria-live="polite">Ενεργοποίησε τις ειδοποιήσεις για τις επόμενες βόλτες της παρέας.</p><div class="voltes-push-actions" role="group" aria-label="Ειδοποιήσεις νέας βόλτας"><button type="button" class="btn" id="voltesPushEnable" aria-pressed="false">Ενεργοποίηση</button><button type="button" class="btn secondary" id="voltesPushDisable" aria-pressed="false">Απενεργοποίηση</button></div></section><div class="card"><h2>Διαχείριση Admin</h2>${admin?`<div class="admin-settings"><button class="btn" data-go="new">+ Νέα βόλτα</button><button class="btn secondary" data-go="historyAdd">+ Προσθήκη παλιάς βόλτας</button><button class="btn secondary" data-go="routeAdd">+ Προσθήκη διαδρομής</button><button class="btn secondary" data-go="routes">Διαδρομές</button><button class="btn secondary" data-go="riders">Ποδηλάτες & επισκέπτες</button><button class="btn secondary" data-go="stats">Στατιστικά</button><button class="btn secondary" data-go="trash">🗑️ Κάδος διαγραμμένων</button><button class="btn secondary" data-do="downloadBackup">⬇ Λήψη Backup</button><button class="btn secondary" data-go="backup">↩ Επαναφορά Backup</button><button class="btn secondary" data-do="adminLogout">Αποσύνδεση</button></div>`:`<button class="btn" data-go="auth">Είσοδος Admin</button>`}</div>${admin&&db.rides.some(expiredRide)?`<div class="card"><h2>Παλιές προγραμματισμένες βόλτες</h2><p class="muted">Αποσύρθηκαν από την Αρχική. Μπορείς να τις ολοκληρώσεις ή να τις διαγράψεις.</p>${db.rides.filter(expiredRide).map(rideCard).join('')}</div>`:''}`}
+function themeSettings(){return `<div class="card"><h2>Χρώμα εφαρμογής</h2><div class="theme-options">${Object.entries(themes).map(([k,v])=>`<button type="button" class="theme-option theme-${k}" data-theme="${k}" aria-pressed="${k===chosenTheme}">${v}${k===chosenTheme?' ✓':''}</button>`).join('')}</div></div>${bikeServiceSummary()}<section class="card voltes-push-card" aria-labelledby="voltesPushHeading"><div class="voltes-push-heading"><span aria-hidden="true">🔔</span><h2 id="voltesPushHeading">Ειδοποιήσεις νέας βόλτας</h2></div><p id="voltesPushState" role="status" aria-live="polite">Ενεργοποίησε τις ειδοποιήσεις για τις επόμενες βόλτες της παρέας.</p><div class="voltes-push-actions" role="group" aria-label="Ειδοποιήσεις νέας βόλτας"><button type="button" class="btn" id="voltesPushEnable" aria-pressed="false">Ενεργοποίηση</button><button type="button" class="btn secondary" id="voltesPushDisable" aria-pressed="false">Απενεργοποίηση</button></div></section><div class="card"><h2>Διαχείριση Admin</h2>${admin?`<div class="admin-settings"><button class="btn" data-go="new">+ Νέα βόλτα</button><button class="btn secondary" data-go="historyAdd">+ Προσθήκη παλιάς βόλτας</button><button class="btn secondary" data-go="routeAdd">+ Προσθήκη διαδρομής</button><button class="btn secondary" data-go="routes">Διαδρομές</button><button class="btn secondary" data-go="riders">Ποδηλάτες & επισκέπτες</button><button class="btn secondary" data-go="stats">Στατιστικά</button><button class="btn secondary" data-go="trash">🗑️ Κάδος διαγραμμένων</button><button class="btn secondary" data-do="downloadBackup">⬇ Λήψη Backup</button><button class="btn secondary" data-go="backup">↩ Επαναφορά Backup</button><button class="btn secondary" data-do="checkDatabase" type="button">🟢 Έλεγχος βάσης Supabase</button><button class="btn secondary" data-do="adminLogout">Αποσύνδεση</button></div>`:`<button class="btn" data-go="auth">Είσοδος Admin</button>`}</div>${admin&&db.rides.some(expiredRide)?`<div class="card"><h2>Παλιές προγραμματισμένες βόλτες</h2><p class="muted">Αποσύρθηκαν από την Αρχική. Μπορείς να τις ολοκληρώσεις ή να τις διαγράψεις.</p>${db.rides.filter(expiredRide).map(rideCard).join('')}</div>`:''}`}
 const memberKey='voltesChosenMember';
 const savedMember=()=>readLocal(memberKey);
 function memberName(){const name=savedMember();return db.publicMembers.some(x=>x.name===name)?name:''}
@@ -776,6 +776,20 @@ app.addEventListener('click',async e=>{
  }
  case 'chooseMember':chooseMember(b.dataset.name);break;
  case 'changeMember':writeLocal(memberKey,'');render();break;
+ case 'checkDatabase':{
+  if(!admin)return;
+  b.disabled=true;
+  b.setAttribute('aria-busy','true');
+  b.textContent='Έλεγχος σύνδεσης...';
+  try{
+   // A state request performs a normal database read; no row is inserted or deleted.
+   const result=await api('state');
+   if(!result||!Array.isArray(result.rides))throw Error('Μη έγκυρη απάντηση από τη βάση.');
+   toast('✅ Η βάση Supabase ανταποκρίθηκε. Έγινε μόνο ανάγνωση, χωρίς εγγραφή ή διαγραφή.');
+  }catch(e){toast('Αποτυχία ελέγχου Supabase: '+(e?.message||'Άγνωστο σφάλμα'))}
+  finally{b.disabled=false;b.removeAttribute('aria-busy')}
+  break;
+ }
  case 'adminLogout':if(admin){try{await api('logout')}catch{}admin=false;adminToken='';pin='';writeLocal('voltesAdminToken','');await refresh().catch(()=>{});navigate('settings')}break;
  case 'signup':if(memberName()){b.disabled=true;await submitRideSignup(r.id,memberName());}else{window.currentRide=r;navigate('signup')}break;
  case 'olderHistory':historyLimit=10;route='history';render();window.scrollTo(0,0);break;
