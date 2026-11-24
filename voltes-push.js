@@ -59,8 +59,8 @@
    if(checking)message="◌ Έλεγχος σύνδεσης Push…";
    else if(!supportedHere)message="Η συσκευή ή ο browser δεν υποστηρίζει Web Push.";
    else if(Notification.permission==="denied")message="Οι ειδοποιήσεις είναι αποκλεισμένες από το Android. Επίτρεψέ τες από τις ρυθμίσεις της εφαρμογής.";
-   else if(confirmed)message="✓ Push ενεργό και επιβεβαιωμένο · Οι ειδοποιήσεις νέας βόλτας έχουν καταχωριστεί.";
-   else message="○ Push ανενεργό · Πάτησε Ενεργοποίηση για να καταχωριστεί αυτή η συσκευή.";
+   else if(confirmed)message="✓ Push ενεργό · Θα λαμβάνεις νέες βόλτες και προειδοποιήσεις βροχής.";
+   else message="○ Push ανενεργό · Ενεργοποίησέ το για νέες βόλτες και προειδοποιήσεις βροχής.";
    // A previous success message must never masquerade as current verification.
    state.textContent=checking?message:(lastMessage||message);
    state.classList.toggle("is-active",confirmed);
@@ -115,7 +115,7 @@
      const subscription=await reg?.pushManager.getSubscription();
      if(subscription)await subscription.unsubscribe();
      removeCredentials();active=false;setKeepaliveAlerts(false);
-     setMessage("Οι ειδοποιήσεις νέας βόλτας απενεργοποιήθηκαν.");
+     setMessage("Οι ειδοποιήσεις βόλτας και καιρού απενεργοποιήθηκαν.");
    }catch(error){setMessage(error?.message||"Η απενεργοποίηση απέτυχε.");}
    finally{busy=false;updateUi()}
  }
