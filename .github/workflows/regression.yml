@@ -24,6 +24,8 @@ jobs:
           node --check tests/regression.cjs
       - name: Run lightweight offline regression suite
         run: node tests/regression.cjs
+      - name: Verify weather push decision logic with mocked forecast and transport
+        run: node tests/weather.test.cjs
       - name: Run ride completion and member interaction suites
         run: npm test
       - name: Install pinned PostgreSQL test emulator
