@@ -516,9 +516,10 @@ async function api(action,fields={}){
 }
 async function refresh(){const result=await api('state');db={rides:result.rides||[],riders:result.riders||[],members:result.members||0,routeTemplates:result.routeTemplates||[],publicMembers:result.publicMembers||[]};admin=!!result.admin;if(!admin&&adminToken){adminToken='';writeLocal('voltesAdminToken','')}completionV2=result.capabilities?.rideCompletionV2===true;if(!admin){trashItems=[];trashError='';backupDraft=null;backupFilename=''}render()}
 async function perform(action,fields,success){try{await api(action,fields);await refresh();return true}catch(e){toast(e.message);return false}}
+const embeddedAdminRoute=(()=>{if(window.self===window.top)return "";const k=new URLSearchParams(location.search).get("adminView");return ["new","settings","backup","riders","stats","routes","trash"].includes(k)?k:""})();
 async function start(){
  if(!API_URL){app.innerHTML='<p class="alert">Η εφαρμογή χρειάζεται ρύθμιση του Supabase. Συμπλήρωσε το API_URL στο config.js σύμφωνα με το README.</p>';return}
- try{await refresh();await restoreMemberSession();await autoSyncBikeCloud()}catch(e){if(route==='bikeHistory'||route==='bikeService'||route==='bikeDetails'||route==='bikeMaintenance')toast(e.message);else if(!db.publicMembers.length)app.innerHTML=`<p class="alert">${safe(e.message)}</p>`}
+ try{await refresh();if(embeddedAdminRoute)navigate(admin?embeddedAdminRoute:'auth');await restoreMemberSession();await autoSyncBikeCloud()}catch(e){if(route==='bikeHistory'||route==='bikeService'||route==='bikeDetails'||route==='bikeMaintenance')toast(e.message);else if(!db.publicMembers.length)app.innerHTML=`<p class="alert">${safe(e.message)}</p>`}
 }
 const datefmt=d=>new Date(d+'T12:00:00').toLocaleDateString('el-GR',{day:'2-digit',month:'2-digit',year:'numeric'});
 function toast(v){message=v;render()}
@@ -1235,7 +1236,7 @@ app.addEventListener('submit',async e=>{
  }else if(f.id==='login'){
   const attempted=String(d.get('pin')||'');
   pin=attempted;
-  try{const result=await api('login');adminToken=result.adminToken;pin='';if(!adminToken)throw Error('Απαιτείται ενημέρωση της υπηρεσίας.');if(!writeLocal('voltesAdminToken',adminToken))message='Η σύνδεση ισχύει για τώρα, αλλά ο browser δεν επιτρέπει να αποθηκευτεί.';await refresh();navigate('settings')}
+  try{const result=await api('login');adminToken=result.adminToken;pin='';if(!adminToken)throw Error('Απαιτείται ενημέρωση της υπηρεσίας.');if(!writeLocal('voltesAdminToken',adminToken))message='Η σύνδεση ισχύει για τώρα, αλλά ο browser δεν επιτρέπει να αποθηκευτεί.';await refresh();navigate(embeddedAdminRoute||'settings')}
   catch(err){pin='';adminToken='';writeLocal('voltesAdminToken','');toast(err.message);const input=app.querySelector('#login input[name="pin"]');if(input){input.value='';input.form.dataset.submitting='0';input.focus()}}
  }else if(f.id==='saveRouteForm'&&admin){
   const points=String(values.points||'').split(',').map(x=>x.trim()).filter(Boolean);
