@@ -107,7 +107,35 @@ async function main(){
  await assert.rejects(()=>db.query('select * from public.voltes_route_templates'),e=>e.code==='42501');
  await assert.rejects(()=>db.query('select * from public.voltes_bike_services'),e=>e.code==='42501');
  console.log('PASS publicly exposed tables denied direct access');count++;
- await db.exec('reset role');await db.close();
+ await db.exec('reset role');
+ for(const name of ['activity_game_core.sql','activity_game_catalog.sql','activity_game_groups.sql','activity_game_group_rewards.sql','activity_game_official_rides.sql','activity_game_existing_members.sql','activity_game_historical_cycling.sql']){
+  await db.exec(await fs.readFile(path.join(root,'backend',name),'utf8'));console.log('PASS rewards migration '+name);count++;
+ }
+ const gamePrivileges=(await db.query("select has_schema_privilege('anon','voltes_game','usage') as schema_access,has_function_privilege('anon','public.voltes_game_action(uuid,boolean,text,jsonb)','execute') as rpc_access")).rows[0];
+ assert.equal(gamePrivileges.schema_access,false);assert.equal(gamePrivileges.rpc_access,false);
+ const {randomUUID}=require('node:crypto'),ga=randomUUID(),gb=randomUUID(),gc=randomUUID();
+ const call=async(id,action,fields={},admin=false)=>(await db.query('select public.voltes_game_action($1,$2,$3,$4::jsonb) as result',[id,admin,action,JSON.stringify(fields)])).rows[0].result;
+ for(const [id,name] of [[ga,'Reward Audit A'],[gb,'Reward Audit B'],[gc,'Reward Audit C']]){
+  await db.query('insert into public.voltes_riders(id,name,member) values($1,$2,true)',[id,name]);
+  await db.query("insert into voltes_game.players(id,status) values($1,'approved')",[id]);
+ }
+ const buyId=randomUUID();let state=await call(ga,'buy',{item:'helmet',requestId:buyId});assert.equal(Number(state.coins),600);
+ state=await call(ga,'buy',{item:'helmet',requestId:buyId});assert.equal(Number(state.coins),600);
+ const giftId=randomUUID();state=await call(ga,'gift',{item:'helmet',target:gb,requestId:giftId,visible:false});assert.equal(Number(state.coins),200);
+ state=await call(gc,'state');let recipient=state.members.find(m=>m.id===gb);assert.ok(!recipient.owned.includes('helmet'));assert.equal(recipient.gifts.length,0);
+ state=await call(gb,'state');assert.ok(state.owned.includes('helmet'));
+ await call(ga,'message',{target:gb,body:'Audit private message'});state=await call(gc,'state');assert.ok(!state.messages.some(m=>m.body==='Audit private message'));
+ console.log('PASS purchase idempotency, private gifts and private messages');count++;
+ const day=(await db.query("select ((now() at time zone 'Europe/Athens')::date)::text as day")).rows[0].day;
+ const groupId=randomUUID();await call(ga,'group_activity',{requestId:groupId,sport:'bike',day,amount:30,participants:[gb,gc]});
+ await call(gb,'confirm_group',{target:groupId});await call(gc,'confirm_group',{target:groupId});
+ await call(null,'approve_group',{target:groupId},true);await call(null,'approve_group',{target:groupId},true);
+ state=await call(ga,'state');assert.equal(Number(state.coins),1400);assert.equal(Number(state.xp),300);assert.equal(Number(state.totals.bike),30);
+ const rideId=randomUUID();await db.query("insert into public.voltes_rides(id,date,time,place,title,done,km,attendees) values($1,$2,'10:00','Audit','Audit ride',true,11,$3::jsonb)",[rideId,day,JSON.stringify(['Reward Audit A','Reward Audit B'])]);
+ await db.query("update public.voltes_rides set done=true where id=$1",[rideId]);
+ state=await call(ga,'state');assert.equal(Number(state.coins),1620);assert.equal(Number(state.totals.bike),41);
+ console.log('PASS group rewards, double approval protection and official ride credits');count++;
+ await db.close();
  console.log(count+' fresh installation checks passed');
 }
 main().catch(e=>{console.error(e);process.exitCode=1});
