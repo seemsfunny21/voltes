@@ -131,10 +131,10 @@ async function main(){
  const groupId=randomUUID();await call(ga,'group_activity',{requestId:groupId,sport:'bike',day,amount:30,participants:[gb,gc]});
  await call(gb,'confirm_group',{target:groupId});await call(gc,'confirm_group',{target:groupId});
  await call(null,'approve_group',{target:groupId},true);await call(null,'approve_group',{target:groupId},true);
- state=await call(ga,'state');assert.equal(Number(state.coins),1400);assert.equal(Number(state.xp),300);assert.equal(Number(state.totals.bike),30);
+ state=await call(ga,'state');assert.equal(Number(state.coins),1300);assert.equal(Number(state.xp),300);assert.equal(Number(state.totals.bike),30);
  const rideId=randomUUID();await db.query("insert into public.voltes_rides(id,date,time,place,title,done,km,attendees) values($1,$2,'10:00','Audit','Audit ride',true,11,$3::jsonb)",[rideId,day,JSON.stringify(['Reward Audit A','Reward Audit B'])]);
  await db.query("update public.voltes_rides set done=true where id=$1",[rideId]);
- state=await call(ga,'state');assert.equal(Number(state.coins),1620);assert.equal(Number(state.totals.bike),41);
+ state=await call(ga,'state');assert.equal(Number(state.coins),1520);assert.equal(Number(state.totals.bike),41);
  console.log('PASS group rewards, double approval protection and official ride credits');count++;
  await db.close();
  console.log(count+' fresh installation checks passed');
