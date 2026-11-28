@@ -106,7 +106,7 @@ Deno.serve(async req=>{
   }
   if(action==='login'){
    const name=cleanName(p.name),password=p.password;
-   if(name.length<2||name.length>70||!validPassword(password))return bad('Λάθος όνομα ή κωδικός.',403);
+   if(name.length<2||name.length>70||(!validPassword(password)&&password!=='1234'))return bad('Λάθος όνομα ή κωδικός.',403);
    const {data:riders,error}=await db.from('voltes_riders').select('id,name,member').eq('member',true);
    if(error)throw error;
    const member=(riders||[]).find((r:any)=>cleanName(r.name).toLocaleLowerCase('el-GR')===name.toLocaleLowerCase('el-GR'));
@@ -120,6 +120,15 @@ Deno.serve(async req=>{
    const result=await db.rpc('voltes_member_login_gate',{p_key:gateKey,p_correct:correct});
    if(result.error)throw result.error;
    if(result.data!==true)return bad('Λάθος όνομα ή κωδικός, ή πολλές αποτυχημένες προσπάθειες. Δοκίμασε αργότερα.',403);
+   // A four-character bootstrap code is never allowed to create a normal session.
+   if(password==='1234'){
+    if(p.newPassword===undefined)return reply({ok:true,mustChangePassword:true});
+    if(!validPassword(p.newPassword))return bad('Ο νέος κωδικός πρέπει να έχει 6–64 χαρακτήρες.');
+    const salt=toHex(crypto.getRandomValues(new Uint8Array(16))),hash=await passwordHash(p.newPassword,salt);
+    const changed=await db.from('voltes_member_credentials').update({password_hash:hash,salt,iterations,updated_at:new Date().toISOString()}).eq('member_id',member.id).eq('password_hash',stored.password_hash).select('member_id').maybeSingle();
+    if(changed.error)throw changed.error;
+    if(!changed.data)return bad('Ο αρχικός κωδικός δεν ισχύει πλέον.',403);
+   }
    const token=await createSession(member.id);
    return reply({ok:true,member:{id:member.id,name:member.name},memberToken:token});
   }
