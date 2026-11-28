@@ -40,7 +40,7 @@ begin
    end if;
   elsif p_action='set_rate' then update voltes_game.rates set rate=(p->>'rate')::integer,daily_cap=(p->>'cap')::integer where sport=p->>'sport';
   end if;
-  return jsonb_build_object('ok',true,'pendingMembers',coalesce((select jsonb_agg(jsonb_build_object('id',g.id,'name',v.name,'joined_at',g.joined_at)) from voltes_game.players g join public.voltes_riders v on v.id=g.id where g.status='pending'),'[]'::jsonb),'pendingActivities',coalesce((select jsonb_agg(to_jsonb(x)) from (select a.*,v.name from voltes_game.activities a join public.voltes_riders v on v.id=a.player where a.status='pending' order by a.created_at limit 200)x),'[]'::jsonb),'rates',(select jsonb_agg(to_jsonb(r)) from voltes_game.rates r));
+  return jsonb_build_object('ok',true,'pendingMembers',coalesce((select jsonb_agg(jsonb_build_object('id',g.id,'name',v.name,'joined_at',g.joined_at)) from voltes_game.players g join public.voltes_riders v on v.id=g.id where g.status='pending'),'[]'::jsonb),'pendingActivities',coalesce((select jsonb_agg(to_jsonb(x)) from (select act.*,v.name from voltes_game.activities act join public.voltes_riders v on v.id=act.player where act.status='pending' order by act.created_at limit 200)x),'[]'::jsonb),'rates',(select jsonb_agg(to_jsonb(rate_row)) from voltes_game.rates rate_row));
  end if;
  if p_member is null or not exists(select 1 from public.voltes_riders where id=p_member and member) then raise exception 'Συνδέσου πρώτα';end if;
  if p_action='join' then insert into voltes_game.players(id) values(p_member) on conflict do nothing;end if;
@@ -80,7 +80,7 @@ begin
  'owned',coalesce((select jsonb_agg(item) from voltes_game.owned where player=p_member),'[]'::jsonb),
  'activities',coalesce((select jsonb_agg(to_jsonb(x)) from (select * from voltes_game.activities where player=p_member order by day desc,created_at desc limit 100)x),'[]'::jsonb),
  'totals',coalesce((select jsonb_object_agg(sport,total) from (select sport,sum(amount) total from voltes_game.activities where player=p_member and status='approved' group by sport)x),'{}'::jsonb),
- 'rates',(select jsonb_agg(to_jsonb(r)) from voltes_game.rates r),
+ 'rates',(select jsonb_agg(to_jsonb(rate_row)) from voltes_game.rates rate_row),
  'members',coalesce((select jsonb_agg(to_jsonb(x) order by x.xp desc,x.name) from (select g.id,v.name,g.coins,g.xp,g.style,coalesce((select jsonb_agg(o.item) from voltes_game.owned o where o.player=g.id),'[]'::jsonb) owned,coalesce((select jsonb_object_agg(sport,total) from (select sport,sum(amount) total from voltes_game.activities where player=g.id and status='approved' group by sport)t),'{}'::jsonb) totals from voltes_game.players g join public.voltes_riders v on v.id=g.id where g.status='approved')x),'[]'::jsonb),
  'messages',coalesce((select jsonb_agg(to_jsonb(x) order by x.id) from (select m.id,m.sender,m.recipient,m.body,m.created_at,v.name from voltes_game.messages m join public.voltes_riders v on v.id=m.sender where m.recipient is null or m.recipient=p_member or m.sender=p_member order by m.id desc limit 100)x),'[]'::jsonb));
 end $$;
