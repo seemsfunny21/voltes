@@ -1,7 +1,7 @@
 /* Cycling PWA offline shell and new-ride Web Push receiver. */
-const CACHE="podilasia-credential-options-20261128";
+const CACHE="podilasia-credential-options-20261128-admin";
 const ASSETS=[
-  "./",'./index.html','./style.css?v=economy-buttons-20261128','./app.js?v=credential-options-20261128',
+  "./",'./index.html','./style.css?v=economy-buttons-20261128','./app.js?v=credential-options-20261128-admin',
   './voltes-push.js?v=5','./completion.js','./strava-ocr.js?v=40',
   './config.js','./icon.svg?v=2','./hero-cyclist.webp','./manifest.webmanifest'
 ];
