@@ -909,12 +909,12 @@ app.addEventListener('click',async e=>{
  if(b.dataset.do==='newMaintenance'){maintenanceEditId='new:'+b.dataset.bikeId;render();return}
  if(b.dataset.do==='editMaintenance'){maintenanceEditId=b.dataset.id;render();return}
  if(b.dataset.do==='completeMaintenance'){
-  if(confirm('Έγινε η εργασία; Θα ξεκινήσει νέο διάστημα και θα μπει στο ιστορικό σέρβις.'))
+  if(await appConfirm('Έγινε η εργασία; Θα ξεκινήσει νέο διάστημα και θα μπει στο ιστορικό σέρβις.'))
    await bikeAction('completeMaintenance',{bikeId:b.dataset.bikeId,id:b.dataset.id},'Η εργασία καταχωρίστηκε.');
   return;
  }
  if(b.dataset.do==='deleteMaintenance'){
-  if(confirm('Να διαγραφεί η προγραμματισμένη εργασία; Το παλιό ιστορικό δεν διαγράφεται.'))
+  if(await appConfirm('Να διαγραφεί η προγραμματισμένη εργασία; Το παλιό ιστορικό δεν διαγράφεται.'))
    await bikeAction('deleteMaintenance',{bikeId:b.dataset.bikeId,id:b.dataset.id},'Η εργασία διαγράφηκε.');
   return;
  }
@@ -958,7 +958,7 @@ app.addEventListener('click',async e=>{
  if(b.dataset.do==='deleteBikeService'){
   const item=bikeCloud.services.find(x=>x.id===b.dataset.id),bike=bikeCloud.bikes.find(x=>x.id===item?.bike_id);
   if(!item||!bike||bike.member_name!==memberName())return;
-  if(confirm('Να διαγραφεί αυτή η καταχώριση σέρβις;'))await bikeAction('deleteService',{bikeId:bike.id,id:item.id},'Η καταχώριση διαγράφηκε.');
+  if(await appConfirm('Να διαγραφεί αυτή η καταχώριση σέρβις;'))await bikeAction('deleteService',{bikeId:bike.id,id:item.id},'Η καταχώριση διαγράφηκε.');
   return;
  }
  if(b.dataset.do==='quickEdit'){
@@ -991,7 +991,7 @@ app.addEventListener('click',async e=>{
  case 'downloadBackup':if(admin)await downloadFileBackup(b);break;
  case 'restoreFileBackup':{
   if(!admin||!backupDraft||backupBusy)return;
-  if(!confirm('Να προστεθούν από το backup μόνο οι καταχωρίσεις που λείπουν; Τα υπάρχοντα στοιχεία δεν θα αλλάξουν.'))return;
+  if(!await appConfirm('Να προστεθούν από το backup μόνο οι καταχωρίσεις που λείπουν; Τα υπάρχοντα στοιχεία δεν θα αλλάξουν.'))return;
   backupBusy=true;
   render();
   try{
@@ -1011,7 +1011,7 @@ app.addEventListener('click',async e=>{
  case 'restoreTrash':{
   if(!admin)return;
   const item=trashItems.find(x=>x.id===b.dataset.id);
-  if(!item||!confirm('Να επαναφερθεί η καταχώριση «'+item.label+'»;'))return;
+  if(!item||!await appConfirm('Να επαναφερθεί η καταχώριση «'+item.label+'»;'))return;
   try{
    await api('trashRestore',{id:item.id});
    await refresh();
@@ -1024,7 +1024,7 @@ app.addEventListener('click',async e=>{
  }
  case 'memberLogout':await memberLogout();break;
  case 'memberRemoveAvatar':
-  if(memberAccount&&confirm('Να αφαιρεθεί η φωτογραφία σου;')){
+  if(memberAccount&&await appConfirm('Να αφαιρεθεί η φωτογραφία σου;')){
    try{await memberApi('setAvatar',{avatar:null});await refresh();navigate('memberProfile')}
    catch(e){toast(e.message)}
   }
@@ -1033,10 +1033,10 @@ app.addEventListener('click',async e=>{
   if(admin){
    const rider=db.riders.find(x=>x.id===b.dataset.id&&x.member);
    if(!rider||memberCredentialIds===null||memberCredentialIds.has(rider.id))return;
-   const chosen=prompt('Πρώτος κωδικός για '+rider.name+' (6–64 χαρακτήρες):');
+   const chosen=await appDialog('Πρώτος κωδικός για '+rider.name+' (6–64 χαρακτήρες):',{title:'Πρώτος κωδικός',input:true,password:true});
    if(chosen===null)return;
    if(chosen.length<6||chosen.length>64||chosen.trim()!==chosen){toast('Χρειάζονται 6–64 χαρακτήρες χωρίς κενά στην αρχή ή στο τέλος.');return}
-   if(!confirm('Να ενεργοποιηθεί ο προσωπικός λογαριασμός του '+rider.name+';'))return;
+   if(!await appConfirm('Να ενεργοποιηθεί ο προσωπικός λογαριασμός του '+rider.name+';'))return;
    try{
     await memberApi('adminSetPassword',{memberId:rider.id,password:chosen});
     memberCredentialIds.add(rider.id);
@@ -1049,7 +1049,7 @@ app.addEventListener('click',async e=>{
   {
    const rider=db.riders.find(x=>x.id===b.dataset.id&&x.member);
    if(!rider)return;
-   if(!confirm('Να εγκριθεί αλλαγή κωδικού για '+rider.name+' για μία ώρα; Τυχόν προηγούμενος προσωρινός κωδικός θα ακυρωθεί.'))return;
+   if(!await appConfirm('Να εγκριθεί αλλαγή κωδικού για '+rider.name+' για μία ώρα; Τυχόν προηγούμενος προσωρινός κωδικός θα ακυρωθεί.'))return;
    b.disabled=true;
    try{
     const data=await memberApi('adminIssueReset',{memberId:rider.id});
@@ -1064,7 +1064,7 @@ app.addEventListener('click',async e=>{
    await navigator.clipboard.writeText(adminIssuedRecovery.code);
    toast('Ο προσωρινός κωδικός αντιγράφηκε.');
   }catch{
-   prompt('Αντίγραψε τον προσωρινό κωδικό:',adminIssuedRecovery.code);
+   await appDialog('Αντίγραψε τον προσωρινό κωδικό:',{title:'Κωδικός επαναφοράς',input:true,value:adminIssuedRecovery.code,ok:'Κλείσιμο'});
   }
   break;
  case 'hideMemberReset':
@@ -1103,15 +1103,15 @@ app.addEventListener('click',async e=>{
  case 'signup':if(memberName()){b.disabled=true;await submitRideSignup(r.id,memberName());}else{window.currentRide=r;navigate('signup')}break;
  case 'olderHistory':historyLimit=10;route='history';render();window.scrollTo(0,0);break;
  case 'moreHistory':historyLimit+=5;render();break;
- case 'cancelSignup':if(!r||!signupTokens[r.id])return;if(confirm('Να ακυρωθεί η συμμετοχή σου;')){b.disabled=true;try{await api('cancelSignup',{id:r.id,cancelToken:signupTokens[r.id]});delete signupTokens[r.id];saveSignupTokens();await refresh()}catch(err){b.disabled=false;toast(err.message)}}break;
- case 'removeAvatar':if(admin&&confirm('Να αφαιρεθεί η φωτογραφία;'))await perform('setAvatar',{id:b.dataset.id,avatar:null},'Η φωτογραφία αφαιρέθηκε.');break;
+ case 'cancelSignup':if(!r||!signupTokens[r.id])return;if(await appConfirm('Να ακυρωθεί η συμμετοχή σου;')){b.disabled=true;try{await api('cancelSignup',{id:r.id,cancelToken:signupTokens[r.id]});delete signupTokens[r.id];saveSignupTokens();await refresh()}catch(err){b.disabled=false;toast(err.message)}}break;
+ case 'removeAvatar':if(admin&&await appConfirm('Να αφαιρεθεί η φωτογραφία;'))await perform('setAvatar',{id:b.dataset.id,avatar:null},'Η φωτογραφία αφαιρέθηκε.');break;
  case 'editRoute':if(admin){window.currentRouteId=b.dataset.id;navigate('routeEdit')}break;
  case 'useSavedRoute':if(admin){const t=db.routeTemplates.find(x=>x.id===b.dataset.id);if(t){navigate('newDetailed');const select=document.querySelector('#rideTemplateSelect');if(select){select.value=t.id;syncRouteChoice()}}}break;
  case 'finish':if(!admin)return;window.currentRide=r;navigate('finish');break;
  case 'editPlanned':if(!admin||!r||r.done)return;window.currentRide=r;navigate('editPlanned');break;
  case 'editDone':if(!admin||!r?.done)return;window.currentRide=r;navigate('editDone');break;
- case 'delete':if(admin&&r&&confirm('Να διαγραφεί η βόλτα;')){await perform('delete',{id:r.id},'Η βόλτα διαγράφηκε.')}break;
- case 'deleteRider':if(admin){const rider=db.riders.find(x=>x.id===b.dataset.id);if(rider&&confirm('Να διαγραφεί ο ποδηλάτης «'+rider.name+'» από τη λίστα μελών; Οι παλιές βόλτες θα διατηρηθούν.')){await perform('deleteRider',{id:rider.id},'Ο ποδηλάτης διαγράφηκε από τη λίστα.')}}break;
+ case 'delete':if(admin&&r&&await appConfirm('Να διαγραφεί η βόλτα;')){await perform('delete',{id:r.id},'Η βόλτα διαγράφηκε.')}break;
+ case 'deleteRider':if(admin){const rider=db.riders.find(x=>x.id===b.dataset.id);if(rider&&await appConfirm('Να διαγραφεί ο ποδηλάτης «'+rider.name+'» από τη λίστα μελών; Οι παλιές βόλτες θα διατηρηθούν.')){await perform('deleteRider',{id:rider.id},'Ο ποδηλάτης διαγράφηκε από τη λίστα.')}}break;
  case 'toggleMember':if(admin){await perform('toggleMember',{id:b.dataset.id},'Ο τύπος μέλους ενημερώθηκε.')}break;
  }
 });
@@ -1260,7 +1260,7 @@ app.addEventListener('submit',async e=>{
   if(!date||date<greekDay()||!chosen||!['morning','noon','afternoon'].includes(q.period)||!place){toast('Συμπλήρωσε ημέρα, μέρος ημέρας, διαδρομή και σημείο συνάντησης.');return}
   if(departure&&!/^([01]\d|2[0-3]):[0-5]\d$/.test(departure)){toast('Μη έγκυρη ώρα.');return}
   const duplicate=db.rides.some(r=>!r.done&&r.date===date&&r.routeTemplateId===chosen.id);
-  if(duplicate&&!confirm('Υπάρχει ήδη προγραμματισμένη βόλτα με αυτή τη διαδρομή την ίδια ημέρα. Να δημοσιευτεί άλλη;'))return;
+  if(duplicate&&!await appConfirm('Υπάρχει ήδη προγραμματισμένη βόλτα με αυτή τη διαδρομή την ίδια ημέρα. Να δημοσιευτεί άλλη;'))return;
   const button=f.querySelector('button[type="submit"]');button.disabled=true;
   if(await perform('create',{date,time:departure,timePeriod:q.period,routeTemplateId:chosen.id,place,title:chosen.name,routeType:chosen.route_type,estimate:chosen.estimate??''},'Η βόλτα δημοσιεύτηκε.'))navigate('upcoming');else button.disabled=false;
  }else if(f.id==='login'){
@@ -1370,7 +1370,7 @@ function gameBikeAccessories(x){const catalog=gameData?.catalog||x.catalog||[],o
 function gameLife(x){const catalog=gameData?.catalog||x.catalog||[],owned=x.owned||[];return '<h2>Η καθημερινότητά μου</h2><div class="game-life-grid">'+gameLifeCats.map(cat=>{const items=catalog.filter(c=>c.category===cat&&owned.includes(c.id)).sort((a,b)=>b.price-a.price),c=items[0];return '<div class="game-life-item"><strong>'+safe(cat)+'</strong>'+(c?gamePicture(c,false)+'<b>'+safe(c.name)+'</b><small>'+items.length+' αποκτήματα</small>':'<span class="game-life-empty">'+(gameCategoryIcons[cat]||'🎁')+'</span><small>Δεν αποκτήθηκε</small>')+'</div>'}).join('')+'</div>'+gameBikeAccessories(x)}
 function gameGifts(x,own=false){const catalog=gameData?.catalog||x.catalog||[],gifts=x.gifts||[];return '<h2>🎁 '+(own?'Τα δώρα μου':'Δώρα')+'</h2>'+(gifts.length?'<div class="game-life-grid">'+gifts.map(g=>{const c=catalog.find(i=>i.id===g.item);return '<article class="game-life-item">'+(c?gamePicture(c):'🎁')+'<strong>'+safe(c?.name||'Δώρο')+'</strong><small>Από '+safe(g.sender)+'</small>'+(own?'<small>'+ (g.visible?'👁 Φανερό':'🔒 Κρυφό')+'</small>':'')+'</article>'}).join('')+'</div>':'<p class="muted">Δεν υπάρχουν ακόμη δώρα.</p>')}
 function gameProfileCard(){if(!memberAccount)return '';const x=gameOwner===memberToken?gameData:null;if(x?.status!=='approved')return '';return '<section class="card game-card game-profile-life" '+gameCosmeticStyle(x)+'>'+gameLife(x)+'</section><section class="card game-card game-profile-gifts" '+gameCosmeticStyle(x)+'>'+gameGifts(x,true)+'</section>'}
-function gameMorePage(){return '<h1>Περισσότερα</h1><section class="card"><div class="game-more-grid"><button class="game-more-tile" data-go="history"><span>📜</span>Ιστορικό βόλτας</button><button class="game-more-tile" data-go="memberDirectory"><span>👥</span>Μέλη &amp; κατάταξη</button>'+[['awards','🏅','Επιτεύγματα'],['gift','🎁','Δώρα'],['chat','💬','Συνομιλία'],['private','✉️','Μηνύματα'],['plans','📅','Ομαδικά']].map(([k,i,t])=>'<button class="game-more-tile" data-game="open" data-game-tab="'+k+'"><span>'+i+'</span>'+t+'</button>').join('')+'<button class="game-more-tile" data-go="settings"><span>⚙️</span>Ρυθμίσεις & ειδοποιήσεις</button>'+(admin?'<button class="game-more-tile" data-go="activityAdmin"><span>🛡️</span>Διαχείριση άθλησης</button>':'')+'</div></section>'}
+function gameMorePage(){return '<h1>Περισσότερα</h1><section class="card"><div class="game-more-grid"><button class="game-more-tile" data-go="history"><span>📜</span>Ιστορικό βόλτας</button><button class="game-more-tile" data-go="memberDirectory"><span>👥</span>Μέλη &amp; κατάταξη</button>'+[['awards','🏅','Επιτεύγματα'],['gift','🎁','Δώρα'],['chat','💬','Συνομιλία'],['private','✉️','Μηνύματα'],['plans','📅','Ομαδικά']].map(([k,i,t])=>'<button class="game-more-tile" data-game="open" data-game-tab="'+k+'"><span>'+i+'</span>'+t+'</button>').join('')+'<button class="game-more-tile" data-go="settings"><span>⚙️</span>Ρυθμίσεις & ειδοποιήσεις</button>'+(admin?'<button class="game-more-tile" style="grid-column:1/-1" data-go="activityAdmin"><span>🛡️</span>Διαχείριση άθλησης</button>':'')+'</div></section>'}
 function gamePublicProfile(x){const person=db.publicMembers?.find(p=>p.name===x.name)||{name:x.name};return '<div class="game-public-profile">'+gameIdentity(x,person)+(person.activityTotal?'<div class="game-history-grid"><div><span>Συμμετοχές ομάδας</span><b>'+gfmt(person.activityCount)+'/'+gfmt(person.activityTotal)+'</b></div><div><span>Χλμ. ομάδας</span><b>'+gfmt(person.activityKm)+'</b></div></div>':'')+'<div class="game-summary">'+Object.entries(gameSports).map(([k,v])=>'<div><small>'+v[1]+'</small><b>'+gfmt(x.totals?.[k])+' '+v[2]+'</b></div>').join('')+'</div>'+'<section class="game-public-life">'+gameLife(x)+'</section><section class="game-public-gifts">'+gameGifts(x)+'</section></div>'}
 function gamePreview(x,c){
  const mock={...x,appearance:{...x.appearance}},cosmetic=gameIsPersonal(c),gift=gameTab==='gift',owned=x.owned.includes(c.id),category=c.source_category;
@@ -1441,9 +1441,9 @@ async function handleGameClick(b){const d=b.dataset,act=d.game;if(act==='directo
  if(act==='refresh'){await gameCall('state');return}
  if(act==='adminRefresh'){await gameCall('admin_state',{},true);return}
  if(act==='join'){await gameCall('join');return}
- if(act==='style'){gamePreviewItem='';await gameCall('style',{style:d.style});return}if(act==='equip'||act==='unequip'){gamePreviewItem='';await gameCall(act,{item:d.item,category:d.category});return}if(act==='moreItems'){gameStorePage++;render();return}if(act==='planForm'){gamePlanFormOpen=!gamePlanFormOpen;render();return}if(['rsvp','leave_plan','cancel_plan'].includes(act)){if(act==='cancel_plan'&&!confirm('Να ακυρωθεί η δραστηριότητα;'))return;await gameCall(act,{target:d.target});return}
+ if(act==='style'){gamePreviewItem='';await gameCall('style',{style:d.style});return}if(act==='equip'||act==='unequip'){gamePreviewItem='';await gameCall(act,{item:d.item,category:d.category});return}if(act==='moreItems'){gameStorePage++;render();return}if(act==='planForm'){gamePlanFormOpen=!gamePlanFormOpen;render();return}if(['rsvp','leave_plan','cancel_plan'].includes(act)){if(act==='cancel_plan'&&!await appConfirm('Να ακυρωθεί η δραστηριότητα;'))return;await gameCall(act,{target:d.target});return}
  if(['approve_member','approve_activity','reject_activity','approve_group','reject_group'].includes(act)){await gameCall(act,{target:d.target},true);return}
- if(['buy','gift'].includes(act)){const item=gameData?.catalog.find(c=>c.id===d.item);if(!item)return;if(act==='gift'&&!gameRecipient){toast('Επίλεξε παραλήπτη.');return}if(!confirm(item.name+' · '+gfmt(item.price)+' νομίσματα. Επιβεβαίωση;'))return;await gameCall(act,{item:item.id,target:gameRecipient,visible:gameGiftVisible,requestId:crypto.randomUUID()})}
+ if(['buy','gift'].includes(act)){const item=gameData?.catalog.find(c=>c.id===d.item);if(!item)return;if(act==='gift'&&!gameRecipient){toast('Επίλεξε παραλήπτη.');return}if(!await appConfirm(item.name+' · '+gfmt(item.price)+' νομίσματα. Επιβεβαίωση;'))return;await gameCall(act,{item:item.id,target:gameRecipient,visible:gameGiftVisible,requestId:crypto.randomUUID()})}
 }
 app.addEventListener('input',e=>{if(e.target.closest?.('#gameActivityForm'))gameUpdateReward()});
 app.addEventListener('change',e=>{if(e.target.id==='gameAdminPeople'){gameAdminMultiplier=Number(e.target.value);const f=e.target.closest('form');f.elements.multiplier.value=gameAdminData.multipliers.find(m=>m.people===gameAdminMultiplier)?.multiplier||1;return}if(e.target.id==='gameAdminProduct'){gameAdminProduct=e.target.value;const f=e.target.closest('form');f.elements.price.value=gameAdminData.catalog.find(c=>c.id===gameAdminProduct)?.price||1;return}if(e.target.id==='gameGroupMode'){gameGroupMode=e.target.checked;const panel=app.querySelector('#gameGroupPeople');if(panel)panel.hidden=!gameGroupMode;gameUpdateReward();return}if(e.target.name==='participants'){gameUpdateReward();return}if(e.target.id==='gameGiftVisibility'){gameGiftVisible=e.target.value==='public';return}if(e.target.id==='gameRecipient'){gameRecipient=e.target.value;render()}if(e.target.id==='gameStoreFilter'){gameStoreFilter=e.target.value;gameStorePage=1;render()}if(e.target.id==='gameRankingSport'){gameRankingSport=e.target.value;render()}if(e.target.id==='gameRankingPeriod'){gameRankingPeriod=e.target.value;render()}});
@@ -1452,3 +1452,20 @@ async function handleGameSubmit(e){const f=e.target;e.preventDefault();if(gameBu
 start();
 if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
 // Re-publish v42: retain all existing features and completed-ride editor.
+
+function appConfirm(message){return appDialog(message)}
+function appDialog(message,opt={}){
+ return new Promise(resolve=>{
+  if(document.querySelector("dialog[data-app-dialog]")){resolve(opt.input?null:false);return}
+  const previous=document.activeElement,d=document.createElement("dialog");d.dataset.appDialog="1";
+  d.setAttribute("aria-label",opt.title||"Επιβεβαίωση");
+  d.style.cssText="position:fixed;inset:0;margin:auto;box-sizing:border-box;width:min(92vw,380px);max-height:85dvh;overflow:auto;padding:16px;border:1px solid #4779ab;border-radius:16px;background:#102b48;color:#e5efff;box-shadow:0 12px 50px #0009;font:14px/1.45 system-ui";
+  const h=document.createElement("h2"),p=document.createElement("p"),row=document.createElement("div");h.textContent=opt.title||"Επιβεβαίωση";h.style.cssText="font-size:17px;margin:0 0 8px;color:#fff";p.textContent=String(message);p.style.cssText="margin:0 0 12px;color:#d4e5f5;overflow-wrap:anywhere";row.style.cssText="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px";
+  let input=null,done=false;if(opt.input){input=document.createElement("input");input.type=opt.password?"password":"text";input.value=opt.value||"";input.setAttribute("aria-label",opt.title||"Κείμενο");input.autocomplete=opt.password?"new-password":"off";input.style.cssText="box-sizing:border-box;width:100%;padding:10px;border:1px solid #4779ab;border-radius:8px;background:#173958;color:white;font:inherit"}
+  function finish(v){if(done)return;done=true;d.close();d.remove();if(previous?.isConnected)previous.focus({preventScroll:true});resolve(v)}
+  for(const [label,primary] of [["Ακύρωση",false],[opt.ok||"Επιβεβαίωση",true]]){const b=document.createElement("button");b.type="button";b.textContent=label;b.style.cssText="min-height:42px;width:100%;padding:8px;border:1px solid #4779ab;border-radius:9px;color:white;font:inherit;cursor:pointer;background:"+(primary?"#2874bf":"#244765");b.onclick=()=>finish(primary?(opt.input?input.value:true):(opt.input?null:false));row.append(b)}
+  d.append(h,p);if(input)d.append(input);d.append(row);document.body.append(d);d.addEventListener("cancel",e=>{e.preventDefault();finish(opt.input?null:false)});d.addEventListener("close",()=>finish(opt.input?null:false),{once:true});
+  if(input)input.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();finish(input.value)}});
+  try{d.showModal();(input||row.firstChild).focus()}catch{d.remove();resolve(opt.input?null:false)}
+ });
+}
