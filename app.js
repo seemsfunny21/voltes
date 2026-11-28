@@ -571,13 +571,15 @@ function memberLoginPage(){
   <p class="muted">Συνδέσου με το όνομα ή ψευδώνυμο και τον προσωπικό σου κωδικό.</p>
   <form id="memberLoginForm" autocomplete="on">
    <label>Όνομα ή ψευδώνυμο<input name="name" required maxlength="70" autocomplete="username" value="${safe(readLocal('voltesLastSignupName'))}"></label>
-   <label>Κωδικός<input type="password" name="password" required autocomplete="current-password" minlength="6" maxlength="64"></label>
+   <label>Κωδικός<input type="password" name="password" required autocomplete="current-password" minlength="4" maxlength="64"></label>
    <div class="member-access-actions"><button class="btn" type="submit">Σύνδεση</button><button class="btn secondary" type="button" data-go="memberRegister">Νέα εγγραφή</button></div>
   </form>
   <p class="note">Ξέχασες τον κωδικό; Ζήτησε από τον Admin προσωρινό κωδικό επαναφοράς, με ισχύ μία ώρα.</p>
   <button type="button" class="btn secondary" data-go="memberRecovery">Έχω κωδικό επαναφοράς</button>
  </section>`;
 }
+let bootstrapMemberName='';
+function memberBootstrapPage(){return pageToolbar('Νέος προσωπικός κωδικός','memberLogin')+'<section class="card member-account-page"><p>Πριν συνδεθείς, όρισε τον δικό σου προσωπικό κωδικό (6–64 χαρακτήρες).</p><form id="memberBootstrapForm"><label>Όνομα<input value="'+safe(bootstrapMemberName)+'" readonly></label><label>Αρχικός κωδικός<input type="password" name="currentPassword" autocomplete="current-password" minlength="4" maxlength="4" required></label><label>Νέος κωδικός<input name="newPassword" type="password" autocomplete="new-password" minlength="6" maxlength="64" required></label><label>Επιβεβαίωση<input name="confirmPassword" type="password" autocomplete="new-password" minlength="6" maxlength="64" required></label><button class="btn" type="submit">Αποθήκευση και σύνδεση</button></form></section>'}
 function memberRecoveryPage(){
  if(memberAccount)return memberProfilePage();
  return `<h1>Επαναφορά προσωπικού κωδικού</h1><section class="card member-account-page">
@@ -805,10 +807,10 @@ function pagePolish(html){const backRoutes={settings:'more',history:'more',bikeD
  const re=new RegExp('<button\\b[^>]*data-go="'+back+'"[^>]*>\\s*(?:←\\s*)?(?:Επιστροφή(?: στο (?:προφίλ|Admin))?|Πίσω(?: στο Admin)?|Το προφίλ μου|Ρυθμίσεις)\\s*<\\/button>','g');
  return html.replace(re,'').replace(/<div class="actions">\s*<\/div>/g,'');
 }
-function render(){if(!admin&&['activityAdmin','new','newDetailed','riders','stats','finish','historyAdd','editDone','editPlanned','routeAdd','routes','routeEdit','trash','backup'].includes(route))route='home';document.querySelector('#adminNav').classList.toggle('hidden',!admin);document.querySelector('#authBtn').textContent=admin?'Αποσύνδεση Admin':'Είσοδος Admin';let html=(['activityGame','activityAppearance','sportGame','communityGame'].includes(route))?gameActivityPage():route==='more'?gameMorePage():route==='activityAdmin'?gameAdminPage():route==='backup'?backupPage():route==='trash'?trashPage():route==='settings'?themeSettings():route==='bikeService'?bikeServicePage():route==='bikeHistory'?bikeServicePage('history'):route==='bikeMaintenance'?bikeMaintenancePage():route==='bikeDetails'?bikeDetailsPage():route==='home'?home():route==='members'?memberHub():route==='memberDirectory'?publicMembers():route==='memberRegister'?memberRegisterPage():route==='memberLogin'?memberLoginPage():route==='memberRecovery'?memberRecoveryPage():route==='memberProfile'?memberProfilePage():route==='upcoming'?upcoming():route==='history'?history():route==='new'?newRide():route==='newDetailed'?detailedRide():route==='routeAdd'?addRoutePage():route==='routes'?savedRoutesPage():route==='routeEdit'?editRoutePage():route==='historyAdd'?historicalRide():route==='editPlanned'&&window.currentRide&&admin?editPlannedRide(window.currentRide):route==='editDone'&&window.currentRide&&admin?editCompletedRide(window.currentRide):route==='riders'?riders():route==='stats'?analytics():route==='auth'?auth():route==='signup'&&window.currentRide?signup(window.currentRide):route==='finish'&&window.currentRide&&admin?finish(window.currentRide):home();app.innerHTML=renderNotice()+pagePolish(html);message='';syncBottomNav();window.VoltesPush?.updateUi();gameEnhanceSelects()}
+function render(){if(!admin&&['activityAdmin','new','newDetailed','riders','stats','finish','historyAdd','editDone','editPlanned','routeAdd','routes','routeEdit','trash','backup'].includes(route))route='home';document.querySelector('#adminNav').classList.toggle('hidden',!admin);document.querySelector('#authBtn').textContent=admin?'Αποσύνδεση Admin':'Είσοδος Admin';let html=(['activityGame','activityAppearance','sportGame','communityGame'].includes(route))?gameActivityPage():route==='more'?gameMorePage():route==='activityAdmin'?gameAdminPage():route==='backup'?backupPage():route==='trash'?trashPage():route==='settings'?themeSettings():route==='bikeService'?bikeServicePage():route==='bikeHistory'?bikeServicePage('history'):route==='bikeMaintenance'?bikeMaintenancePage():route==='bikeDetails'?bikeDetailsPage():route==='home'?home():route==='members'?memberHub():route==='memberDirectory'?publicMembers():route==='memberRegister'?memberRegisterPage():route==='memberLogin'?memberLoginPage():route==='memberBootstrap'?memberBootstrapPage():route==='memberRecovery'?memberRecoveryPage():route==='memberProfile'?memberProfilePage():route==='upcoming'?upcoming():route==='history'?history():route==='new'?newRide():route==='newDetailed'?detailedRide():route==='routeAdd'?addRoutePage():route==='routes'?savedRoutesPage():route==='routeEdit'?editRoutePage():route==='historyAdd'?historicalRide():route==='editPlanned'&&window.currentRide&&admin?editPlannedRide(window.currentRide):route==='editDone'&&window.currentRide&&admin?editCompletedRide(window.currentRide):route==='riders'?riders():route==='stats'?analytics():route==='auth'?auth():route==='signup'&&window.currentRide?signup(window.currentRide):route==='finish'&&window.currentRide&&admin?finish(window.currentRide):home();app.innerHTML=renderNotice()+pagePolish(html);message='';syncBottomNav();window.VoltesPush?.updateUi();gameEnhanceSelects()}
 const bottomNav=document.querySelector('#bottomNav');
 // Keep the Profile tab selected throughout its private screens; Admin tools stay in Settings.
-const profileRoutes=new Set(['activityAppearance','members','memberDirectory','memberRegister','memberLogin','memberRecovery','memberProfile','bikeService','bikeHistory','bikeMaintenance','bikeDetails']);
+const profileRoutes=new Set(['activityAppearance','members','memberDirectory','memberRegister','memberLogin','memberBootstrap','memberRecovery','memberProfile','bikeService','bikeHistory','bikeMaintenance','bikeDetails']);
 function syncBottomNav(){
  const current=route==='memberDirectory'&&memberDirectoryOrigin!=='members'?'menu':route==='activityGame'?'activityGame':route==='sportGame'?'sportGame':profileRoutes.has(route)?'members':route==='home'||route==='upcoming'||route==='signup'?'home':'menu';
  bottomNav.querySelectorAll('button').forEach(b=>{
@@ -1150,14 +1152,23 @@ app.addEventListener('submit',async e=>{
  const values=Object.fromEntries(d.entries());
  if(f.id==='memberRegisterForm'||f.id==='memberLoginForm'){
   const name=String(values.name||'').trim(),password=String(values.password||'');
-  if(name.length<2||name.length>70||password.length<6||password.length>64){toast('Συμπλήρωσε όνομα και κωδικό 6–64 χαρακτήρων.');return}
+  if(name.length<2||name.length>70||(password.length<6&&!(f.id==='memberLoginForm'&&password==='1234'))||password.length>64){toast('Έλεγξε το όνομα και τον κωδικό.');return}
   if(f.id==='memberRegisterForm'&&name.split(/\s+/).length<2){toast('Συμπλήρωσε όνομα και επώνυμο.');return}
   if(f.id==='memberRegisterForm'&&password!==String(values.confirmPassword||'')){toast('Οι κωδικοί δεν ταιριάζουν.');return}
   const button=f.querySelector('button[type="submit"]');if(button)button.disabled=true;
   try{
    const result=await memberApi(f.id==='memberRegisterForm'?'register':'login',{name,password});
+   if(result.mustChangePassword){bootstrapMemberName=name;route='memberBootstrap';render();return}
    memberSignedIn(result);await refresh();if(f.id==='memberRegisterForm')await gameCall('join');navigate('memberProfile');autoSyncBikeCloud().catch(()=>{});
   }catch(err){if(button)button.disabled=false;toast(err.message||'Η σύνδεση απέτυχε.')}
+  return;
+ }
+ if(f.id==='memberBootstrapForm'){
+  const newPassword=String(values.newPassword||'');
+  if(newPassword.length<6||newPassword.length>64||newPassword!==values.confirmPassword){toast('Οι νέοι κωδικοί πρέπει να ταιριάζουν και να έχουν 6–64 χαρακτήρες.');return}
+  const button=f.querySelector('button[type="submit"]');if(button)button.disabled=true;
+  try{const result=await memberApi('login',{name:bootstrapMemberName,password:String(values.currentPassword||''),newPassword});memberSignedIn(result);bootstrapMemberName='';await refresh();navigate('memberProfile');autoSyncBikeCloud().catch(()=>{});toast('Ο προσωπικός κωδικός αποθηκεύτηκε.')}
+  catch(err){if(button)button.disabled=false;toast(err.message||'Η αλλαγή απέτυχε.')}
   return;
  }
  if(f.id==='memberRecoveryForm'){
