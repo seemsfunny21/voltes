@@ -1,7 +1,7 @@
 /* Cycling PWA offline shell and new-ride Web Push receiver. */
-const CACHE="podilasia-ui-v118-member-search-game-seasons";
+const CACHE="podilasia-economy-buttons-20261128";
 const ASSETS=[
-  "./",'./index.html','./style.css?v=97','./app.js?v=game-seasons-20261128',
+  "./",'./index.html','./style.css?v=economy-buttons-20261128','./app.js?v=economy-buttons-20261128',
   './voltes-push.js?v=5','./completion.js','./strava-ocr.js?v=40',
   './config.js','./icon.svg?v=2','./hero-cyclist.webp','./manifest.webmanifest'
 ];

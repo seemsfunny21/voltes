@@ -1441,10 +1441,8 @@ function gameEconomyWizard(){
  const d=document.createElement("dialog");d.id="gameEconomyWizard";d.setAttribute("aria-label","Οδηγός οικονομίας");d.style.cssText="position:fixed;inset:0;margin:auto;box-sizing:border-box;width:min(94vw,420px);max-height:88dvh;overflow:auto;background:#102b48;color:#e5efff;border:1px solid #4779ab;border-radius:16px;padding:14px";
  const make=(tag,t)=>{const x=document.createElement(tag);if(t!=null)x.textContent=t;return x},button=(t,fn)=>{const b=make("button",t);b.type="button";b.className="btn";b.onclick=fn;return b};
  const content=make("div"),error=make("p");error.setAttribute("role","status");let plan=null,working=false;
- const rewards=make("select"),pace=make("select");
- for(const v of [.5,.75,1,1.25,1.5,2,3]){const o=make("option","×"+gfmt(v));o.value=v;rewards.append(o)}rewards.value="1";
- for(const [v,t] of [[1,"Ίδια εξέλιξη"],[1.25,"Σταδιακή"],[1.5,"Μακροχρόνια"],[2,"Δύσκολη"],[3,"Πολύ μακροχρόνια"]]){const o=make("option",t);o.value=v;pace.append(o)}pace.value="1";
- const label=(t,f)=>{const l=make("label",t);l.append(f);return l};
+ const rewards=economyChoices([.5,.75,1,1.25,1.5,2,3].map(v=>[v,"×"+gfmt(v)]),1,"Πολλαπλασιαστής ανταμοιβών",4),pace=economyChoices([[1,"Ίδια εξέλιξη"],[1.25,"Σταδιακή"],[1.5,"Μακροχρόνια"],[2,"Δύσκολη"],[3,"Πολύ μακροχρόνια"]],1,"Ρυθμός απόκτησης αντικειμένων",2);
+ const label=(t,f,hint)=>{const l=make("div");const help=make("small",hint);help.className="economy-wizard-hint";l.append(make("strong",t),f,help);return l};
  function setBusy(v){working=v;rewards.disabled=pace.disabled=preview.disabled=v;apply.disabled=v||!plan}
  function close(){if(!working){d.close();d.remove()}}
  function invalidate(){plan=null;content.replaceChildren();apply.disabled=true;error.textContent=""}
@@ -1452,7 +1450,7 @@ function gameEconomyWizard(){
  const preview=button("2 · Προεπισκόπηση",async()=>{if(working)return;invalidate();setBusy(true);try{const x=await gameEconomyRequest("economy_plan",{reward:Number(rewards.value),pace:Number(pace.value)});plan=x;content.append(make("h3","Νέες ανταμοιβές και τιμές"));for(const r of x.rates||[])row(gameSports[r.sport]?.[1]||r.sport,gfmt(r.old_rate)+" → "+gfmt(r.new_rate)+" 🪙 / "+(gameSports[r.sport]?.[2]||"μονάδα"));row("Αντικείμενα και δώρα",x.item_count);row("Σύνολο τιμών",gfmt(x.old_total)+" → "+gfmt(x.new_total));row("Διάμεση εβδομαδιαία ανταμοιβή",x.sample_members?gfmt(x.median_weekly_earned)+" 🪙":"Χωρίς δείγμα");for(const item of x.samples||[])row(item.name,gfmt(item.old_price)+" → "+gfmt(item.new_price));content.append(make("small","Τα υπάρχοντα υπόλοιπα, αντικείμενα, καταγραφές και ημερήσια όρια άσκησης παραμένουν ίδια. Οι αλλαγές αφορούν νέες ανταμοιβές και αγορές."))}catch(e){error.textContent=e.message}finally{setBusy(false)}});
  const apply=button("3 · Εφαρμογή πλάνου",async()=>{if(working||!plan)return;if(!await appConfirm("Να εφαρμοστούν όλες οι νέες ανταμοιβές και τιμές;"))return;setBusy(true);try{await gameEconomyRequest("economy_apply",{reward:plan.reward,pace:plan.pace,expected:plan.fingerprint});working=false;close();toast("Το πλάνο οικονομίας αποθηκεύτηκε.");await gameCall("admin_state",{},true)}catch(e){error.textContent=e.message;setBusy(false)}});
  apply.disabled=true;rewards.onchange=pace.onchange=invalidate;
- d.append(make("h2","Οδηγός οικονομίας"),make("small","1 · Αλλαγή σε σχέση με τις τρέχουσες τιμές"),label("Πολλαπλασιαστής ανταμοιβών",rewards),label("Ρυθμός απόκτησης αντικειμένων",pace),preview,content,error,apply,button("Κλείσιμο",close));
+ const actions=make("div");actions.className="economy-wizard-actions";actions.append(apply,button("Κλείσιμο",close));preview.style.width="100%";d.append(make("h2","Οδηγός οικονομίας"),make("small","1 · Αλλαγή σε σχέση με τις τρέχουσες τιμές"),label("Πολλαπλασιαστής ανταμοιβών",rewards,"Αλλάζει τις ανταμοιβές και αναλογικά τις τιμές."),label("Ρυθμός απόκτησης αντικειμένων",pace,"Μεγαλύτερη δυσκολία = υψηλότερες τιμές."),preview,content,error,actions);
  d.addEventListener("cancel",e=>{e.preventDefault();close()});d.addEventListener("close",()=>d.remove(),{once:true});document.body.append(d);d.showModal();
 }
 
@@ -1523,4 +1521,13 @@ function appDialog(message,opt={}){
   if(input)input.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();finish(input.value)}});
   try{d.showModal();(input||row.firstChild).focus()}catch{d.remove();resolve(opt.input?null:false)}
  });
+}
+
+function economyChoices(options,initial,label,columns=3){
+ const group=document.createElement("div");group.className="economy-choices";group.setAttribute("role","group");group.setAttribute("aria-label",label);group.style.gridTemplateColumns="repeat("+columns+",minmax(0,1fr))";
+ let value=String(initial),disabled=false;
+ function sync(){for(const b of group.children){b.setAttribute("aria-pressed",String(b.dataset.value===value));b.disabled=disabled}}
+ function add(v,t){v=String(v);if([...group.children].some(b=>b.dataset.value===v))return;const b=document.createElement("button");b.type="button";b.className="economy-choice";b.dataset.value=v;b.textContent=t;b.onclick=()=>{if(disabled||value===v)return;value=v;sync();group.onchange?.()};group.append(b);sync()}
+ Object.defineProperties(group,{value:{get:()=>value,set:v=>{value=String(v);sync()}},disabled:{get:()=>disabled,set:v=>{disabled=!!v;sync()}}});
+ group.addChoice=add;for(const [v,t] of options)add(v,t);return group;
 }

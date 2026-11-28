@@ -1945,3 +1945,14 @@ html[data-theme] .game-title-legend .game-cosmetic-title{color:#fff3b4;backgroun
 
 /* Accurate offline vector illustrations for cycling accessories. */
 .game-accessory-art{display:block;width:100%;height:auto;max-height:160px;aspect-ratio:160/132;flex-shrink:0}.game-products .game-accessory-art{height:105px;background:#102b46}.game-accessory-description{display:block;font-size:11px!important;line-height:1.35;color:#c9e5f5;min-height:28px;overflow-wrap:anywhere}.game-accessory-section{margin:12px 0 18px}.game-accessory-section h3{margin:0 0 7px!important;font-size:14px!important;color:#e3f2ff;border-bottom:1px solid #6396b650;padding-bottom:5px}.game-accessory-section h3 small{font-size:11px;color:#b1d6ed}.game-life-item .game-accessory-art{max-height:85px}.game-preview-product .game-accessory-art{width:min(230px,100%);height:auto;max-height:185px}.game-preview-product .game-accessory-description{max-width:260px;text-align:center;min-height:0}@media(min-width:650px){.game-products .game-accessory-art{height:125px}}
+
+/* Compact in-app economy options instead of native dropdowns. */
+.economy-choices{display:grid;gap:6px;width:100%;margin:5px 0 8px;min-width:0}
+.economy-choices>.economy-choice{width:100%;min-width:0;min-height:40px;padding:7px 3px;border:1px solid #4779ab;border-radius:10px;background:#193752;color:#e5efff;font:600 12px/1.2 system-ui;white-space:normal;overflow-wrap:anywhere;box-shadow:none;text-align:center}
+.economy-choices>.economy-choice[aria-pressed=true]{background:linear-gradient(145deg,#266ba7,#245b99);border-color:#9cdbff;box-shadow:inset 0 0 0 1px #8acbff;color:white}
+.economy-choices>.economy-choice:focus-visible{outline:2px solid #92d6ff;outline-offset:2px}
+.economy-choices>.economy-choice:disabled{opacity:.6;cursor:default}
+.economy-wizard-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:8px;width:100%}
+.economy-wizard-actions>button{width:100%;min-width:0;white-space:normal;margin:0}
+.economy-wizard-hint{display:block;color:#abc6df;font-size:11px;line-height:1.35;margin:0 0 8px}
+
