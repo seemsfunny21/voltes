@@ -1829,3 +1829,5 @@ html[data-theme] .game-card .game-composer{display:grid;grid-template-columns:mi
 html[data-theme] .game-card .game-composer input{margin:0;width:100%;min-width:0}
 html[data-theme] .game-card .game-composer .btn{width:42px;height:40px;padding:0;margin:0;font-size:20px}
 @media(max-width:340px){.game-life-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+html[data-theme] .game-card #gameMessageForm{width:100%;min-width:0;grid-template-columns:minmax(0,1fr) 42px;gap:6px;overflow:hidden}html[data-theme] .game-card #gameMessageForm>button.btn{min-width:0!important;max-width:42px!important;width:42px!important;justify-self:stretch;box-sizing:border-box;transform:none}html[data-theme] .game-card #gameMessageForm>input{min-width:0!important;max-width:100%;box-sizing:border-box}.game-chat-empty{text-align:center;padding:12px 0;margin:0}.game-chat-thread:has(>p:only-child){min-height:64px}.game-chat-members:empty{display:none}
