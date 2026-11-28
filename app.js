@@ -191,7 +191,7 @@ function bikeServicePage(view='new'){
  }
  if(view==='new'){
   return '<h1>🔧 Νέο σέρβις</h1>'+blocks+
-   '<div class="actions"><button type="button" class="btn secondary" data-go="settings">Επιστροφή στις Ρυθμίσεις</button></div>';
+   '<div class="actions"><button type="button" class="btn secondary" data-go="members">Επιστροφή στο προφίλ</button></div>';
  }
  const history='<div class="bike-service-history">'+(items.length?items.map(item=>{
   const bike=bikeCloud.bikes.find(b=>b.id===item.bike_id),own=!!name&&bike?.member_name===name;
@@ -203,7 +203,7 @@ function bikeServicePage(view='new'){
  return '<h1>🔧 Παλιά σέρβις</h1>'+
  (name&&!bikeCloud.loaded?blocks:'')+
  (name&&bikeCloud.loaded?'<div class="card"><h2>Ιστορικό συντήρησης</h2>'+history+'</div>':!name?blocks:'')+
- '<div class="actions"><button type="button" class="btn secondary" data-go="settings">Επιστροφή στις Ρυθμίσεις</button></div>';
+ '<div class="actions"><button type="button" class="btn secondary" data-go="members">Επιστροφή στο προφίλ</button></div>';
 }
 
 
@@ -267,7 +267,7 @@ function bikeDetailsPage(){
  }).join('');
  return '<h1>🚴 Πληροφορίες ποδηλάτου</h1>'+
    (output||'<div class="card">Δεν υπάρχει ποδήλατο. Πρόσθεσέ το από το Νέο σέρβις.</div>')+
-   '<div class="actions"><button type="button" class="btn secondary" data-go="settings">Επιστροφή</button></div>';
+   '<div class="actions"><button type="button" class="btn secondary" data-go="members">Επιστροφή στο προφίλ</button></div>';
 }
 
 let maintenanceEditId='';
@@ -322,7 +322,7 @@ function bikeMaintenancePage(){
   return head+(entries||'<div class="card">Δεν υπάρχουν προγραμματισμένοι έλεγχοι.</div>')+adding;
  }).join('');
  return '<h1>🔧 Προγραμματισμένοι έλεγχοι</h1>'+cards+
- '<div class="actions"><button class="btn secondary" type="button" data-go="bikeHistory">Ιστορικό σέρβις</button><button class="btn secondary" type="button" data-go="settings">Επιστροφή</button></div>';
+ '<div class="actions"><button class="btn secondary" type="button" data-go="bikeHistory">Ιστορικό σέρβις</button><button class="btn secondary" type="button" data-go="members">Επιστροφή στο προφίλ</button></div>';
 }
 
 
