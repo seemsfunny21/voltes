@@ -535,7 +535,7 @@ function rideCard(r){let n=r.done?(r.attendeeCount??(r.attendees||[]).length):(r
 function home(){const next=active();return `${stats()}<h2>Προγραμματισμένες βόλτες</h2>${next.length?next.map(rideCard).join(''):'<p class="empty">Δεν υπάρχουν προγραμματισμένες βόλτες.</p>'}`}
 function memberHub(){
  if(memberAccount){return memberProfilePage();}
- return '<h1>Το προφίλ σου</h1><section class="card member-access"><h2>🚴 Καλώς ήρθες!</h2><p class="muted">Συνδέσου για το προσωπικό σου προφίλ, τα ποδήλατα και τα σέρβις σου. Δεν χρειάζεται email.</p><div class="member-access-actions"><button type="button" class="btn" data-go="memberLogin">Σύνδεση</button><button type="button" class="btn secondary" data-go="memberRegister">+ Νέα εγγραφή</button></div><p class="note">Ήδη καταχωρισμένο μέλος; Ο Admin θα σου δώσει τον πρώτο κωδικό.</p></section><section class="card member-directory-cta"><button type="button" class="btn secondary" data-go="memberDirectory">👥 Δες τα μέλη της ομάδας</button></section>';
+ return '<h1>Το προφίλ σου</h1><section class="card member-access"><h2>🚴 Καλώς ήρθες!</h2><p class="muted">Συνδέσου για το προσωπικό σου προφίλ, τα ποδήλατα και τα σέρβις σου. Δεν χρειάζεται email.</p><div class="member-access-actions"><button type="button" class="btn" data-go="memberLogin">Σύνδεση</button><button type="button" class="btn secondary" data-go="memberRegister">+ Νέα εγγραφή</button></div><p class="note">Ήδη καταχωρισμένο μέλος; Ο Admin θα σου δώσει τον πρώτο κωδικό.</p></section>';
 }
 function publicMembers(){
  const ordered=[...db.publicMembers].sort((a,b)=>(Number(b.activityCount)||0)-(Number(a.activityCount)||0)||String(a.name).localeCompare(String(b.name),'el'));
