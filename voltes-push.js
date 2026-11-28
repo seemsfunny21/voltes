@@ -2,6 +2,17 @@
    Separate from Reminder and the existing Voltes admin/bike features. */
 (()=>{
  "use strict";
+function startupPushNotice(key,openSettings,enabled){
+ const id="startup-push-notice";let hidden=false;try{hidden=localStorage.getItem(key)==="1"}catch{}
+ if(enabled){document.getElementById(id)?.remove();return}
+ if(hidden||document.getElementById(id)||window.__pushNoticeDismissed||!document.body)return;
+ const box=document.createElement("aside");box.id=id;box.setAttribute("aria-label","Ειδοποιήσεις");box.style.cssText="position:fixed;top:max(8px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);width:min(92%,360px);z-index:90;background:#173650;color:#fff;border:1px solid #659bc1;border-radius:12px;padding:10px;box-shadow:0 4px 18px #0005;font:13px system-ui;display:grid;gap:7px";
+ const title=document.createElement("strong");title.textContent="🔕 Οι ειδοποιήσεις είναι ανενεργές";const row=document.createElement("div");row.style.cssText="display:grid;grid-template-columns:1fr 1fr;gap:6px";
+ const label=document.createElement("label"),check=document.createElement("input");check.type="checkbox";label.style.cssText="display:flex;align-items:center;gap:6px;font-size:12px";label.append(check,document.createTextNode("Να μην εμφανιστεί ξανά"));
+ function dismiss(){if(check.checked)try{localStorage.setItem(key,"1")}catch{}window.__pushNoticeDismissed=true;box.remove()}
+ for(const [name,fn] of [["Ενεργοποίηση",()=>{dismiss();openSettings()}],["Αργότερα",dismiss]]){const b=document.createElement("button");b.type="button";b.textContent=name;b.style.cssText="background:#215780;color:white;border:1px solid #659bc1;border-radius:8px;padding:8px;font:inherit;cursor:pointer";b.onclick=fn;row.append(b)}
+ box.append(title,row,label);document.body.append(box);
+}
  const API="https://zrbmsziipzabnniqcpav.supabase.co/functions/v1/voltes-push";
  const STORAGE_KEY="voltes.push.device.v1";
  const $=id=>document.getElementById(id);
@@ -163,6 +174,7 @@
    }finally{
      checking=false;
      updateUi();
+     if(supported())startupPushNotice("voltes.push.notice.hide",()=>{navigate("settings");document.getElementById("voltesPushEnable")?.scrollIntoView({block:"center"})},active);
    }
  }
  document.addEventListener("visibilitychange",()=>{
