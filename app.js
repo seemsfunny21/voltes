@@ -556,14 +556,16 @@ function publicMembers(){
 }
 
 const validMemberCredential=x=>typeof x==='string'&&x!=='1234'&&(/^\d{4,8}$/.test(x)||(x.length>=5&&x.length<=15&&x.trim()===x&&!/[\u0000-\u001f\u007f]/.test(x)));
+function matchesMemberCredential(value,type){return validMemberCredential(value)&&(type==="pin"?/^\d{4,8}$/.test(value):value.length>=5&&value.length<=15)}
+app.addEventListener("change",e=>{const sel=e.target;if(sel.name!=="credentialType")return;const isPin=sel.value==="pin";for(const input of sel.form.querySelectorAll('input[autocomplete="new-password"]')){input.value="";input.inputMode=isPin?"numeric":"text";input.minLength=isPin?4:5;input.maxLength=isPin?8:15;if(isPin)input.pattern="[0-9]{4,8}";else input.removeAttribute("pattern")}});
 function memberRegisterPage(){
  if(memberAccount)return memberProfilePage();
  return `<h1>Εγγραφή νέου μέλους</h1><section class="card member-account-page">
   <p class="muted">Δημιούργησε το προσωπικό σου προφίλ χωρίς email. Κράτησε τον κωδικό σου. Αν τον θυμάσαι, μπορείς να τον αλλάξεις μόνος σου. Ο Admin βοηθά μόνο όταν τον ξεχάσεις.</p>
   <form id="memberRegisterForm" autocomplete="on">
    <label>Όνομα και επώνυμο<input name="name" required minlength="3" maxlength="70" autocomplete="name" placeholder="π.χ. Κώστας Παπαδόπουλος"></label>
-   <label>PIN ή προσωπικός κωδικός<input type="password" name="password" required minlength="4" maxlength="15" autocomplete="new-password" placeholder="PIN 4–8 ή κωδικός 5–15"></label>
-   <label>Επιβεβαίωση κωδικού<input type="password" name="confirmPassword" required minlength="4" maxlength="15" autocomplete="new-password"></label>
+   <label>Τύπος νέου κωδικού<select name="credentialType"><option value="password">Κωδικός · 5–15 χαρακτήρες</option><option value="pin">PIN · 4–8 ψηφία</option></select></label><label>PIN ή προσωπικός κωδικός<input type="password" name="password" required minlength="5" maxlength="15" autocomplete="new-password" placeholder="PIN 4–8 ή κωδικός 5–15"></label>
+   <label>Επιβεβαίωση κωδικού<input type="password" name="confirmPassword" required minlength="5" maxlength="15" autocomplete="new-password"></label>
    <div class="member-access-actions"><button class="btn" type="submit">Δημιουργία προφίλ</button><button class="btn secondary" type="button" data-go="members">Πίσω</button></div>
   </form>
  </section>`;
@@ -582,7 +584,7 @@ function memberLoginPage(){
  </section>`;
 }
 let bootstrapMemberName='';
-function memberBootstrapPage(){return pageToolbar('Νέος προσωπικός κωδικός','memberLogin')+'<section class="card member-account-page"><p>Πριν συνδεθείς, όρισε τον δικό σου προσωπικό κωδικό (PIN 4–8 ψηφίων ή κωδικό 5–15 χαρακτήρων).</p><form id="memberBootstrapForm"><label>Όνομα<input value="'+safe(bootstrapMemberName)+'" readonly></label><label>Αρχικός κωδικός<input type="password" name="currentPassword" autocomplete="current-password" minlength="4" maxlength="4" required></label><label>Νέο PIN ή κωδικός<input name="newPassword" type="password" autocomplete="new-password" minlength="4" maxlength="15" required></label><label>Επιβεβαίωση<input name="confirmPassword" type="password" autocomplete="new-password" minlength="4" maxlength="15" required></label><button class="btn" type="submit">Αποθήκευση και σύνδεση</button></form></section>'}
+function memberBootstrapPage(){return pageToolbar('Νέος προσωπικός κωδικός','memberLogin')+'<section class="card member-account-page"><p>Πριν συνδεθείς, όρισε τον δικό σου προσωπικό κωδικό (PIN 4–8 ψηφίων ή κωδικό 5–15 χαρακτήρων).</p><form id="memberBootstrapForm"><label>Όνομα<input value="'+safe(bootstrapMemberName)+'" readonly></label><label>Αρχικός κωδικός<input type="password" name="currentPassword" autocomplete="current-password" minlength="4" maxlength="4" required></label><label>Τύπος νέου κωδικού<select name="credentialType"><option value="password">Κωδικός · 5–15 χαρακτήρες</option><option value="pin">PIN · 4–8 ψηφία</option></select></label><label>Νέο PIN ή κωδικός<input name="newPassword" type="password" autocomplete="new-password" minlength="5" maxlength="15" required></label><label>Επιβεβαίωση<input name="confirmPassword" type="password" autocomplete="new-password" minlength="5" maxlength="15" required></label><button class="btn" type="submit">Αποθήκευση και σύνδεση</button></form></section>'}
 function memberRecoveryPage(){
  if(memberAccount)return memberProfilePage();
  return `<h1>Επαναφορά προσωπικού κωδικού</h1><section class="card member-account-page">
@@ -590,8 +592,8 @@ function memberRecoveryPage(){
   <form id="memberRecoveryForm" autocomplete="off">
    <label>Όνομα ή ψευδώνυμο<input name="name" required maxlength="70" autocomplete="username" value="${safe(readLocal('voltesLastSignupName'))}"></label>
    <label>Προσωρινός κωδικός 1 ώρας<input name="resetCode" required maxlength="35" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" placeholder="XXXXX-XXXXX-XXXXX-XXXXX"></label>
-   <label>Νέος προσωπικός κωδικός<input type="password" name="newPassword" required minlength="4" maxlength="15" autocomplete="new-password"></label>
-   <label>Επιβεβαίωση νέου κωδικού<input type="password" name="confirmPassword" required minlength="4" maxlength="15" autocomplete="new-password"></label>
+   <label>Τύπος νέου κωδικού<select name="credentialType"><option value="password">Κωδικός · 5–15 χαρακτήρες</option><option value="pin">PIN · 4–8 ψηφία</option></select></label><label>Νέος προσωπικός κωδικός<input type="password" name="newPassword" required minlength="5" maxlength="15" autocomplete="new-password"></label>
+   <label>Επιβεβαίωση νέου κωδικού<input type="password" name="confirmPassword" required minlength="5" maxlength="15" autocomplete="new-password"></label>
    <div class="member-access-actions"><button type="submit" class="btn">Αποθήκευση νέου κωδικού</button><button type="button" class="btn secondary" data-go="memberLogin">Πίσω</button></div>
   </form>
   <p class="note">Ο προσωρινός κωδικός ακυρώνεται αμέσως μετά την επιτυχημένη χρήση ή όταν περάσει η μία ώρα.</p>
@@ -619,8 +621,8 @@ function memberProfilePage(){
    <details class="member-password-panel"><summary>Αλλαγή προσωπικού κωδικού</summary>
    <form id="memberPasswordForm">
     <label>Τρέχων κωδικός<input type="password" name="currentPassword" required minlength="4" maxlength="64" autocomplete="current-password"></label>
-    <label>Νέος κωδικός<input type="password" name="newPassword" required minlength="4" maxlength="15" autocomplete="new-password"></label>
-    <label>Επιβεβαίωση<input type="password" name="confirmPassword" required minlength="4" maxlength="15" autocomplete="new-password"></label>
+    <label>Τύπος νέου κωδικού<select name="credentialType"><option value="password">Κωδικός · 5–15 χαρακτήρες</option><option value="pin">PIN · 4–8 ψηφία</option></select></label><label>Νέος κωδικός<input type="password" name="newPassword" required minlength="5" maxlength="15" autocomplete="new-password"></label>
+    <label>Επιβεβαίωση<input type="password" name="confirmPassword" required minlength="5" maxlength="15" autocomplete="new-password"></label>
     <button type="submit" class="btn">Αλλαγή κωδικού</button>
    </form>
    </details>
@@ -1155,7 +1157,7 @@ app.addEventListener('submit',async e=>{
  const values=Object.fromEntries(d.entries());
  if(f.id==='memberRegisterForm'||f.id==='memberLoginForm'){
   const name=String(values.name||'').trim(),password=String(values.password||'');
-  if(name.length<2||name.length>70||(f.id==='memberRegisterForm'?!validMemberCredential(password):password.length<4||password.length>64)){toast('Έλεγξε το όνομα και τον κωδικό.');return}
+  if(name.length<2||name.length>70||(f.id==='memberRegisterForm'?!matchesMemberCredential(password,values.credentialType):password.length<4||password.length>64)){toast('Έλεγξε το όνομα και τον κωδικό.');return}
   if(f.id==='memberRegisterForm'&&name.split(/\s+/).length<2){toast('Συμπλήρωσε όνομα και επώνυμο.');return}
   if(f.id==='memberRegisterForm'&&password!==String(values.confirmPassword||'')){toast('Οι κωδικοί δεν ταιριάζουν.');return}
   const button=f.querySelector('button[type="submit"]');if(button)button.disabled=true;
@@ -1168,7 +1170,7 @@ app.addEventListener('submit',async e=>{
  }
  if(f.id==='memberBootstrapForm'){
   const newPassword=String(values.newPassword||'');
-  if(!validMemberCredential(newPassword)||newPassword!==values.confirmPassword){toast('Οι νέοι κωδικοί πρέπει να ταιριάζουν και να έχουν PIN 4–8 ψηφίων ή κωδικό 5–15 χαρακτήρων.');return}
+  if(!matchesMemberCredential(newPassword,values.credentialType)||newPassword!==values.confirmPassword){toast('Οι νέοι κωδικοί πρέπει να ταιριάζουν και να έχουν PIN 4–8 ψηφίων ή κωδικό 5–15 χαρακτήρων.');return}
   const button=f.querySelector('button[type="submit"]');if(button)button.disabled=true;
   try{const result=await memberApi('login',{name:bootstrapMemberName,password:String(values.currentPassword||''),newPassword});memberSignedIn(result);bootstrapMemberName='';await refresh();navigate('memberProfile');autoSyncBikeCloud().catch(()=>{});toast('Ο προσωπικός κωδικός αποθηκεύτηκε.')}
   catch(err){if(button)button.disabled=false;toast(err.message||'Η αλλαγή απέτυχε.')}
@@ -1179,7 +1181,7 @@ app.addEventListener('submit',async e=>{
   const resetCode=String(values.resetCode||'').trim();
   const newPassword=String(values.newPassword||'');
   if(newPassword!==String(values.confirmPassword||'')){toast('Οι νέοι κωδικοί δεν ταιριάζουν.');return}
-  if(name.length<2||!resetCode||!validMemberCredential(newPassword)){toast('Έλεγξε τα στοιχεία επαναφοράς και τον νέο κωδικό.');return}
+  if(name.length<2||!resetCode||!matchesMemberCredential(newPassword,values.credentialType)){toast('Έλεγξε τα στοιχεία επαναφοράς και τον νέο κωδικό.');return}
   const button=f.querySelector('button[type="submit"]');if(button)button.disabled=true;
   try{
    const result=await memberApi('resetPassword',{name,resetCode,newPassword});
@@ -1195,7 +1197,7 @@ app.addEventListener('submit',async e=>{
   const currentPassword=String(values.currentPassword||'');
   const newPassword=String(values.newPassword||'');
   if(newPassword!==String(values.confirmPassword||'')){toast('Οι νέοι κωδικοί δεν ταιριάζουν.');return}
-  if(!validMemberCredential(newPassword)){toast('Ο νέος κωδικός πρέπει να είναι PIN 4–8 ψηφίων ή κωδικό 5–15 χαρακτήρων.');return}
+  if(!matchesMemberCredential(newPassword,values.credentialType)){toast('Ο νέος κωδικός πρέπει να είναι PIN 4–8 ψηφίων ή κωδικό 5–15 χαρακτήρων.');return}
   const button=f.querySelector('button[type="submit"]');if(button)button.disabled=true;
   try{memberSignedIn(await memberApi('changePassword',{currentPassword,newPassword}));navigate('memberProfile');toast('Ο προσωπικός κωδικός άλλαξε.')}
   catch(err){if(button)button.disabled=false;toast(err.message||'Η αλλαγή απέτυχε.')}
