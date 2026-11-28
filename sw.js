@@ -1,7 +1,7 @@
 /* Cycling PWA offline shell and new-ride Web Push receiver. */
-const CACHE="podilasia-ui-v116-clean-shop-sport";
+const CACHE="podilasia-ui-v117-catalog-photo-review";
 const ASSETS=[
-  "./",'./index.html','./style.css?v=97','./app.js?v=101',
+  "./",'./index.html','./style.css?v=97','./app.js?v=102',
   './voltes-push.js?v=5','./completion.js','./strava-ocr.js?v=40',
   './config.js','./icon.svg?v=2','./hero-cyclist.webp','./manifest.webmanifest'
 ];
@@ -22,8 +22,12 @@ self.addEventListener("fetch", event => {
   const req = event.request;
   const url = new URL(req.url);
   const scope = new URL(self.registration.scope);
-  if (req.method !== "GET" || url.origin !== scope.origin ||
-      !url.pathname.startsWith(scope.pathname)) return;
+  if (req.method !== "GET" || url.origin !== scope.origin) return;
+  const sharedPhotoPath=new URL("../predictions/images/",scope).pathname;
+  if(req.destination==="image"&&url.pathname.startsWith(sharedPhotoPath)&&/\.webp$/i.test(url.pathname)){
+    event.respondWith((async()=>{const cache=await caches.open(CACHE),hit=await cache.match(req);if(hit)return hit;const response=await fetch(req,{cache:"no-cache"});if(response.ok&&response.headers.get("content-type")?.startsWith("image/")){try{await cache.put(req,response.clone());for(const k of await cache.keys()){const u=new URL(k.url);if(u.pathname===url.pathname&&u.href!==url.href)await cache.delete(k);}}catch{}}return response})().catch(()=>Response.error()));return;
+  }
+  if(!url.pathname.startsWith(scope.pathname)) return;
   const staticRequest = req.mode === "navigate" ||
     ["script", "style", "image", "font", "manifest"].includes(req.destination);
   if (!staticRequest) return;
