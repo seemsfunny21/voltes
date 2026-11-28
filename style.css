@@ -1799,3 +1799,33 @@ html[data-theme] .game-card .game-category{min-height:74px;padding:7px 3px;borde
 .game-modal-layer{position:fixed;inset:0;z-index:3000;background:#020a16b8;backdrop-filter:blur(3px);display:flex;align-items:flex-end;justify-content:center;padding:0;overscroll-behavior:contain}.game-modal-layer .game-sheet{width:min(100%,520px);max-height:82dvh;overflow:auto;box-sizing:border-box;border-radius:17px 17px 0 0;margin:0;padding:14px 14px calc(14px + env(safe-area-inset-bottom,0px));box-shadow:0 -8px 40px #0007}.game-modal-layer .game-sheet>.game-btn{width:100%}.game-preview-product .game-product-photo{max-height:175px}.game-footer{margin:6px 0}.game-footer .btn{font-size:12px;min-height:34px;padding:7px 10px}
 html[data-theme] .settings-compact{padding:12px}html[data-theme] .settings-compact h2{margin:4px 0 9px;font-size:16px}html[data-theme] .settings-compact .theme-option{min-height:43px;padding:8px;font-size:13px}html[data-theme] .voltes-push-card{padding:12px}html[data-theme] .voltes-push-card h2{font-size:14px}html[data-theme] .voltes-push-card .btn{min-height:38px;padding:8px 5px;font-size:12px}html[data-theme] .settings-admin-primary .btn,html[data-theme] .settings-more summary{min-height:40px;padding:9px 6px;font-size:13px}html[data-theme] .settings-admin-primary{gap:7px}
 @media(min-width:650px){.game-admin-rates{grid-template-columns:repeat(2,minmax(0,1fr))}.game-products .game-product-photo,.game-products .game-icon{height:120px}.game-modal-layer{align-items:center}.game-modal-layer .game-sheet{border-radius:16px}.game-picker-dialog{inset:50% auto auto 50%;transform:translate(-50%,-50%);border-radius:16px}}
+
+/* Consistent compact screen headers and social surfaces. */
+html[data-theme] .page-toolbar{display:grid;grid-template-columns:40px minmax(0,1fr) 40px;align-items:center;gap:6px;margin:6px 0 12px}
+html[data-theme] .page-toolbar h1{font-size:clamp(17px,4.7vw,23px);line-height:1.2;margin:0;text-align:center;overflow-wrap:anywhere}
+html[data-theme] .page-toolbar .page-icon{display:grid;place-items:center;min-width:40px;width:40px;height:40px;min-height:40px;margin:0;padding:0;border:1px solid #6094be55;border-radius:11px;background:#102e4c;color:#cde9ff;box-shadow:none}
+html[data-theme] .page-toolbar .page-icon:active{background:#26638f}
+.game-wallet-compact{background:linear-gradient(125deg,#183d62,#0b223c)!important;margin:0 0 10px!important;padding:10px!important}
+.game-wallet-compact .game-hero-wallet strong{font-size:24px}
+.game-wallet-compact .game-hero-xp{margin-top:7px}
+.game-identity-avatar .rider-avatar{width:60px;height:60px}
+.game-life-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+.game-life-item strong,.game-life-item b{font-size:10px;overflow-wrap:anywhere}
+.game-life-item small{font-size:9px;overflow-wrap:anywhere}
+.game-life-item .game-life-empty{font-size:23px}
+html[data-theme] .game-card .game-btn[aria-pressed=true]{border-color:#72d7ff;background:linear-gradient(135deg,#237bad,#124e78);color:#fff;box-shadow:inset 0 0 0 1px #8ce2ff77}
+.game-premium-item{border-color:#d6aa5d99!important;background:linear-gradient(145deg,#3b3938,#152f49)!important}
+.game-awards-grid .game-award{display:grid;justify-items:center;gap:6px;text-align:center;padding:11px 6px}
+.game-award-icon{font-size:27px}.game-award b{font-size:12px}.game-award progress{width:100%;height:6px;accent-color:#6edecb}.game-award small{font-size:10px}
+.game-rank-1{border-color:#f1c96e!important}.game-rank-2{border-color:#c3d6e5!important}.game-rank-3{border-color:#d3956c!important}
+.game-chat-members{display:flex;gap:7px;overflow:auto;padding:3px 0 9px}
+html[data-theme] .game-chat-person{flex:0 0 76px;display:grid;justify-items:center;gap:5px;padding:7px 3px;border:1px solid #6494bd55;border-radius:11px;background:#0d2844;color:#eaf4ff;font-size:10px;line-height:1.3}
+.game-chat-person .rider-avatar{width:36px;height:36px}.game-chat-person span{overflow-wrap:anywhere}.game-chat-person[aria-pressed=true]{border-color:#72d7ff!important;background:#20577b!important}
+.game-chat-thread{min-height:120px;max-height:48dvh;overflow:auto;display:flex;flex-direction:column;gap:8px;padding:8px 3px}
+.game-chat-line{display:flex;align-items:flex-end;gap:6px}.game-chat-line.own{justify-content:flex-end}.game-chat-line .rider-avatar{width:28px;height:28px;flex-shrink:0}
+.game-bubble{display:grid;gap:3px;max-width:83%;border-radius:13px 13px 13px 3px;background:#102d48;padding:8px 10px;color:#e9f4ff;overflow-wrap:anywhere;font-size:13px}
+.game-chat-line.own .game-bubble{background:#195f89;border-radius:13px 13px 3px 13px}.game-bubble small{color:#abd2e9;font-size:10px}
+html[data-theme] .game-card .game-composer{display:grid;grid-template-columns:minmax(0,1fr) 42px;gap:6px;align-items:center;margin:0}
+html[data-theme] .game-card .game-composer input{margin:0;width:100%;min-width:0}
+html[data-theme] .game-card .game-composer .btn{width:42px;height:40px;padding:0;margin:0;font-size:20px}
+@media(max-width:340px){.game-life-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
