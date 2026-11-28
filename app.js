@@ -558,7 +558,7 @@ function memberRegisterPage(){
  return `<h1>Εγγραφή νέου μέλους</h1><section class="card member-account-page">
   <p class="muted">Δημιούργησε το προσωπικό σου προφίλ χωρίς email. Κράτησε τον κωδικό σου. Αν τον θυμάσαι, μπορείς να τον αλλάξεις μόνος σου. Ο Admin βοηθά μόνο όταν τον ξεχάσεις.</p>
   <form id="memberRegisterForm" autocomplete="on">
-   <label>Όνομα ή ψευδώνυμο<input name="name" required minlength="2" maxlength="70" autocomplete="nickname" placeholder="π.χ. Κώστας ή KostasRider"></label>
+   <label>Όνομα και επώνυμο<input name="name" required minlength="3" maxlength="70" autocomplete="name" placeholder="π.χ. Κώστας Παπαδόπουλος"></label>
    <label>Προσωπικός κωδικός<input type="password" name="password" required minlength="6" maxlength="64" autocomplete="new-password" placeholder="Τουλάχιστον 6 χαρακτήρες"></label>
    <label>Επιβεβαίωση κωδικού<input type="password" name="confirmPassword" required minlength="6" maxlength="64" autocomplete="new-password"></label>
    <div class="member-access-actions"><button class="btn" type="submit">Δημιουργία προφίλ</button><button class="btn secondary" type="button" data-go="members">Πίσω</button></div>
@@ -872,7 +872,7 @@ app.addEventListener('change',async e=>{
 });
 
 app.addEventListener('click',async e=>{
- let b=e.target.closest('button');if(!b)return;
+ let b=e.target.closest('button');if(!b)return;if(b.dataset.game)return handleGameClick(b);
  if(b.dataset.do==='cancelBikeDetailsField'){bikeDetailsFieldKey='';render();return}
  if(b.dataset.do==='editBikeDetails'){
   const bike=ownBikes().find(x=>x.id===b.dataset.bikeId);
@@ -1137,16 +1137,17 @@ app.addEventListener('input',e=>{
  }
 });
 app.addEventListener('submit',async e=>{
- e.preventDefault();let f=e.target,d=new FormData(f);
+ e.preventDefault();let f=e.target;if(['gameActivityForm','gameMessageForm'].includes(f.id)||f.matches?.('.game-rate-form'))return handleGameSubmit(e);let d=new FormData(f);
  const values=Object.fromEntries(d.entries());
  if(f.id==='memberRegisterForm'||f.id==='memberLoginForm'){
   const name=String(values.name||'').trim(),password=String(values.password||'');
   if(name.length<2||name.length>70||password.length<6||password.length>64){toast('Συμπλήρωσε όνομα και κωδικό 6–64 χαρακτήρων.');return}
+  if(f.id==='memberRegisterForm'&&name.split(/\s+/).length<2){toast('Συμπλήρωσε όνομα και επώνυμο.');return}
   if(f.id==='memberRegisterForm'&&password!==String(values.confirmPassword||'')){toast('Οι κωδικοί δεν ταιριάζουν.');return}
   const button=f.querySelector('button[type="submit"]');if(button)button.disabled=true;
   try{
    const result=await memberApi(f.id==='memberRegisterForm'?'register':'login',{name,password});
-   memberSignedIn(result);await refresh();navigate('memberProfile');autoSyncBikeCloud().catch(()=>{});
+   memberSignedIn(result);await refresh();if(f.id==='memberRegisterForm')await gameCall('join');navigate('memberProfile');autoSyncBikeCloud().catch(()=>{});
   }catch(err){if(button)button.disabled=false;toast(err.message||'Η σύνδεση απέτυχε.')}
   return;
  }
@@ -1316,7 +1317,7 @@ async function gameCall(action,fields={},isAdmin=false){
 }
 function gameLevel(x){const xp=Number(x||0);return {level:1+Math.floor(xp/1000),progress:xp%1000}}
 function gameSummary(x){const l=gameLevel(x.xp),tot=x.totals||{};return '<div class="game-summary"><div><small>Επίπεδο</small><b>'+l.level+'</b></div><div><small>XP</small><b>'+gfmt(l.progress)+'/1000</b><progress max="1000" value="'+l.progress+'"></progress></div><div><small>Νομίσματα</small><b>🪙 '+gfmt(x.coins)+'</b></div><div><small>Σύνολο km</small><b>'+gfmt(Number(tot.bike||0)+Number(tot.walk||0)+Number(tot.run||0))+'</b></div></div>'}
-function gameProfileCard(){if(!memberAccount)return '';const x=gameOwner===memberToken?gameData:null;return '<section class="card game-card"><h2>🏆 Δραστηριότητες &amp; Κατάστημα</h2>'+(x?.status==='approved'?gameSummary(x):'<p class="muted">Κέρδισε νομίσματα από την άθληση και εξέλιξε το προφίλ σου.</p>')+'<div class="game-grid">'+[['🎯 Δραστηριότητες','activity'],['🛒 Κατάστημα','shop'],['🎨 Η εμφάνισή μου','owned'],['🏅 Επιτεύγματα','awards'],['👥 Μέλη ομάδας','members'],['🎁 Δώρα','gift'],['💬 Συνομιλία','chat'],['✉️ Μηνύματα','private']].map(([t,k])=>gbtn(t,'open','data-game-tab="'+k+'"')).join('')+'</div></section>'}
+function gameProfileCard(){if(!memberAccount)return '';const x=gameOwner===memberToken?gameData:null;return '<section class="card game-card game-style-'+safe(x?.style||'blue')+'"><h2>🏆 Δραστηριότητες &amp; Κατάστημα</h2>'+(x?.status==='approved'?gameSummary(x):'<p class="muted">Κέρδισε νομίσματα από την άθληση και εξέλιξε το προφίλ σου.</p>')+'<div class="game-grid">'+[['🎯 Δραστηριότητες','activity'],['🛒 Κατάστημα','shop'],['🎨 Η εμφάνισή μου','owned'],['🏅 Επιτεύγματα','awards'],['👥 Μέλη ομάδας','members'],['🎁 Δώρα','gift'],['💬 Συνομιλία','chat'],['✉️ Μηνύματα','private']].map(([t,k])=>gbtn(t,'open','data-game-tab="'+k+'"')).join('')+'</div></section>'}
 function gameMemberOptions(x){return '<option value="">Επίλεξε μέλος</option>'+x.members.filter(m=>m.id!==memberAccount?.id).map(m=>'<option value="'+safe(m.id)+'" '+(gameRecipient===m.id?'selected':'')+'>'+safe(m.name)+'</option>').join('')}
 function gameActivityPage(){if(!memberAccount)return memberLoginPage();const x=gameOwner===memberToken?gameData:null;const back='<div class="actions"><button type="button" class="btn secondary" data-go="members">← Το προφίλ μου</button>'+gbtn('↻ Ανανέωση','refresh')+'</div>';if(!x||x.status!=='approved')return '<h1>🏆 Δραστηριότητες</h1><section class="card game-card">'+(gameError?'<p class="alert">'+safe(gameError)+'</p>':'')+(x?.status==='pending'?'<h2>Αναμονή έγκρισης Admin</h2><p>Η αίτηση παραμένει ενεργή μέχρι την έγκριση.</p>':x?.status==='unregistered'?'<h2>Συμμετοχή στο παιχνίδι</h2><p>'+safe(memberName())+' · Αίτηση με τον υπάρχοντα λογαριασμό.</p>'+gbtn('Υποβολή αίτησης','join'):'<p>Φόρτωση δραστηριοτήτων…</p>')+'</section>'+back;
  const tabs=[['activity','Δραστηριότητες'],['shop','Κατάστημα'],['owned','Αποκτήματα'],['awards','Επιτεύγματα'],['members','Μέλη'],['gift','Δώρα'],['chat','Chat'],['private','Μηνύματα']];
@@ -1329,7 +1330,7 @@ function gameActivityPage(){if(!memberAccount)return memberLoginPage();const x=g
  else {const priv=gameTab==='private';content=(priv?'<label>Μέλος<select id="gameRecipient">'+gameMemberOptions(x)+'</select></label>':'')+'<div class="game-messages">'+x.messages.filter(m=>priv?(gameRecipient&&(m.sender===gameRecipient||m.recipient===gameRecipient)&&m.recipient!==null):m.recipient===null).map(m=>'<div class="game-row"><span><strong>'+safe(m.name)+'</strong><small>'+safe(m.body)+'</small></span></div>').join('')+'</div><form id="gameMessageForm"><label>Μήνυμα<input name="body" maxlength="500" required></label><button type="submit" class="btn">Αποστολή</button></form>'}
  return '<h1>🏆 Δραστηριότητες</h1><section class="card game-card game-style-'+safe(x.style)+'">'+gameSummary(x)+'<div class="game-grid game-tabs">'+tabs.map(([k,t])=>gbtn(t,'tab','data-game-tab="'+k+'" aria-pressed="'+(gameTab===k)+'"')).join('')+'</div>'+(gameError?'<p class="alert">'+safe(gameError)+'</p>':'')+content+'</section>'+back}
 function gameAdminPage(){if(!admin)return auth();const x=gameAdminData;return '<h1>🛡️ Διαχείριση Δραστηριοτήτων</h1><section class="card game-card">'+(gameAdminError?'<p class="alert">'+safe(gameAdminError)+'</p>':'')+gbtn('↻ Ανανέωση','adminRefresh')+(x?'<h2>Αιτήσεις μελών</h2>'+(x.pendingMembers.map(m=>'<div class="game-row"><span>'+safe(m.name)+'</span>'+gbtn('Έγκριση','approve_member','data-target="'+safe(m.id)+'"')+'</div>').join('')||'<p class="muted">Καμία εκκρεμής αίτηση.</p>')+'<h2>Δραστηριότητες σε αναμονή</h2>'+(x.pendingActivities.map(a=>'<div class="game-row"><span>'+safe(a.name)+'<small>'+safe(a.day)+' · '+gameSports[a.sport][1]+' '+gfmt(a.amount)+' · '+a.reward+' 🪙</small></span><div>'+gbtn('✓','approve_activity','data-target="'+safe(a.id)+'"')+gbtn('✗','reject_activity','data-target="'+safe(a.id)+'"')+'</div></div>').join('')||'<p class="muted">Καμία εκκρεμότητα.</p>')+'<h2>Ανταμοιβές και όρια</h2>'+x.rates.map(r=>'<form class="game-rate-form" data-sport="'+r.sport+'"><strong>'+gameSports[r.sport][1]+'</strong><label>Νομίσματα / '+gameSports[r.sport][2]+'<input type="number" name="rate" min="1" max="1000" value="'+r.rate+'" required></label><label>Ημερήσιο όριο<input type="number" name="cap" min="1" max="1000" value="'+r.daily_cap+'" required></label><button class="btn secondary" type="submit">Αποθήκευση</button></form>').join(''):'<p>Φόρτωση…</p>')+'</section><button class="btn secondary" data-go="settings">← Ρυθμίσεις</button>'}
-app.addEventListener('click',async e=>{const b=e.target.closest('[data-game]');if(!b)return;const d=b.dataset,act=d.game;if(gameBusy)return;
+async function handleGameClick(b){const d=b.dataset,act=d.game;if(gameBusy)return;
  if(act==='open'){gameTab=d.gameTab;gameStoreFilter='';navigate('activityGame');return}
  if(act==='tab'){gameTab=d.gameTab;gameStoreFilter='';render();return}
  if(act==='sport'){gameSport=d.sport;render();return}
@@ -1339,9 +1340,9 @@ app.addEventListener('click',async e=>{const b=e.target.closest('[data-game]');i
  if(act==='style'){await gameCall('style',{style:d.style});return}
  if(['approve_member','approve_activity','reject_activity'].includes(act)){await gameCall(act,{target:d.target},true);return}
  if(['buy','gift'].includes(act)){const item=gameData?.catalog.find(c=>c.id===d.item);if(!item)return;if(act==='gift'&&!gameRecipient){toast('Επίλεξε παραλήπτη.');return}if(!confirm(item.name+' · '+gfmt(item.price)+' νομίσματα. Επιβεβαίωση;'))return;await gameCall(act,{item:item.id,target:gameRecipient,requestId:crypto.randomUUID()})}
-});
+}
 app.addEventListener('change',e=>{if(e.target.id==='gameRecipient'){gameRecipient=e.target.value;render()}if(e.target.id==='gameStoreFilter'){gameStoreFilter=e.target.value;render()}});
-app.addEventListener('submit',async e=>{const f=e.target;if(!['gameActivityForm','gameMessageForm'].includes(f.id)&&!f.matches('.game-rate-form'))return;e.preventDefault();if(gameBusy)return;const v=Object.fromEntries(new FormData(f));const b=f.querySelector('button');if(b)b.disabled=true;try{if(f.id==='gameActivityForm'){await gameCall('activity',{sport:gameSport,amount:Number(v.amount),day:v.day,requestId:crypto.randomUUID()})}else if(f.id==='gameMessageForm'){if(gameTab==='private'&&!gameRecipient){toast('Επίλεξε μέλος.');return}await gameCall('message',{body:v.body,target:gameTab==='private'?gameRecipient:''})}else await gameCall('set_rate',{sport:f.dataset.sport,rate:Number(v.rate),cap:Number(v.cap)},true)}finally{if(b)b.disabled=false}});
+async function handleGameSubmit(e){const f=e.target;e.preventDefault();if(gameBusy)return;const v=Object.fromEntries(new FormData(f));const b=f.querySelector('button');if(b)b.disabled=true;try{if(f.id==='gameActivityForm'){await gameCall('activity',{sport:gameSport,amount:Number(v.amount),day:v.day,requestId:crypto.randomUUID()})}else if(f.id==='gameMessageForm'){if(gameTab==='private'&&!gameRecipient){toast('Επίλεξε μέλος.');return}await gameCall('message',{body:v.body,target:gameTab==='private'?gameRecipient:''})}else await gameCall('set_rate',{sport:f.dataset.sport,rate:Number(v.rate),cap:Number(v.cap)},true)}finally{if(b)b.disabled=false}}
 
 start();
 if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
