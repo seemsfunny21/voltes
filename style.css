@@ -1831,3 +1831,10 @@ html[data-theme] .game-card .game-composer .btn{width:42px;height:40px;padding:0
 @media(max-width:340px){.game-life-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 
 html[data-theme] .game-card #gameMessageForm{width:100%;min-width:0;grid-template-columns:minmax(0,1fr) 42px;gap:6px;overflow:hidden}html[data-theme] .game-card #gameMessageForm>button.btn{min-width:0!important;max-width:42px!important;width:42px!important;justify-self:stretch;box-sizing:border-box;transform:none}html[data-theme] .game-card #gameMessageForm>input{min-width:0!important;max-width:100%;box-sizing:border-box}.game-chat-empty{text-align:center;padding:12px 0;margin:0}.game-chat-thread:has(>p:only-child){min-height:64px}.game-chat-members:empty{display:none}
+
+/* Gift recipient selection: accessible, full-width rows with avatar and name. */
+.game-gift-recipients{display:grid;gap:6px;max-height:230px;overflow:auto;margin:5px 0 10px}
+html[data-theme] .game-card .game-gift-person{display:grid;grid-template-columns:38px minmax(0,1fr) 22px;gap:9px;align-items:center;text-align:left;width:100%;min-width:0;margin:0;padding:7px 9px;border:1px solid #6094be66;border-radius:10px;background:#102e4c;color:#eaf4ff;box-shadow:none;font-size:13px;font-weight:650}
+.game-gift-person .rider-avatar{width:36px;height:36px;margin:0}.game-gift-person>span{min-width:0;overflow-wrap:anywhere}.game-gift-person .gift-person-check{text-align:center;color:#a9d8fa;font-size:17px}
+html[data-theme] .game-card .game-gift-person[aria-pressed=true]{border-color:#72d7ff;background:#20577b;box-shadow:inset 0 0 0 1px #72d7ff55}
+.game-gift-settings{margin:0 0 9px}.game-gift-settings .game-select-trigger{min-height:40px}
