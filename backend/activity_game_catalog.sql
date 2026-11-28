@@ -202,6 +202,31 @@ insert into voltes_game.catalog(id,category,name,icon,price,source_category,imag
 ('pred_watch_luxury','Ρολόι','Luxury','⌚','5000','watch','../predictions/images/watches/watch_luxury.webp','John Torcasio · CC BY-SA 3.0 · Resized and converted to WebP; centered on 480×480 canvas','https://commons.wikimedia.org/wiki/File:Omega_Seamaster_Planet_Ocean_Chronograph_2210.51.00.jpg','https://creativecommons.org/licenses/by-sa/3.0'),
 ('pred_art_watch','Ρολόι','Συλλεκτικό','⌚','15000','watch','../predictions/images/watches/art_watch.webp','FrankWilliams · Public domain · Resized and converted to WebP; centered on 480×480 canvas','https://commons.wikimedia.org/wiki/File:Rolex-Submariner.jpg','')
 on conflict(id) do nothing;
+-- Cycling accessories: shared shop and gift catalog; preserve existing prices and ownership.
+insert into voltes_game.catalog(id,category,name,icon,price,source_category) values
+('bike_accessory_bottle','Αξεσουάρ ποδηλάτου','Παγούρι','🧴',100,'bike_accessory'),
+('bike_accessory_cage','Αξεσουάρ ποδηλάτου','Παγουροθήκη','🔧',150,'bike_accessory'),
+('bike_accessory_bell','Αξεσουάρ ποδηλάτου','Κουδουνάκι','🔔',100,'bike_accessory'),
+('bike_accessory_patch','Αξεσουάρ ποδηλάτου','Κιτ επισκευής','🩹',150,'bike_accessory'),
+('bike_accessory_tube','Αξεσουάρ ποδηλάτου','Σαμπρέλα','⭕',180,'bike_accessory'),
+('bike_accessory_lever','Αξεσουάρ ποδηλάτου','Μοχλοί ελαστικών','🛠️',100,'bike_accessory'),
+('bike_accessory_pump','Αξεσουάρ ποδηλάτου','Τρόμπα χειρός','💨',250,'bike_accessory'),
+('bike_accessory_multitool','Αξεσουάρ ποδηλάτου','Πολυεργαλείο','🛠️',350,'bike_accessory'),
+('bike_accessory_bag','Αξεσουάρ ποδηλάτου','Τσαντάκι σέλας','🎒',300,'bike_accessory'),
+('bike_accessory_lights','Αξεσουάρ ποδηλάτου','Σετ φώτων LED','🔦',400,'bike_accessory'),
+('bike_accessory_lock','Αξεσουάρ ποδηλάτου','Κλειδαριά ποδηλάτου','🔒',300,'bike_accessory'),
+('bike_accessory_gloves','Αξεσουάρ ποδηλάτου','Ποδηλατικά γάντια','🧤',300,'bike_accessory'),
+('bike_accessory_glasses','Αξεσουάρ ποδηλάτου','Ποδηλατικά γυαλιά','🕶️',450,'bike_accessory'),
+('bike_accessory_pedals','Αξεσουάρ ποδηλάτου','Κουμπωτά πετάλια','⚙️',800,'bike_accessory'),
+('bike_accessory_cleats_shoes','Αξεσουάρ ποδηλάτου','Ποδηλατικά παπούτσια SPD-SL','👟',1000,'bike_accessory'),
+('bike_accessory_tyres','Αξεσουάρ ποδηλάτου','Σετ ελαστικών tubeless','🛞',850,'bike_accessory'),
+('bike_accessory_computer','Αξεσουάρ ποδηλάτου','GPS ποδηλασίας','🧭',1500,'bike_accessory'),
+('bike_accessory_radar','Αξεσουάρ ποδηλάτου','Πίσω ραντάρ','📡',2000,'bike_accessory'),
+('bike_accessory_power','Αξεσουάρ ποδηλάτου','Μετρητής ισχύος','⚡',3000,'bike_accessory'),
+('bike_accessory_trainer','Αξεσουάρ ποδηλάτου','Έξυπνο προπονητήριο','🚴',4000,'bike_accessory')
+on conflict(id) do nothing;
+update voltes_game.catalog set category='Αξεσουάρ ποδηλάτου',source_category='bike_accessory' where id='helmet';
+
 create or replace function public.voltes_game_action(p_member uuid,p_admin boolean,p_action text,p jsonb default '{}'::jsonb) returns jsonb language plpgsql security invoker set search_path='' as $$
 declare me voltes_game.players%rowtype; a voltes_game.activities%rowtype; item voltes_game.catalog%rowtype; r voltes_game.rates%rowtype; target uuid; rid uuid; q numeric; d date; n integer; result jsonb; msg text; today date:=(now() at time zone 'Europe/Athens')::date;
 begin
