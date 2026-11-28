@@ -65,7 +65,7 @@ begin
    insert into voltes_game.transactions values(rid,p_member,p_action,-item.price,now());
   end if;
  elsif p_action='style' then
-  msg:=p->>'style';if msg not in ('blue','gold','green') or (msg<>'blue' and not exists(select 1 from voltes_game.owned where player=p_member and item=msg)) then raise exception 'Δεν διαθέτεις αυτή την εμφάνιση';end if;
+  msg:=p->>'style';if msg not in ('blue','gold','green') or (msg<>'blue' and not exists(select 1 from voltes_game.owned where player=p_member and voltes_game.owned.item=msg)) then raise exception 'Δεν διαθέτεις αυτή την εμφάνιση';end if;
   update voltes_game.players set style=msg where id=p_member;
  elsif p_action='message' then
   msg:=btrim(p->>'body');target:=nullif(p->>'target','')::uuid;
@@ -77,7 +77,7 @@ begin
  select * into me from voltes_game.players where id=p_member;
  return jsonb_build_object('ok',true,'status',me.status,'coins',me.coins,'xp',me.xp,'style',me.style,
  'catalog',(select jsonb_agg(to_jsonb(c) order by category,price) from voltes_game.catalog c),
- 'owned',coalesce((select jsonb_agg(item) from voltes_game.owned where player=p_member),'[]'::jsonb),
+ 'owned',coalesce((select jsonb_agg(own.item) from voltes_game.owned own where own.player=p_member),'[]'::jsonb),
  'activities',coalesce((select jsonb_agg(to_jsonb(x)) from (select * from voltes_game.activities where player=p_member order by day desc,created_at desc limit 100)x),'[]'::jsonb),
  'totals',coalesce((select jsonb_object_agg(sport,total) from (select sport,sum(amount) total from voltes_game.activities where player=p_member and status='approved' group by sport)x),'{}'::jsonb),
  'rates',(select jsonb_agg(to_jsonb(rate_row)) from voltes_game.rates rate_row),
