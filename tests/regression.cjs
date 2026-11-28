@@ -100,7 +100,7 @@ async function main(){
   vm.runInContext('memberAccount=null;memberToken=""',ctx);
   const hub=vm.runInContext('memberHub()',ctx);
   assert.ok(hub.includes('data-go="memberLogin"')&&hub.includes('data-go="memberRegister"'));
-  assert.ok(hub.includes('data-go="memberDirectory"'));
+  assert.ok(!hub.includes('data-go="memberDirectory"'));
   assert.ok(!hub.includes('data-go="bikeService"'));
   vm.runInContext("memberAccount={id:'a',name:'Μέλος Α'};memberToken='"+'1'.repeat(64)+"'",ctx);
  });
