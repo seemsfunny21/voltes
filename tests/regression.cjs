@@ -91,7 +91,8 @@ async function main(){
     assert.equal((settings.match(new RegExp('data-go="'+route+'"','g'))||[]).length,0,'No '+route+' inside settings');
     assert.equal((profile.match(new RegExp('data-go="'+route+'"','g'))||[]).length,1,'One '+route+' button in profile');
   }
-  assert.ok(profile.includes('data-go="memberDirectory"'),'Member directory is accessible from profile');
+  assert.ok(!profile.includes('data-go="memberDirectory"'),'Signed-in profile has no duplicate member directory button');
+  assert.ok(vm.runInContext('gameMorePage()',ctx).includes('data-go="memberDirectory"'),'Member directory is accessible from More');
   assert.ok(!settings.includes('data-go="riders"')&&!settings.includes('data-go="new"'),
     'Non-admin settings have no privileged controls');
  });
